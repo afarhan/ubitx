@@ -1,4 +1,6 @@
 /**
+ * This is source code for the scratch built ubitx, it is no longer used for the kits.
+ *
  * This source file is under General Public License version 3.
  * 
  * Most source code are meant to be understood by the compilers and the computers. 
