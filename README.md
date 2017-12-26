@@ -1,5 +1,5 @@
 
-uBITX firmware, written for the Raduino/Arduino control of uBITX transceigers
+uBITX firmware, written for the Raduino/Arduino control of uBITX tranceivers
 
 Copyright (C) 2017,  Ashhar Farhan
 

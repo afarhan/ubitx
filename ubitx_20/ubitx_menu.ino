@@ -1,11 +1,11 @@
 /** Menus
- *  The Radio menus are accessed by tapping on the function button. 
+ *  The Radio menus are accessed by tapping on the function button.
  *  - The main loop() constantly looks for a button press and calls doMenu() when it detects
- *  a function button press. 
+ *  a function button press.
  *  - As the encoder is rotated, at every 10th pulse, the next or the previous menu
  *  item is displayed. Each menu item is controlled by it's own function.
  *  - Eache menu function may be called to display itself
- *  - Each of these menu routines is called with a button parameter. 
+ *  - Each of these menu routines is called with a button parameter.
  *  - The btn flag denotes if the menu itme was clicked on or not.
  *  - If the menu item is clicked on, then it is selected,
  *  - If the menu item is NOT clicked on, then the menu's prompt is to be displayed
@@ -20,7 +20,7 @@ int menuBand(int btn){
 
  // band = frequency/1000000l;
  // offset = frequency % 1000000l;
-    
+
   if (!btn){
    printLine2("Band Select?");
    return;
@@ -30,7 +30,7 @@ int menuBand(int btn){
   //wait for the button menu select button to be lifted)
   while (btnDown())
     delay(50);
-  delay(50);    
+  delay(50);
   ritDisable();
 
   while(!btnDown()){
@@ -41,7 +41,7 @@ int menuBand(int btn){
       if (band > 3 && knob < 0)
         band--;
       if (band < 30 && knob > 0)
-        band++; 
+        band++;
       if (band > 10)
         isUSB = true;
       else
@@ -63,19 +63,19 @@ int menuBand(int btn){
   while(btnDown())
     delay(50);
   delay(50);
-  
+
   printLine2("");
   updateDisplay();
   menuOn = 0;
 }
 
 void menuVfoToggle(int btn){
-  
+
   if (!btn){
     if (vfoActive == VFO_A)
       printLine2("Select VFO B?   ");
     else
-      printLine2("Select VFO A?   ");    
+      printLine2("Select VFO A?   ");
   }
   else {
       if (vfoActive == VFO_B){
@@ -89,10 +89,10 @@ void menuVfoToggle(int btn){
         vfoA = frequency;
         EEPROM.put(VFO_A, frequency);
         vfoActive = VFO_B;
-        printLine2("Selected VFO B  ");      
+        printLine2("Selected VFO B  ");
         frequency = vfoB;
       }
-      
+
       ritDisable();
       setFrequency(frequency);
       if (frequency >= 10000000l)
@@ -151,7 +151,7 @@ void menuSidebandToggle(int btn){
         delay(500);
         printLine2("");
       }
-    
+
     updateDisplay();
     menuOn = 0;
   }
@@ -174,7 +174,7 @@ void menuSetup(int btn){
     }
     else {
       modeCalibrate = false;
-      printLine2("Setup:Off   ");      
+      printLine2("Setup:Off   ");
     }
    delay(2000);
    printLine2("");
@@ -201,7 +201,7 @@ int menuCWSpeed(int btn){
     int wpm;
 
     wpm = 1200/cwSpeed;
-     
+
     if (!btn){
      strcpy(b, "CW:");
      itoa(wpm,c, 10);
@@ -237,7 +237,7 @@ int menuCWSpeed(int btn){
         //re-enable the clock1 and clock 2
         break;
     }
-    
+
     //save the setting
     if (digitalRead(PTT) == LOW){
       printLine2("CW Speed set!");
@@ -253,12 +253,12 @@ int menuCWSpeed(int btn){
 
 /**
  * Take a deep breath, math(ematics) ahead
- * The 25 mhz oscillator is multiplied by 35 to run the vco at 875 mhz
+ * The 25 MHz oscillator is multiplied by 35 to run the vco at 875 MHz
  * This is divided by a number to generate different frequencies.
- * If we divide it by 875, we will get 1 mhz signal
- * So, if the vco is shifted up by 875 hz, the generated frequency of 1 mhz is shifted by 1 hz (875/875)
- * At 12 Mhz, the carrier will needed to be shifted down by 12 hz for every 875 hz of shift up of the vco
- * 
+ * If we divide it by 875, we will get 1 MHz signal
+ * So, if the vco is shifted up by 875 Hz, the generated frequency of 1 MHz is shifted by 1 Hz (875/875)
+ * At 12 MHz, the carrier will needed to be shifted down by 12 Hz for every 875 Hz of shift up of the vco
+ *
  */
 
  //this is used by the si5351 routines in the ubitx_5351 file
@@ -274,7 +274,7 @@ int factoryCalibration(int btn){
   while (btnDown())
     delay(100);
   delay(100);
-   
+
   if (!btn){
     printLine2("Set Calibration?");
     return 0;
@@ -288,12 +288,12 @@ int factoryCalibration(int btn){
   //turn off the second local oscillator and the bfo
   si5351_set_calibration(calibration);
   startTx(TX_CW);
-  si5351bx_setfreq(2, 10000000l); 
-  
+  si5351bx_setfreq(2, 10000000l);
+
   strcpy(b, "#1 10 MHz cal:");
   ltoa(calibration/8750, c, 10);
   strcat(b, c);
-  printLine2(b);     
+  printLine2(b);
 
   while (!btnDown())
   {
@@ -302,22 +302,22 @@ int factoryCalibration(int btn){
       cwKeydown();
     if (digitalRead(PTT)  == HIGH && keyDown)
       cwKeyUp();
-      
+
     knob = enc_read();
 
     if (knob > 0)
       calibration += 875;
     else if (knob < 0)
       calibration -= 875;
-    else 
+    else
       continue; //don't update the frequency or the display
-      
+
     si5351_set_calibration(calibration);
     si5351bx_setfreq(2, 10000000l);
     strcpy(b, "#1 10 MHz cal:");
     ltoa(calibration/8750, c, 10);
     strcat(b, c);
-    printLine2(b);     
+    printLine2(b);
   }
 
   cwTimeout = 0;
@@ -327,7 +327,7 @@ int factoryCalibration(int btn){
   printLine2("Calibration set!");
   EEPROM.put(MASTER_CAL, calibration);
   initOscillators();
-  setFrequency(frequency);    
+  setFrequency(frequency);
   updateDisplay();
 
   while(btnDown())
@@ -338,7 +338,7 @@ int factoryCalibration(int btn){
 int menuSetupCalibration(int btn){
   int knob = 0;
   int32_t prev_calibration;
-   
+
   if (!btn){
     printLine2("Set Calibration?");
     return 0;
@@ -347,16 +347,16 @@ int menuSetupCalibration(int btn){
   printLine1("Set to Zero-beat,");
   printLine2("press PTT to save");
   delay(1000);
-  
+
   prev_calibration = calibration;
   calibration = 0;
   si5351_set_calibration(calibration);
-  setFrequency(frequency);    
-  
+  setFrequency(frequency);
+
   strcpy(b, "cal:");
   ltoa(calibration/8750, c, 10);
   strcat(b, c);
-  printLine2(b);     
+  printLine2(b);
 
   while (digitalRead(PTT) == HIGH && !btnDown())
   {
@@ -375,14 +375,14 @@ int menuSetupCalibration(int btn){
 
     si5351_set_calibration(calibration);
     si5351bx_setfreq(0, usbCarrier);
-    setFrequency(frequency);    
+    setFrequency(frequency);
 
     strcpy(b, "cal:");
     ltoa(calibration/8750, c, 10);
     strcat(b, c);
-    printLine2(b);     
+    printLine2(b);
   }
-  
+
   //save the setting
   if (digitalRead(PTT) == LOW){
     printLine1("Calibration set!");
@@ -396,7 +396,7 @@ int menuSetupCalibration(int btn){
   printLine2("");
   initOscillators();
   //si5351_set_calibration(calibration);
-  setFrequency(frequency);    
+  setFrequency(frequency);
   updateDisplay();
   menuOn = 0;
 }
@@ -408,26 +408,26 @@ void printCarrierFreq(unsigned long freq){
   memset(b, 0, sizeof(b));
 
   ultoa(freq, b, DEC);
-  
+
   strncat(c, b, 2);
   strcat(c, ".");
   strncat(c, &b[2], 3);
   strcat(c, ".");
   strncat(c, &b[5], 1);
-  printLine2(c);    
+  printLine2(c);
 }
 
 void menuSetupCarrier(int btn){
   int knob = 0;
   unsigned long prevCarrier;
-   
+
   if (!btn){
       printLine2("Set the BFO");
     return;
   }
 
   prevCarrier = usbCarrier;
-  printLine1("Tune to best Signal");  
+  printLine1("Tune to best Signal");
   printLine2("PTT to confirm. ");
   delay(1000);
 
@@ -435,7 +435,7 @@ void menuSetupCarrier(int btn){
   si5351bx_setfreq(0, usbCarrier);
   printCarrierFreq(usbCarrier);
 
-  //disable all clock 1 and clock 2 
+  //disable all clock 1 and clock 2
   while (digitalRead(PTT) == HIGH && !btnDown())
   {
     knob = enc_read();
@@ -446,10 +446,10 @@ void menuSetupCarrier(int btn){
       usbCarrier += 50;
     else
       continue; //don't update the frequency or the display
-      
+
     si5351bx_setfreq(0, usbCarrier);
     printCarrierFreq(usbCarrier);
-    
+
     delay(100);
   }
 
@@ -459,32 +459,32 @@ void menuSetupCarrier(int btn){
     EEPROM.put(USB_CAL, usbCarrier);
     delay(1000);
   }
-  else 
+  else
     usbCarrier = prevCarrier;
 
-  si5351bx_setfreq(0, usbCarrier);          
-  setFrequency(frequency);    
+  si5351bx_setfreq(0, usbCarrier);
+  setFrequency(frequency);
   updateDisplay();
   printLine2("");
-  menuOn = 0; 
+  menuOn = 0;
 }
 
 void menuSetupCwTone(int btn){
     int knob = 0;
     int prev_sideTone;
-     
+
     if (!btn){
         printLine2("Change CW Tone");
       return;
     }
 
     prev_sideTone = sideTone;
-    printLine1("Tune CW tone");  
+    printLine1("Tune CW tone");
     printLine2("PTT to confirm. ");
     delay(1000);
     tone(CW_TONE, sideTone);
 
-    //disable all clock 1 and clock 2 
+    //disable all clock 1 and clock 2
     while (digitalRead(PTT) == LOW || !btnDown())
     {
       knob = enc_read();
@@ -495,7 +495,7 @@ void menuSetupCwTone(int btn){
         sideTone -= 10;
       else
         continue; //don't update the frequency or the display
-        
+
       tone(CW_TONE, sideTone);
       itoa(sideTone, b, 10);
       printLine2(b);
@@ -511,10 +511,10 @@ void menuSetupCwTone(int btn){
     }
     else
       sideTone = prev_sideTone;
-    
-    printLine2("");  
-    updateDisplay(); 
-    menuOn = 0; 
+
+    printLine2("");
+    updateDisplay();
+    menuOn = 0;
  }
 
 void doMenu(){
@@ -524,9 +524,9 @@ void doMenu(){
   while(btnDown())
     delay(50);
   delay(50);  //debounce
-  
+
   menuOn = 2;
-  
+
   while (menuOn){
     i = enc_read();
     btnState = btnDown();
@@ -561,7 +561,7 @@ void doMenu(){
     else if (select < 100 && modeCalibrate)
       menuSetupCwTone(btnState);
     else if (select < 110 && modeCalibrate)
-      menuExit(btnState);  
+      menuExit(btnState);
   }
 
   //debounce the button
@@ -569,4 +569,3 @@ void doMenu(){
     delay(50);
   delay(50);
 }
-
