@@ -2,7 +2,7 @@
  * The user interface of the ubitx consists of the encoder, the push-button on top of it
  * and the 16x2 LCD display.
  * The upper line of the display is constantly used to display frequency and status
- * of the radio. Occasionally, it is used to provide a two-line information that is 
+ * of the radio. Occasionally, it is used to provide a two-line information that is
  * quickly cleared up.
  */
 
@@ -17,8 +17,8 @@ int btnDown(){
 /**
  * Meter (not used in this build for anything)
  * the meter is drawn using special characters. Each character is composed of 5 x 8 matrix.
- * The  s_meter array holds the definition of the these characters. 
- * each line of the array is is one character such that 5 bits of every byte 
+ * The  s_meter array holds the definition of the these characters.
+ * each line of the array is is one character such that 5 bits of every byte
  * makes up one line of pixels of the that character (only 5 bits are used)
  * The current reading of the meter is assembled in the string called meter
  */
@@ -74,7 +74,7 @@ void drawMeter(int8_t needle){
   meter[i] = 0;
 }
 
-// The generic routine to display one line on the LCD 
+// The generic routine to display one line on the LCD
 void printLine(char linenmbr, char *c) {
   if (strcmp(c, printBuff[linenmbr])) {     // only refresh the display when there was a change
     lcd.setCursor(0, linenmbr);             // place the cursor at the beginning of the selected line
@@ -129,12 +129,12 @@ void updateDisplay() {
 
 
 
-  //one mhz digit if less than 10 M, two digits if more
+  //one MHz digit if less than 10 M, two digits if more
   if (frequency < 10000000l){
     c[6] = ' ';
     c[7]  = b[0];
     strcat(c, ".");
-    strncat(c, &b[1], 3);    
+    strncat(c, &b[1], 3);
     strcat(c, ".");
     strncat(c, &b[4], 3);
   }
@@ -143,7 +143,7 @@ void updateDisplay() {
     strcat(c, ".");
     strncat(c, &b[2], 3);
     strcat(c, ".");
-    strncat(c, &b[5], 3);    
+    strncat(c, &b[5], 3);
   }
 
   if (inTx)
@@ -172,16 +172,16 @@ int enc_prev_state = 3;
 /**
  * The A7 And A6 are purely analog lines on the Arduino Nano
  * These need to be pulled up externally using two 10 K resistors
- * 
+ *
  * There are excellent pages on the Internet about how these encoders work
  * and how they should be used. We have elected to use the simplest way
- * to use these encoders without the complexity of interrupts etc to 
+ * to use these encoders without the complexity of interrupts etc to
  * keep it understandable.
- * 
+ *
  * The enc_state returns a two-bit number such that each bit reflects the current
  * value of each of the two phases of the encoder
- * 
- * The enc_read returns the number of net pulses counted over 50 msecs. 
+ *
+ * The enc_read returns the number of net pulses counted over 50 msecs.
  * If the puluses are -ve, they were anti-clockwise, if they are +ve, the
  * were in the clockwise directions. Higher the pulses, greater the speed
  * at which the enccoder was spun
@@ -192,31 +192,31 @@ byte enc_state (void) {
 }
 
 int enc_read(void) {
-  int result = 0; 
+  int result = 0;
   byte newState;
   int enc_speed = 0;
-  
+
   long stop_by = millis() + 50;
-  
+
   while (millis() < stop_by) { // check if the previous state was stable
-    newState = enc_state(); // Get current state  
-    
+    newState = enc_state(); // Get current state
+
     if (newState != enc_prev_state)
       delay (1);
-    
+
     if (enc_state() != newState || newState == enc_prev_state)
-      continue; 
+      continue;
     //these transitions point to the encoder being rotated anti-clockwise
-    if ((enc_prev_state == 0 && newState == 2) || 
-      (enc_prev_state == 2 && newState == 3) || 
-      (enc_prev_state == 3 && newState == 1) || 
+    if ((enc_prev_state == 0 && newState == 2) ||
+      (enc_prev_state == 2 && newState == 3) ||
+      (enc_prev_state == 3 && newState == 1) ||
       (enc_prev_state == 1 && newState == 0)){
         result--;
       }
     //these transitions point o the enccoder being rotated clockwise
-    if ((enc_prev_state == 0 && newState == 1) || 
-      (enc_prev_state == 1 && newState == 3) || 
-      (enc_prev_state == 3 && newState == 2) || 
+    if ((enc_prev_state == 0 && newState == 1) ||
+      (enc_prev_state == 1 && newState == 3) ||
+      (enc_prev_state == 3 && newState == 2) ||
       (enc_prev_state == 2 && newState == 0)){
         result++;
       }
@@ -226,5 +226,3 @@ int enc_read(void) {
   }
   return(result);
 }
-
-

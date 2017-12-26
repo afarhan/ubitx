@@ -1,9 +1,9 @@
 // *************  SI5315 routines - tks Jerry Gaffke, KE7ER   ***********************
 
 // An minimalist standalone set of Si5351 routines.
-// VCOA is fixed at 875mhz, VCOB not used.
+// VCOA is fixed at 875MHz, VCOB not used.
 // The output msynth dividers are used to generate 3 independent clocks
-// with 1hz resolution to any frequency between 4khz and 109mhz.
+// with 1Hz resolution to any frequency between 4kHz and 109MHz.
 
 // Usage:
 // Call si5351bx_init() once at startup with no args;
@@ -12,14 +12,14 @@
 // A freq of 0 serves to shut down that output clock.
 
 // The global variable si5351bx_vcoa starts out equal to the nominal VCOA
-// frequency of 25mhz*35 = 875000000 Hz.  To correct for 25mhz crystal errors,
+// frequency of 25MHz*35 = 875000000 Hz.  To correct for 25MHz crystal errors,
 // the user can adjust this value.  The vco frequency will not change but
 // the number used for the (a+b/c) output msynth calculations is affected.
-// Example:  We call for a 5mhz signal, but it measures to be 5.001mhz.
-// So the actual vcoa frequency is 875mhz*5.001/5.000 = 875175000 Hz,
+// Example:  We call for a 5MHz signal, but it measures to be 5.001MHz.
+// So the actual vcoa frequency is 875MHz*5.001/5.000 = 875175000 Hz,
 // To correct for this error:     si5351bx_vcoa=875175000;
 
-// Most users will never need to generate clocks below 500khz.
+// Most users will never need to generate clocks below 500kHz.
 // But it is possible to do so by loading a value between 0 and 7 into
 // the global variable si5351bx_rdiv, be sure to return it to a value of 0
 // before setting some other CLK output pin.  The affected clock will be
@@ -35,12 +35,12 @@
 #define SI5351BX_ADDR 0x60              // I2C address of Si5351   (typical)
 #define SI5351BX_XTALPF 2               // 1:6pf  2:8pf  3:10pf
 
-// If using 27mhz crystal, set XTAL=27000000, MSA=33.  Then vco=891mhz
+// If using 27MHz crystal, set XTAL=27000000, MSA=33.  Then vco=891MHz
 #define SI5351BX_XTAL 25000000          // Crystal freq in Hz
-#define SI5351BX_MSA  35                // VCOA is at 25mhz*35 = 875mhz
+#define SI5351BX_MSA  35                // VCOA is at 25MHz*35 = 875MHz
 
 // User program may have reason to poke new values into these 3 RAM variables
-uint32_t si5351bx_vcoa = (SI5351BX_XTAL*SI5351BX_MSA);  // 25mhzXtal calibrate
+uint32_t si5351bx_vcoa = (SI5351BX_XTAL*SI5351BX_MSA);  // 25MHzXtal calibrate
 uint8_t  si5351bx_rdiv = 0;             // 0-7, CLK pin sees fout/(2**rdiv)
 uint8_t  si5351bx_drive[3] = {1, 1, 1}; // 0=2ma 1=4ma 2=6ma 3=8ma for CLK 0,1,2
 uint8_t  si5351bx_clken = 0xFF;         // Private, all CLK output drivers off
@@ -66,7 +66,7 @@ void si5351bx_init() {                  // Call once at power-up, start PLLA
   Wire.begin();
   i2cWrite(149, 0);                     // SpreadSpectrum off
   i2cWrite(3, si5351bx_clken);          // Disable all CLK output drivers
-  i2cWrite(183, SI5351BX_XTALPF << 6);  // Set 25mhz crystal load capacitance
+  i2cWrite(183, SI5351BX_XTALPF << 6);  // Set 25MHz crystal load capacitance
   msxp1 = 128 * SI5351BX_MSA - 512;     // and msxp2=0, msxp3=1, not fractional
   uint8_t  vals[8] = {0, 1, BB2(msxp1), BB1(msxp1), BB0(msxp1), 0, 0, 0};
   i2cWriten(26, vals, 8);               // Write to 8 PLLA msynth regs
@@ -111,6 +111,3 @@ void initOscillators(){
   si5351bx_vcoa = (SI5351BX_XTAL * SI5351BX_MSA) + calibration; // apply the calibration correction factor
   si5351bx_setfreq(0, usbCarrier);
 }
-
-
-
