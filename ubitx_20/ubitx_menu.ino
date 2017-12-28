@@ -485,7 +485,7 @@ void menuSetupCwTone(int btn){
     tone(CW_TONE, sideTone);
 
     //disable all clock 1 and clock 2 
-    while (digitalRead(PTT) == LOW || !btnDown())
+    while (digitalRead(PTT) == HIGH && !btnDown())
     {
       knob = enc_read();
 
@@ -506,7 +506,7 @@ void menuSetupCwTone(int btn){
     //save the setting
     if (digitalRead(PTT) == LOW){
       printLine2("Sidetone set!    ");
-      EEPROM.put(CW_SIDETONE, usbCarrier);
+      EEPROM.put(CW_SIDETONE, sideTone);
       delay(2000);
     }
     else
