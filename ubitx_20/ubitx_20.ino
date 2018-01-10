@@ -275,7 +275,7 @@ unsigned long delayBeforeTime = 0;
 byte delay_background(unsigned delayTime, byte fromType){ //fromType : 4 autoCWKey -> Check Paddle
   delayBeforeTime = millis();
 
-  while (millis() <= delayBeforeTime + delayTime) {
+  while (millis() - delayBeforeTime <= delayTime) {
 
     if (fromType == 4)
     {
