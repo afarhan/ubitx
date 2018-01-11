@@ -5,6 +5,21 @@ The copyright information of the original is below.
 
 KD8CEC
 ----------------------------------------------------------------------------
+Prepared or finished tasks for the next version
+  - Prevent overflow bugs [from pullrequest, history check] : complete
+  - Hamlib bug (raspberry pi), It was perfect for the 0.224 version, but there was a problem for the 0.25 version.
+    Found by Beta Tester very thanks.
+    On Windows, ham deluxe, wsjt-x, jt65-hf, and fldigi were successfully run. Problem with Raspberry pi.
+    As a result of the analysis, when the serial port is initialized and used immediately, problems occur in Linux and Raspberry pi. -> Resolution (Complete)
+    
+  - No TX on non-ham band request - This may be a prohibited item depending on the country.
+    Plan to change for uBITX Manager for free countries - Icom, yaesu, kenwood are mostly jumper in circuit.
+    Only those who need to lock themselves, Other users remain unchanged
+    so, Available in most countries around the world.
+  - I have heard that Beta testers want DialLock to distinguish between VFOA and VFOB (Complete)
+  - Convenience of band movement added (ing)
+
+----------------------------------------------------------------------------
 ## REVISION RECORD
 0.25
   - Beta Version Released
