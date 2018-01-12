@@ -148,8 +148,12 @@ int count = 0;          //to generally count ticks, loops, etc
 #define VFO_B_MODE 257
 #define CW_DELAY 258
 #define CW_START 259
+#define HAM_BAND_COUNT 260  //
+#define TX_TUNE_TYPE 261  //
+#define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
+#define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
 
-//
+//Check Firmware type and version
 #define VERSION_ADDRESS 779   //check Firmware version
 //USER INFORMATION
 #define USER_CALLSIGN_KEY 780   //0x59
@@ -228,7 +232,7 @@ byte sideTonePitch=0;
 byte sideToneSub = 0;
 
 //DialLock
-byte isDialLock = 0;
+byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxOff = 0;
 
 //Variables for auto cw mode
@@ -263,6 +267,69 @@ boolean modeCalibrate = false;//this mode of menus shows extended menus to calib
  * Below are the basic functions that control the uBitx. Understanding the functions before 
  * you start hacking around
  */
+
+//Ham Band
+#define MAX_LIMIT_RANGE 10  //because limited eeprom size
+byte useHamBandCount = 0;  //0 use full range frequency
+byte tuneTXType = 0;      //0 : use full range, 1 : just Change Dial speed, 2 : just ham band change, but can general band by tune, 3 : only ham band
+                            //100 : use full range but not TX on general band, 101 : just change dial speed but.. 2 : jut... but.. 3 : only ham band
+unsigned int hamBandRange[MAX_LIMIT_RANGE][2];  // =  //Khz because reduce use memory
+
+//-1 : not found, 0 ~ 9 : Hamband index
+char getIndexHambanBbyFreq(unsigned long f)
+{
+  f = f / 1000;
+  for (byte i = 0; i < useHamBandCount; i++)
+    if (hamBandRange[i][0] <= f && f < hamBandRange[i][1])
+      return i;
+      
+  return -1;
+}
+
+//when Band change step = just hamband
+//moveDirection : 1 = next, -1 : prior
+void setNextHamBandFreq(unsigned long f, char moveDirection)
+{
+  unsigned long resultFreq = 0;
+  byte loadMode = 0;
+  char findedIndex = getIndexHambanBbyFreq(f);
+
+  if (findedIndex == -1) {  //out of hamband
+    f = f / 1000;
+    for (byte i = 0; i < useHamBandCount -1; i++) {
+      if (hamBandRange[i][1] <= f && f < hamBandRange[i + 1][0]) {
+        findedIndex = i + moveDirection;
+        //return (unsigned long)(hamBandRange[i + 1][0]) * 1000;
+      }
+    } //end of for
+  }
+  else if (((moveDirection == 1) && (findedIndex < useHamBandCount -1)) ||  //Next
+    ((moveDirection == -1) && (findedIndex > 0)) ) {                        //Prior
+    findedIndex += moveDirection;
+  }
+  else
+    findedIndex = -1;
+    
+  if (findedIndex == -1)
+    findedIndex = (moveDirection == 1 ? 0 : useHamBandCount -1);
+
+  EEPROM.get(HAM_BAND_FREQS + 4 * findedIndex, resultFreq);
+  
+  loadMode = (byte)(resultFreq >> 30);
+  resultFreq = resultFreq & 0x3FFFFFFF;
+  
+  if ((resultFreq / 1000) < hamBandRange[findedIndex][0] || (resultFreq / 1000) > hamBandRange[findedIndex][1])
+    resultFreq = (unsigned long)(hamBandRange[findedIndex][0]) * 1000;
+
+  setFrequency(resultFreq);
+  byteWithFreqToMode(loadMode);
+}
+
+void saveBandFreqByIndex(unsigned long f, unsigned long mode, byte bandIndex) {
+  if (bandIndex >= 0)
+    EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
+}
+
 
 /*
   KD8CEC
@@ -380,6 +447,12 @@ void setFrequency(unsigned long f){
  
 void startTx(byte txMode, byte isDisplayUpdate){
   unsigned long tx_freq = 0;
+
+  //Check Hamband only TX //Not found Hamband index by now frequency
+  if (tuneTXType >= 100 && getIndexHambanBbyFreq(ritOn ? ritTxFrequency :  frequency) == -1) {
+    //no message
+    return;
+  }
 
   if (isTxOff != 1)
     digitalWrite(TX_RX, 1);
@@ -502,7 +575,8 @@ void doTuning(){
   unsigned long prev_freq;
   int incdecValue = 0;
 
-  if (isDialLock == 1)
+  if ((vfoActive == VFO_A && ((isDialLock & 0x01) == 0x01)) ||
+    (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02)))
     return;
 
   if (isCWAutoMode == 0 || cwAutoDialType == 1)
@@ -636,6 +710,23 @@ void initSettings(){
   //Version Write for Memory Management Software
   if (EEPROM.read(VERSION_ADDRESS) != VERSION_NUM)
     EEPROM.write(VERSION_ADDRESS, VERSION_NUM);
+
+  //Ham Band Count
+  EEPROM.get(HAM_BAND_COUNT, useHamBandCount);
+  EEPROM.get(TX_TUNE_TYPE, tuneTXType);
+
+  
+  if ((3 < tuneTXType && 100 < tuneTXType) || 103 < tuneTXType || useHamBandCount < 1)
+    tuneTXType = 0;
+    
+  //Read band Information
+  for (byte i = 0; i < useHamBandCount; i++) {
+    unsigned int tmpReadValue = 0;
+    EEPROM.get(HAM_BAND_RANGE + 4 * i, tmpReadValue);
+    hamBandRange[i][0] = tmpReadValue;
+    EEPROM.get(HAM_BAND_RANGE + 4 * i + 2, tmpReadValue);
+    hamBandRange[i][1] = tmpReadValue;
+  }
   
   if (cwDelayTime < 1 || cwDelayTime > 250)
     cwDelayTime = 60;
@@ -715,14 +806,17 @@ void initPorts(){
 
 void setup()
 {
-  //Init EEProm for Fault EEProm TEST and Factory Reset
   /*
-  for (int i = 0; i < 1024; i++)
+  //Init EEProm for Fault EEProm TEST and Factory Reset
+  //for (int i = 0; i < 1024; i++)
+  for (int i = 16; i < 1024; i++) //protect Master_cal, usb_cal
     EEPROM.write(i, 0);
   */
   //Serial.begin(9600);
   lcd.begin(16, 2);
 
+  //remark for John test
+  /*
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
   initSettings();
@@ -736,9 +830,20 @@ void setup()
   else
   {
     printLineF(0, F("uBITX v0.20")); 
-    delay_background(500, 0);
+    delay(500); //< -- replace from delay_background(500, 0) //johns bug report / on raspberry
     printLine2(""); 
   }
+  */
+  //replace above to below (before initSettings(); position)
+  
+  printLine2("CECBT v0.27"); 
+  printLine1("uBITX v0.20"); 
+  delay(500);
+  printLine2(""); 
+
+  Init_Cat(9600, SERIAL_8N1);
+  initMeter(); //not used in this build
+  initSettings();  
   
   initPorts();     
   initOscillators();
@@ -751,95 +856,6 @@ void setup()
 
   if (btnDown())
     factory_alignment();
-
-/*
-   //This is for auto key test
-  EEPROM.put(CW_AUTO_MAGIC_KEY, 0x73);        //MAGIC KEY
-  EEPROM.put(CW_AUTO_COUNT, 3);               //WORD COUNT
-  EEPROM.put(CW_AUTO_DATA + 0, 6);        // 0 word begin postion / CQCQ TEST K
-  EEPROM.put(CW_AUTO_DATA + 1, 33);       // 0 word end postion / CQCQ TEST K
-  EEPROM.put(CW_AUTO_DATA + 2, 34);       //1 word begin position / LOL LOL
-  EEPROM.put(CW_AUTO_DATA + 3, 40);       //1 word end position / LOL LOL
-  EEPROM.put(CW_AUTO_DATA + 4, 41);       //2 word begin position / /?![]789
-  EEPROM.put(CW_AUTO_DATA + 5, 48);       //2 word end position / /?![]789
-  
-  EEPROM.put(CW_AUTO_DATA + 6, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 7, 'Q');      //
-  EEPROM.put(CW_AUTO_DATA + 8, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 9, 'Q');      //
-  EEPROM.put(CW_AUTO_DATA + 10, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 11, 'D');      //
-  EEPROM.put(CW_AUTO_DATA + 12, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 13, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 14, 'K');      //
-  EEPROM.put(CW_AUTO_DATA + 15, 'D');      //
-  EEPROM.put(CW_AUTO_DATA + 16, '8');      //
-  EEPROM.put(CW_AUTO_DATA + 17, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 18, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 19, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 20, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 21, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 22, 'M');      //
-  EEPROM.put(CW_AUTO_DATA + 23, '3');      //
-  EEPROM.put(CW_AUTO_DATA + 24, '7');      //
-  EEPROM.put(CW_AUTO_DATA + 25, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 26, 'D');      //
-  EEPROM.put(CW_AUTO_DATA + 27, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 28, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 29, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 30, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 31, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 32, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 33, 'K');      //
-*/
-
-/*
-  EEPROM.put(CW_AUTO_DATA + 34, '<');      //
-  EEPROM.put(CW_AUTO_DATA + 35, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 36, '>');      //
-  EEPROM.put(CW_AUTO_DATA + 37, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 38, '7');      //
-  EEPROM.put(CW_AUTO_DATA + 39, '3');      //
-  EEPROM.put(CW_AUTO_DATA + 40, 'K');      //
-
-  EEPROM.put(CW_AUTO_DATA + 41, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 42, 'Q');      //
-  EEPROM.put(CW_AUTO_DATA + 43, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 44, '>');      // start "
-  EEPROM.put(CW_AUTO_DATA + 45, ' ');      // end "
-  EEPROM.put(CW_AUTO_DATA + 46, '>');      //
-  EEPROM.put(CW_AUTO_DATA + 47, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 48, 'K');      //
-*/
-
-/*
-  //This is for auto key test2
-  //USER CALL SIGN
-  EEPROM.put(USER_CALLSIGN_KEY, 0x59);     //MAGIC KEY
-  //EEPROM.put(USER_CALLSIGN_LEN, 10);           //WORD COUNT
-  EEPROM.put(USER_CALLSIGN_LEN, 10 + 0x80);           //WORD COUNT
-  
-  EEPROM.put(USER_CALLSIGN_DAT + 1, 'K');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 2, 'D');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 3, '8');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 4, 'C');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 5, 'E');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 6, 'C');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 7, '/');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 8, 'A');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 9, 'B');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 10, 'C');      //
-
-  //CW QSO CALLSIGN
-  EEPROM.put(CW_STATION_LEN, 6);                //
-  EEPROM.put(CW_STATION_LEN - 6 + 0 , 'A');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 1 , 'B');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 2 , '1');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 3 , 'C');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 4 , 'D');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 5 , 'E');     // 
-*/
-  
 }
 
 

@@ -251,7 +251,8 @@ void updateDisplay() {
   //  strcat(c, " TX");
   printLine(1, c);
 
-  if (isDialLock == 1) {
+  if ((vfoActive == VFO_A && ((isDialLock & 0x01) == 0x01)) ||
+    (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02))) {
     lcd.setCursor(5,1);
     lcd.write((uint8_t)0);
   }
