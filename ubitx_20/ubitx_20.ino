@@ -812,10 +812,11 @@ void setup()
   for (int i = 16; i < 1024; i++) //protect Master_cal, usb_cal
     EEPROM.write(i, 0);
   */
-  
   //Serial.begin(9600);
   lcd.begin(16, 2);
 
+  //remark for John test
+  /*
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
   initSettings();
@@ -829,9 +830,20 @@ void setup()
   else
   {
     printLineF(0, F("uBITX v0.20")); 
-    delay(500);
+    delay(500); //< -- replace from delay_background(500, 0) //johns bug report / on raspberry
     printLine2(""); 
   }
+  */
+  //replace above to below (before initSettings(); position)
+  
+  printLine2("CECBT v0.27"); 
+  printLine1("uBITX v0.20"); 
+  delay(500);
+  printLine2(""); 
+
+  Init_Cat(9600, SERIAL_8N1);
+  initMeter(); //not used in this build
+  initSettings();  
   
   initPorts();     
   initOscillators();
@@ -844,95 +856,6 @@ void setup()
 
   if (btnDown())
     factory_alignment();
-
-/*
-   //This is for auto key test
-  EEPROM.put(CW_AUTO_MAGIC_KEY, 0x73);        //MAGIC KEY
-  EEPROM.put(CW_AUTO_COUNT, 3);               //WORD COUNT
-  EEPROM.put(CW_AUTO_DATA + 0, 6);        // 0 word begin postion / CQCQ TEST K
-  EEPROM.put(CW_AUTO_DATA + 1, 33);       // 0 word end postion / CQCQ TEST K
-  EEPROM.put(CW_AUTO_DATA + 2, 34);       //1 word begin position / LOL LOL
-  EEPROM.put(CW_AUTO_DATA + 3, 40);       //1 word end position / LOL LOL
-  EEPROM.put(CW_AUTO_DATA + 4, 41);       //2 word begin position / /?![]789
-  EEPROM.put(CW_AUTO_DATA + 5, 48);       //2 word end position / /?![]789
-  
-  EEPROM.put(CW_AUTO_DATA + 6, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 7, 'Q');      //
-  EEPROM.put(CW_AUTO_DATA + 8, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 9, 'Q');      //
-  EEPROM.put(CW_AUTO_DATA + 10, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 11, 'D');      //
-  EEPROM.put(CW_AUTO_DATA + 12, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 13, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 14, 'K');      //
-  EEPROM.put(CW_AUTO_DATA + 15, 'D');      //
-  EEPROM.put(CW_AUTO_DATA + 16, '8');      //
-  EEPROM.put(CW_AUTO_DATA + 17, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 18, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 19, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 20, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 21, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 22, 'M');      //
-  EEPROM.put(CW_AUTO_DATA + 23, '3');      //
-  EEPROM.put(CW_AUTO_DATA + 24, '7');      //
-  EEPROM.put(CW_AUTO_DATA + 25, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 26, 'D');      //
-  EEPROM.put(CW_AUTO_DATA + 27, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 28, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 29, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 30, 'E');      //
-  EEPROM.put(CW_AUTO_DATA + 31, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 32, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 33, 'K');      //
-*/
-
-/*
-  EEPROM.put(CW_AUTO_DATA + 34, '<');      //
-  EEPROM.put(CW_AUTO_DATA + 35, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 36, '>');      //
-  EEPROM.put(CW_AUTO_DATA + 37, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 38, '7');      //
-  EEPROM.put(CW_AUTO_DATA + 39, '3');      //
-  EEPROM.put(CW_AUTO_DATA + 40, 'K');      //
-
-  EEPROM.put(CW_AUTO_DATA + 41, 'C');      //
-  EEPROM.put(CW_AUTO_DATA + 42, 'Q');      //
-  EEPROM.put(CW_AUTO_DATA + 43, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 44, '>');      // start "
-  EEPROM.put(CW_AUTO_DATA + 45, ' ');      // end "
-  EEPROM.put(CW_AUTO_DATA + 46, '>');      //
-  EEPROM.put(CW_AUTO_DATA + 47, ' ');      //
-  EEPROM.put(CW_AUTO_DATA + 48, 'K');      //
-*/
-
-/*
-  //This is for auto key test2
-  //USER CALL SIGN
-  EEPROM.put(USER_CALLSIGN_KEY, 0x59);     //MAGIC KEY
-  //EEPROM.put(USER_CALLSIGN_LEN, 10);           //WORD COUNT
-  EEPROM.put(USER_CALLSIGN_LEN, 10 + 0x80);           //WORD COUNT
-  
-  EEPROM.put(USER_CALLSIGN_DAT + 1, 'K');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 2, 'D');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 3, '8');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 4, 'C');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 5, 'E');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 6, 'C');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 7, '/');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 8, 'A');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 9, 'B');      //
-  EEPROM.put(USER_CALLSIGN_DAT + 10, 'C');      //
-
-  //CW QSO CALLSIGN
-  EEPROM.put(CW_STATION_LEN, 6);                //
-  EEPROM.put(CW_STATION_LEN - 6 + 0 , 'A');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 1 , 'B');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 2 , '1');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 3 , 'C');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 4 , 'D');     //
-  EEPROM.put(CW_STATION_LEN - 6 + 5 , 'E');     // 
-*/
-  
 }
 
 
