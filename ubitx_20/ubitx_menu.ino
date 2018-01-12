@@ -15,12 +15,8 @@
 
 int menuBand(int btn){
   int knob = 0;
-  int band;
-  unsigned long offset;
+  int stepChangeCount = 0;
 
- // band = frequency/1000000l;
- // offset = frequency % 1000000l;
-    
   if (!btn){
    printLineF2(F("Band Select?"));
    return;
@@ -31,6 +27,18 @@ int menuBand(int btn){
   while (btnDown()) {
     delay(50);
     Check_Cat(0);  //To prevent disconnections
+  }
+  
+  byte currentBandIndex = -1;
+  //Save Band Information
+  if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
+    //Get Now Band Index
+    currentBandIndex = getIndexHambanBbyFreq(frequency);
+    
+    if (currentBandIndex >= 0) {
+      //Save Frequency to Band Frequncy Record
+      saveBandFreqByIndex(frequency, modeToByte(), currentBandIndex);
+    }
   }
   
   delay(50);    
@@ -50,16 +58,35 @@ int menuBand(int btn){
       else
         isUSB = false;
       setFrequency(((unsigned long)band * 1000000l) + offset); */
-      if (knob < 0 && frequency > 3000000l)
-        setFrequency(frequency - 200000l);
-      if (knob > 0 && frequency < 30000000l)
-        setFrequency(frequency + 200000l);
-      if (frequency > 10000000l)
-        isUSB = true;
-      else
-        isUSB = false;
+      if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
+        if (knob < 0) {
+          if (stepChangeCount-- < -3) {
+            setNextHamBandFreq(frequency, -1);  //Prior Band
+            stepChangeCount = 0;
+          }
+        }
+        else if (knob > 0) {
+          if (stepChangeCount++ > 3) {
+            setNextHamBandFreq(frequency, 1); //Next Band
+            stepChangeCount = 0;
+          }
+        }
+      }
+      else {  //original source
+        if (knob < 0 && frequency > 3000000l)
+          setFrequency(frequency - 200000l);
+        if (knob > 0 && frequency < 30000000l)
+          setFrequency(frequency + 200000l);
+
+        if (frequency > 10000000l)
+          isUSB = true;
+        else
+          isUSB = false;
+      }
+
       updateDisplay();
     }
+    
     delay(20);
     Check_Cat(0);  //To prevent disconnections
   }
@@ -86,6 +113,14 @@ byte modeToByte(){
 void byteToMode(byte modeValue){
   if (modeValue == 3)
     isUSB = 1;
+  else
+    isUSB = 0;
+}
+void byteWithFreqToMode(byte modeValue){
+  if (modeValue == 3)
+    isUSB = 1;
+  else if (modeValue == 0)  //Not Set
+    isUSB = (frequency > 10000000l) ? true : false;
   else
     isUSB = 0;
 }
@@ -677,11 +712,14 @@ void menuSetupCwTone(int btn){
  }
 
 void setDialLock(byte tmpLock, byte fromMode) {
-  isDialLock = tmpLock;
-
+  if (tmpLock == 1)
+    isDialLock |= (vfoActive == VFO_A ? 0x01 : 0x02);
+  else
+    isDialLock &= ~(vfoActive == VFO_A ? 0x01 : 0x02);
+    
   if (fromMode == 2 || fromMode == 3) return;
   
-  if (isDialLock == 1)
+  if (tmpLock == 1)
     printLineF2(F("Dial Lock ON"));
   else
     printLineF2(F("Dial Lock OFF"));
@@ -706,7 +744,10 @@ void doMenu(){
     //btnDownTimeCount++;
     //check long time Down Button -> 3 Second
     if (btnDownTimeCount++ > (2000 / 50)) {
-      setDialLock(isDialLock == 1 ? 0 : 1, 0); //Reverse Dialo lock
+      if (vfoActive == VFO_A)
+        setDialLock((isDialLock & 0x01) == 0x01 ? 0 : 1, 0); //Reverse Dial lock
+      else
+        setDialLock((isDialLock & 0x02) == 0x02 ? 0 : 1, 0); //Reverse Dial lock
       return;
     }
   }

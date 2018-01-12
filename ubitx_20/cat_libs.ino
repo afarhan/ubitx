@@ -629,6 +629,7 @@ void Check_Cat(byte fromType)
   }
   else if (Serial.available() < 5)
   {
+    /*
     //First Arrived
     if (rxBufferCheckCount == 0)
     {
@@ -648,6 +649,7 @@ void Check_Cat(byte fromType)
       rxBufferCheckCount = Serial.available();
       rxBufferArriveTime = millis() + CAT_RECEIVE_TIMEOUT;  //Set time for timeout
     }
+    */
     
     return;
   }

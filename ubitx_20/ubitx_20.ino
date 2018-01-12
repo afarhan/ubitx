@@ -148,8 +148,12 @@ int count = 0;          //to generally count ticks, loops, etc
 #define VFO_B_MODE 257
 #define CW_DELAY 258
 #define CW_START 259
+#define HAM_BAND_COUNT 260  //
+#define TX_TUNE_TYPE 261  //
+#define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
+#define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
 
-//
+//Check Firmware type and version
 #define VERSION_ADDRESS 779   //check Firmware version
 //USER INFORMATION
 #define USER_CALLSIGN_KEY 780   //0x59
@@ -228,7 +232,7 @@ byte sideTonePitch=0;
 byte sideToneSub = 0;
 
 //DialLock
-byte isDialLock = 0;
+byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxOff = 0;
 
 //Variables for auto cw mode
@@ -263,6 +267,69 @@ boolean modeCalibrate = false;//this mode of menus shows extended menus to calib
  * Below are the basic functions that control the uBitx. Understanding the functions before 
  * you start hacking around
  */
+
+//Ham Band
+#define MAX_LIMIT_RANGE 10  //because limited eeprom size
+byte useHamBandCount = 0;  //0 use full range frequency
+byte tuneTXType = 0;      //0 : use full range, 1 : just Change Dial speed, 2 : just ham band change, but can general band by tune, 3 : only ham band
+                            //100 : use full range but not TX on general band, 101 : just change dial speed but.. 2 : jut... but.. 3 : only ham band
+unsigned int hamBandRange[MAX_LIMIT_RANGE][2];  // =  //Khz because reduce use memory
+
+//-1 : not found, 0 ~ 9 : Hamband index
+char getIndexHambanBbyFreq(unsigned long f)
+{
+  f = f / 1000;
+  for (byte i = 0; i < useHamBandCount; i++)
+    if (hamBandRange[i][0] <= f && f < hamBandRange[i][1])
+      return i;
+      
+  return -1;
+}
+
+//when Band change step = just hamband
+//moveDirection : 1 = next, -1 : prior
+void setNextHamBandFreq(unsigned long f, char moveDirection)
+{
+  unsigned long resultFreq = 0;
+  byte loadMode = 0;
+  char findedIndex = getIndexHambanBbyFreq(f);
+
+  if (findedIndex == -1) {  //out of hamband
+    f = f / 1000;
+    for (byte i = 0; i < useHamBandCount -1; i++) {
+      if (hamBandRange[i][1] <= f && f < hamBandRange[i + 1][0]) {
+        findedIndex = i + moveDirection;
+        //return (unsigned long)(hamBandRange[i + 1][0]) * 1000;
+      }
+    } //end of for
+  }
+  else if (((moveDirection == 1) && (findedIndex < useHamBandCount -1)) ||  //Next
+    ((moveDirection == -1) && (findedIndex > 0)) ) {                        //Prior
+    findedIndex += moveDirection;
+  }
+  else
+    findedIndex = -1;
+    
+  if (findedIndex == -1)
+    findedIndex = (moveDirection == 1 ? 0 : useHamBandCount -1);
+
+  EEPROM.get(HAM_BAND_FREQS + 4 * findedIndex, resultFreq);
+  
+  loadMode = (byte)(resultFreq >> 30);
+  resultFreq = resultFreq & 0x3FFFFFFF;
+  
+  if ((resultFreq / 1000) < hamBandRange[findedIndex][0] || (resultFreq / 1000) > hamBandRange[findedIndex][1])
+    resultFreq = (unsigned long)(hamBandRange[findedIndex][0]) * 1000;
+
+  setFrequency(resultFreq);
+  byteWithFreqToMode(loadMode);
+}
+
+void saveBandFreqByIndex(unsigned long f, unsigned long mode, byte bandIndex) {
+  if (bandIndex >= 0)
+    EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
+}
+
 
 /*
   KD8CEC
@@ -380,6 +447,12 @@ void setFrequency(unsigned long f){
  
 void startTx(byte txMode, byte isDisplayUpdate){
   unsigned long tx_freq = 0;
+
+  //Check Hamband only TX //Not found Hamband index by now frequency
+  if (tuneTXType >= 100 && getIndexHambanBbyFreq(ritOn ? ritTxFrequency :  frequency) == -1) {
+    //no message
+    return;
+  }
 
   if (isTxOff != 1)
     digitalWrite(TX_RX, 1);
@@ -502,7 +575,8 @@ void doTuning(){
   unsigned long prev_freq;
   int incdecValue = 0;
 
-  if (isDialLock == 1)
+  if ((vfoActive == VFO_A && ((isDialLock & 0x01) == 0x01)) ||
+    (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02)))
     return;
 
   if (isCWAutoMode == 0 || cwAutoDialType == 1)
@@ -636,6 +710,23 @@ void initSettings(){
   //Version Write for Memory Management Software
   if (EEPROM.read(VERSION_ADDRESS) != VERSION_NUM)
     EEPROM.write(VERSION_ADDRESS, VERSION_NUM);
+
+  //Ham Band Count
+  EEPROM.get(HAM_BAND_COUNT, useHamBandCount);
+  EEPROM.get(TX_TUNE_TYPE, tuneTXType);
+
+  
+  if ((3 < tuneTXType && 100 < tuneTXType) || 103 < tuneTXType || useHamBandCount < 1)
+    tuneTXType = 0;
+    
+  //Read band Information
+  for (byte i = 0; i < useHamBandCount; i++) {
+    unsigned int tmpReadValue = 0;
+    EEPROM.get(HAM_BAND_RANGE + 4 * i, tmpReadValue);
+    hamBandRange[i][0] = tmpReadValue;
+    EEPROM.get(HAM_BAND_RANGE + 4 * i + 2, tmpReadValue);
+    hamBandRange[i][1] = tmpReadValue;
+  }
   
   if (cwDelayTime < 1 || cwDelayTime > 250)
     cwDelayTime = 60;
@@ -715,11 +806,13 @@ void initPorts(){
 
 void setup()
 {
-  //Init EEProm for Fault EEProm TEST and Factory Reset
   /*
-  for (int i = 0; i < 1024; i++)
+  //Init EEProm for Fault EEProm TEST and Factory Reset
+  //for (int i = 0; i < 1024; i++)
+  for (int i = 16; i < 1024; i++) //protect Master_cal, usb_cal
     EEPROM.write(i, 0);
   */
+  
   //Serial.begin(9600);
   lcd.begin(16, 2);
 
@@ -736,7 +829,7 @@ void setup()
   else
   {
     printLineF(0, F("uBITX v0.20")); 
-    delay_background(500, 0);
+    delay(500);
     printLine2(""); 
   }
   
