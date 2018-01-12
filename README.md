@@ -23,7 +23,7 @@ Prepared or finished tasks for the next version
   - Include WSPR Beacone function - (considerd about include functions or create other version)
     complete experiment
     need solve : Big code size (over 100%, then remove some functions for experment)
-                 need replace Si5351 Library for multisynth (increase risk and need more beta tester)
+                 need replace Si5351 Library (increase risk and need more beta tester)
                  W3PM sent me his wonderful source - using BITX, GPS
                   
 ----------------------------------------------------------------------------
