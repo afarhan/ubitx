@@ -15,10 +15,17 @@ Prepared or finished tasks for the next version
   - No TX on non-ham band request - This may be a prohibited item depending on the country.
     Plan to change for uBITX Manager for free countries - Icom, yaesu, kenwood are mostly jumper in circuit.
     Only those who need to lock themselves, Other users remain unchanged
-    so, Available in most countries around the world.
+    so, Available in most countries around the world. (Complete)
   - I have heard that Beta testers want DialLock to distinguish between VFOA and VFOB (Complete)
-  - Convenience of band movement added (ing)
+  - Convenience of band movement added (ing - need idea...)
 
+  - User Interface on LCD -> Option by user (yet - need idea)
+  - Include WSPR Beacone function - (considerd about include functions or create other version)
+    complete experiment
+    need solve : Big code size (over 100%, then remove some functions for experment)
+                 need replace Si5351 Library for multisynth (increase risk and need more beta tester)
+                 W3PM sent me his wonderful source - using BITX, GPS
+                  
 ----------------------------------------------------------------------------
 ## REVISION RECORD
 0.25
