@@ -327,7 +327,7 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
   byteWithFreqToMode(loadMode);
 }
 
-void saveBandFreqByIndex(unsigned long f, unsigned long mode, byte bandIndex) {
+void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
   if (bandIndex >= 0)
     EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
 }
@@ -739,7 +739,7 @@ void initSettings(){
   EEPROM.get(TX_TUNE_TYPE, tuneTXType);
 
   
-  if ((3 < tuneTXType && 100 < tuneTXType) || 103 < tuneTXType || useHamBandCount < 1)
+  if ((3 < tuneTXType && tuneTXType < 100) || 103 < tuneTXType || useHamBandCount < 1)
     tuneTXType = 0;
     
   //Read band Information
@@ -843,37 +843,23 @@ void setup()
   */
   
   //Serial.begin(9600);
-  delay(100);
   lcd.begin(16, 2);
+  printLineF(1, F("CECBT v0.27")); 
 
-  //remark for John test
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
   initSettings();
 
-  printLineF(1, F("CECBT v0.263")); 
-  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80))
-  {
+  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
     userCallsignLength = userCallsignLength & 0x7F;
     printLineFromEEPRom(0, 0, 0, userCallsignLength -1); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+    delay(500);
   }
-  else
-  {
+  else {
     printLineF(0, F("uBITX v0.20")); 
-    delay(500); //< -- replace from delay_background(500, 0) //johns bug report / on raspberry
+    delay(500);
     printLine2(""); 
   }
-  //replace above to below (before initSettings(); position)
-/*  
-  printLine2("CECBT v0.27"); 
-  printLine1("uBITX v0.20"); 
-  delay(500);
-  printLine2(""); 
-
-  Init_Cat(9600, SERIAL_8N1);
-  initMeter(); //not used in this build
-  initSettings();  
-  */
   
   initPorts();     
   initOscillators();
