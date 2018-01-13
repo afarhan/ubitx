@@ -21,14 +21,14 @@ Prepared or finished tasks for the next version
     Only those who need to lock themselves, Other users remain unchanged
     so, Available in most countries around the world. (Complete)
   - I have heard that Beta testers want DialLock to distinguish between VFOA and VFOB (Complete)
-  - Convenience of band movement added (ing - need idea...)
+  - Convenience of band movement added (Complete)
 
-  - User Interface on LCD -> Option by user (yet - need idea)
-  - Include WSPR Beacone function - (considerd about include functions or create other version)
+  - User Interface on LCD -> Option by user (not need)
+  - Include WSPR Beacone function - (implement other new repository)
     complete experiment
     need solve : Big code size (over 100%, then remove some functions for experment)
                  need replace Si5351 Library (increase risk and need more beta tester)
-                 W3PM sent me his wonderful source - using BITX, GPS
+                 W3PM sent me his wonderful source - using BITX, GPS 
                   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
