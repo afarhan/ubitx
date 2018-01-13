@@ -1,3 +1,7 @@
+#IMPORTANT INFORMATION
+Beta 0.26 is still in testing.
+If you need the source, you can download the 0.25 version or the 0.26 release one day later.
+
 #uBITX
 uBITX firmware, written for the Raduino/Arduino control of uBITX transceivers
 This project is based on https://github.com/afarhan/ubitx and all copyright is inherited.
