@@ -16,6 +16,7 @@
 int menuBand(int btn){
   int knob = 0;
   int stepChangeCount = 0;
+  byte btnPressCount = 0;
 
   if (!btn){
    printLineF2(F("Band Select?"));
@@ -27,6 +28,33 @@ int menuBand(int btn){
   while (btnDown()) {
     delay(50);
     Check_Cat(0);  //To prevent disconnections
+    if (btnPressCount++ > 20) {
+      btnPressCount = 0;
+      if (tuneTXType > 0) { //Just toggle 0 <-> 2, if tuneTXType is 100, 100 -> 0 -> 2
+        tuneTXType = 0;
+        printLineF2(F("Full range mode"));
+      }
+      else {
+        tuneTXType = 2;
+        //if empty band Information, auto insert default region 1 frequency range
+        //This part is made temporary for people who have difficulty setting up, so can remove it when you run out of memory.
+        useHamBandCount = 10;
+        hamBandRange[0][0] = 1810; hamBandRange[0][1] = 2000; 
+        hamBandRange[1][0] = 3500; hamBandRange[1][1] = 3800; 
+        hamBandRange[2][0] = 5351; hamBandRange[2][1] = 5367; 
+        hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7200; 
+        hamBandRange[4][0] = 10100; hamBandRange[4][1] = 10150; 
+        hamBandRange[5][0] = 14000; hamBandRange[5][1] = 14350; 
+        hamBandRange[6][0] = 18068; hamBandRange[6][1] = 18168; 
+        hamBandRange[7][0] = 21000; hamBandRange[7][1] = 21450; 
+        hamBandRange[8][0] = 24890; hamBandRange[8][1] = 24990; 
+        hamBandRange[9][0] = 28000; hamBandRange[9][1] = 29700; 
+        printLineF2(F("Ham band mode"));
+      }
+      delay_background(1000, 0);
+      printLine2ClearAndUpdate();
+      printLineF2(F("Press to confirm"));
+    }
   }
   
   byte currentBandIndex = -1;
@@ -213,20 +241,20 @@ void menuSidebandToggle(int btn){
   }
 }
 
-void menuTxOnOff(int btn){
+void menuTxOnOff(int btn, byte optionType){
   if (!btn){
-    if (isTxOff == 0)
+    if ((isTxType & optionType) == 0)
       printLineF2(F("TX OFF?"));
     else
       printLineF2(F("TX ON?"));
   }
   else {
-      if (isTxOff == 0){
-        isTxOff = 1;
+      if ((isTxType & optionType) == 0){
+        isTxType |= optionType;
         printLineF2(F("TX OFF!"));
       }
       else {
-        isTxOff = 0;
+        isTxType &= ~(optionType);
         printLineF2(F("TX ON!"));
       }
     delay_background(500, 0);
@@ -234,6 +262,30 @@ void menuTxOnOff(int btn){
     menuOn = 0;
   }
 }
+
+/*
+void menuSplitOnOff(int btn){
+  if (!btn){
+    if ((isTxType & 0x02) == 0)
+      printLineF2(F("Split OFF?"));
+    else
+      printLineF2(F("Split ON?"));
+  }
+  else {
+      if ((isTxType & 0x02) == 0){
+        isTxType |= 0x02;
+        printLineF2(F("Split OFF!"));
+      }
+      else {
+        isTxType &= ~(0x02);
+        printLineF2(F("Split ON!"));
+      }
+    delay_background(500, 0);
+    printLine2ClearAndUpdate();
+    menuOn = 0;
+  }
+}
+*/
 
 /**
  * The calibration routines are not normally shown in the menu as they are rarely used
@@ -795,7 +847,7 @@ void doMenu(){
     else if (select < 130 && modeCalibrate)
       menuSetupTXCWInterval(btnState);
     else if (select < 140 && modeCalibrate)
-      menuTxOnOff(btnState);
+      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
     else if (select < 150 && modeCalibrate)
       menuExit(btnState);
 
