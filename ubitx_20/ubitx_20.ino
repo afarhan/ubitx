@@ -154,6 +154,7 @@ int count = 0;          //to generally count ticks, loops, etc
 #define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
 
 //Check Firmware type and version
+#define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
 #define VERSION_ADDRESS 779   //check Firmware version
 //USER INFORMATION
 #define USER_CALLSIGN_KEY 780   //0x59
@@ -233,7 +234,8 @@ byte sideToneSub = 0;
 
 //DialLock
 byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
-byte isTxOff = 0;
+byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
+
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -271,8 +273,8 @@ boolean modeCalibrate = false;//this mode of menus shows extended menus to calib
 //Ham Band
 #define MAX_LIMIT_RANGE 10  //because limited eeprom size
 byte useHamBandCount = 0;  //0 use full range frequency
-byte tuneTXType = 0;      //0 : use full range, 1 : just Change Dial speed, 2 : just ham band change, but can general band by tune, 3 : only ham band
-                            //100 : use full range but not TX on general band, 101 : just change dial speed but.. 2 : jut... but.. 3 : only ham band
+byte tuneTXType = 0;      //0 : use full range, 1 : just Change Dial speed, 2 : just ham band change, but can general band by tune, 3 : only ham band (just support 0, 2 (0.26 version))
+                          //100 : use full range but not TX on general band, 101 : just change dial speed but.. 2 : jut... but.. 3 : only ham band  (just support 100, 102 (0.26 version))
 unsigned int hamBandRange[MAX_LIMIT_RANGE][2];  // =  //Khz because reduce use memory
 
 //-1 : not found, 0 ~ 9 : Hamband index
@@ -325,7 +327,7 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
   byteWithFreqToMode(loadMode);
 }
 
-void saveBandFreqByIndex(unsigned long f, unsigned long mode, byte bandIndex) {
+void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
   if (bandIndex >= 0)
     EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
 }
@@ -454,9 +456,9 @@ void startTx(byte txMode, byte isDisplayUpdate){
     return;
   }
 
-  if (isTxOff != 1)
+  if ((isTxType & 0x01) != 0x01)
     digitalWrite(TX_RX, 1);
-    
+
   inTx = 1;
   
   if (ritOn){
@@ -685,12 +687,37 @@ void storeFrequencyAndMode(byte saveType)
 void initSettings(){
   //read the settings from the eeprom and restore them
   //if the readings are off, then set defaults
+  //for original source Section ===========================
   EEPROM.get(MASTER_CAL, calibration); 
   EEPROM.get(USB_CAL, usbCarrier);
   EEPROM.get(VFO_A, vfoA);
   EEPROM.get(VFO_B, vfoB);
   EEPROM.get(CW_SIDETONE, sideTone);
   EEPROM.get(CW_SPEED, cwSpeed);
+
+  //for custom source Section =============================
+  //ID & Version Check from EEProm 
+  //if found different firmware, erase eeprom (32
+  #define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
+  if (EEPROM.read(FIRMWAR_ID_ADDR) != 0x59 || 
+    EEPROM.read(FIRMWAR_ID_ADDR + 1) != 0x58 || 
+    EEPROM.read(FIRMWAR_ID_ADDR + 2) != 0x68 ) {
+      
+    printLineF(1, F("Init EEProm...")); 
+      //initial all eeprom 
+    for (unsigned int i = 32; i < 1024; i++) //protect Master_cal, usb_cal
+      EEPROM.write(i, 0);
+
+    //Write Firmware ID
+    EEPROM.write(FIRMWAR_ID_ADDR, 0x59);
+    EEPROM.write(FIRMWAR_ID_ADDR + 1, 0x58);
+    EEPROM.write(FIRMWAR_ID_ADDR + 2, 0x68);
+  }
+  
+  //Version Write for Memory Management Software
+  if (EEPROM.read(VERSION_ADDRESS) != VERSION_NUM)
+    EEPROM.write(VERSION_ADDRESS, VERSION_NUM);
+
 
   //for Save VFO_A_MODE to eeprom
   //0: default, 1:not use, 2:LSB, 3:USB, 4:CW, 5:AM, 6:FM
@@ -707,16 +734,12 @@ void initSettings(){
   if (EEPROM.read(USER_CALLSIGN_KEY) == 0x59)
     userCallsignLength = EEPROM.read(USER_CALLSIGN_LEN);  //MAXIMUM 18 LENGTH
 
-  //Version Write for Memory Management Software
-  if (EEPROM.read(VERSION_ADDRESS) != VERSION_NUM)
-    EEPROM.write(VERSION_ADDRESS, VERSION_NUM);
-
   //Ham Band Count
   EEPROM.get(HAM_BAND_COUNT, useHamBandCount);
   EEPROM.get(TX_TUNE_TYPE, tuneTXType);
 
   
-  if ((3 < tuneTXType && 100 < tuneTXType) || 103 < tuneTXType || useHamBandCount < 1)
+  if ((3 < tuneTXType && tuneTXType < 100) || 103 < tuneTXType || useHamBandCount < 1)
     tuneTXType = 0;
     
   //Read band Information
@@ -808,42 +831,35 @@ void setup()
 {
   /*
   //Init EEProm for Fault EEProm TEST and Factory Reset
+  //please remove remark for others.
   //for (int i = 0; i < 1024; i++)
   for (int i = 16; i < 1024; i++) //protect Master_cal, usb_cal
-    EEPROM.write(i, 0);
+    EEPROM.write(i, 0xFF);
+  lcd.begin(16, 2);
+  printLineF(1, F("Complete Erase")); 
+  sleep(1000);
+  //while(1);
+  //end section of test
   */
+  
   //Serial.begin(9600);
   lcd.begin(16, 2);
+  printLineF(1, F("CECBT v0.27")); 
 
-  //remark for John test
-  /*
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
   initSettings();
 
-  printLineF(1, F("CECBT v0.25")); 
-  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80))
-  {
+  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
     userCallsignLength = userCallsignLength & 0x7F;
     printLineFromEEPRom(0, 0, 0, userCallsignLength -1); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+    delay(500);
   }
-  else
-  {
+  else {
     printLineF(0, F("uBITX v0.20")); 
-    delay(500); //< -- replace from delay_background(500, 0) //johns bug report / on raspberry
+    delay(500);
     printLine2(""); 
   }
-  */
-  //replace above to below (before initSettings(); position)
-  
-  printLine2("CECBT v0.27"); 
-  printLine1("uBITX v0.20"); 
-  delay(500);
-  printLine2(""); 
-
-  Init_Cat(9600, SERIAL_8N1);
-  initMeter(); //not used in this build
-  initSettings();  
   
   initPorts();     
   initOscillators();
