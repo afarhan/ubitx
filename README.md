@@ -5,11 +5,12 @@
 #NOTICE
 I received uBITX a month ago and found that many features are required, and began coding with the idea of implementing minimal functionality as a general hf transceiver rather than an experimental device.
 
-
+- fixed bugs...
 - Diallock for uBITX's sensitive encoders
 - built in softare Memory keyer and cw options control for CW communication
 - Implementation of CAT communication protocol for Digital Communication (as FT8, JT65, etc)
 - Delay Options for external Linear.
+- and more...
 
 Most of the basic functions of the HF transceiver I thought were implemented.
 The minimum basic specification for uBITX to operate as a radio, I think it is finished.
