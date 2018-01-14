@@ -1,8 +1,10 @@
 #IMPORTANT INFORMATION
+----------------------------------------------------------------------------
 - Beta 0.26 and Beta 0.261, Beta 0.262, Beta 0.27 is complete test
 - You can download and use it.
 
 #NOTICE
+----------------------------------------------------------------------------
 I received uBITX a month ago and found that many features are required, and began coding with the idea of implementing minimal functionality as a general hf transceiver rather than an experimental device.
 
 - fixed bugs...
