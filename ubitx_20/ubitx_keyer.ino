@@ -23,7 +23,7 @@
 
 
 // in milliseconds, this is the parameter that determines how long the tx will hold between cw key downs
-#define CW_TIMEOUT (600l) 
+//#define CW_TIMEOUT (600l)   //Change to CW Delaytime for value save to eeprom
 #define PADDLE_DOT 1
 #define PADDLE_DASH 2
 #define PADDLE_BOTH 3
@@ -61,7 +61,10 @@ void cwKeydown(){
   keyDown = 1;                  //tracks the CW_KEY
   tone(CW_TONE, (int)sideTone); 
   digitalWrite(CW_KEY, 1);     
-  cwTimeout = millis() + CW_TIMEOUT;
+
+  //Modified by KD8CEC, for CW Delay Time save to eeprom
+  //cwTimeout = millis() + CW_TIMEOUT;
+  cwTimeout = millis() + cwDelayTime * 10;  
 }
 
 /**
@@ -72,7 +75,10 @@ void cwKeyUp(){
   keyDown = 0;    //tracks the CW_KEY
   noTone(CW_TONE);
   digitalWrite(CW_KEY, 0);    
-  cwTimeout = millis() + CW_TIMEOUT;
+  
+  //Modified by KD8CEC, for CW Delay Time save to eeprom
+  //cwTimeout = millis() + CW_TIMEOUT;
+  cwTimeout = millis() + cwDelayTime * 10;
 }
 
 /**
@@ -92,6 +98,10 @@ void cwKeyer(){
     // do nothing if the paddle has not been touched, unless
     // we are in the cw mode and we have timed out
     if (!paddle){
+       //modifed by KD8CEC for auto CW Send
+      if (isCWAutoMode > 1)  //if while auto cw sending, dont stop tx by paddle position
+        return;
+        
       if (0 < cwTimeout && cwTimeout < millis()){
         cwTimeout = 0;
         keyDown = 0;
@@ -103,48 +113,69 @@ void cwKeyer(){
 
       //if a paddle was used (not a straight key) we should extend the space to be a full dash 
       //by adding two more dots long space (one has already been added at the end of the dot or dash)
+      /*
       if (cwTimeout > 0 && lastPaddle != PADDLE_STRAIGHT)
-        delay(cwSpeed * 2);
+        delay_background(cwSpeed * 2, 3);
+        //delay(cwSpeed * 2);
 
       // got back to the begining of the loop, if no further activity happens on the paddle or the straight key
       // we will time out, and return out of this routine 
       delay(5);
+      */
       continue;
     }
 
-    Serial.print("paddle:");Serial.println(paddle);
+    //if while auto cw send, stop auto cw
+    //but isAutoCWHold for Manual Keying with cwAutoSend
+    if (isCWAutoMode > 1 && isAutoCWHold == 0)
+      isCWAutoMode = 1;                         //read status
+
+    //Remoark Debug code / Serial Use by CAT Protocol
+    //Serial.print("paddle:");Serial.println(paddle);
     // if we are here, it is only because the key or the paddle is pressed
     if (!inTx){
       keyDown = 0;
-      cwTimeout = millis() + CW_TIMEOUT;
-      startTx(TX_CW);
+      //Modified by KD8CEC, for CW Delay Time save to eeprom
+      //cwTimeout = millis() + CW_TIMEOUT;
+      cwTimeout = millis() + cwDelayTime * 10;
+      
+      startTx(TX_CW, 0);  //disable updateDisplay Command for reduce latency time
       updateDisplay();
+
+      //DelayTime Option
+      delay_background(delayBeforeCWStartTime * 2, 2);
     }
     
     // star the transmission)
     // we store the transmitted character in the lastPaddle
     cwKeydown();
     if (paddle == PADDLE_DOT){
-      delay(cwSpeed);
+      //delay(cwSpeed);
+      delay_background(cwSpeed, 3);
       lastPaddle = PADDLE_DOT;
     }
     else if (paddle == PADDLE_DASH){
-      delay(cwSpeed * 3);
+      //delay(cwSpeed * 3);
+      delay_background(cwSpeed * 3, 3);
       lastPaddle = PADDLE_DASH;
     }
     else if (paddle == PADDLE_BOTH){ //both paddles down
       //depending upon what was sent last, send the other 
       if (lastPaddle == PADDLE_DOT) {
-        delay(cwSpeed * 3);
+        //delay(cwSpeed * 3);
+        delay_background(cwSpeed * 3, 3);
         lastPaddle = PADDLE_DASH;
       }else{      
-        delay(cwSpeed);
+        //delay(cwSpeed);
+        delay_background(cwSpeed, 3);
         lastPaddle = PADDLE_DOT;
       }
     }
     else if (paddle == PADDLE_STRAIGHT){
-      while (getPaddle() == PADDLE_STRAIGHT)
+      while (getPaddle() == PADDLE_STRAIGHT) {
         delay(1);
+        Check_Cat(2);
+      }
       lastPaddle = PADDLE_STRAIGHT;
     }
     cwKeyUp();
