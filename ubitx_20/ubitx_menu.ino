@@ -155,7 +155,7 @@ void byteWithFreqToMode(byte modeValue){
     isUSB = 0;
 }
 
-void menuVfoToggle(int btn)
+void menuVfoToggle(int btn, char isUseDelayTime)
 {
   if (!btn){
     if (vfoActive == VFO_A)
@@ -189,8 +189,9 @@ void menuVfoToggle(int btn)
 
       ritDisable();
 
-      //updateDisplay();
-      delay_background(500, 0);
+      if (isUseDelayTime == 1)        //Found Issue in wsjt-x Linux 32bit 
+        delay_background(500, 0);
+        
       printLine2ClearAndUpdate();
       //exit the menu
       menuOn = 0;
@@ -803,7 +804,7 @@ void doMenu(){
     else if (select < 20)
       menuRitToggle(btnState);
     else if (select < 30)
-      menuVfoToggle(btnState);
+      menuVfoToggle(btnState, 1);
     else if (select < 40)
       menuSidebandToggle(btnState);
     else if (select < 50)
