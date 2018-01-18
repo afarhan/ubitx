@@ -181,7 +181,7 @@ void CatSetPTT(boolean isPTTOn, byte fromType)
 void CatVFOToggle(boolean isSendACK, byte fromType)
 {
   if (fromType != 2 && fromType != 3) {
-    menuVfoToggle(1);
+    menuVfoToggle(1, 0);
   }  
 
   if (isSendACK)
@@ -470,8 +470,8 @@ void WriteEEPRom_FT817(byte fromType)
         sideTone = (sideTonePitch * 50 + 300) + sideToneSub;
         printLineF2(F("Sidetone set! CAT"));
         EEPROM.put(CW_SIDETONE, sideTone);
-        delay(500);
-        printLine2("");
+        delay(300);                       //If timeout errors occur in the calling software, remove them
+        printLine2("");                   //Ham radio deluxe is the only one that supports this feature yet. and ham radio deluxe has wait time as greater than 500ms
       }
       break;
 
@@ -482,8 +482,8 @@ void WriteEEPRom_FT817(byte fromType)
         sideTone = (sideTonePitch * 50 + 300) + sideToneSub;
         printLineF2(F("Sidetone set! CAT"));
         EEPROM.put(CW_SIDETONE, sideTone);
-        delay(500);
-        printLine2("");
+        delay(300);                   //If timeout errors occur in the calling software, remove them
+        printLine2("");               //Ham radio deluxe is the only one that supports this feature yet. and ham radio deluxe has wait time as greater than 500ms
       }
       break;
 
@@ -502,7 +502,7 @@ void WriteEEPRom_FT817(byte fromType)
       cwDelayTime = CAT_BUFF[2];
       printLineF2(F("CW Speed set!"));
       EEPROM.put(CW_DELAY, cwDelayTime);
-      delay(500);
+      delay(300);
       printLine2("");
       break;
     case 0x62 : //
@@ -511,7 +511,7 @@ void WriteEEPRom_FT817(byte fromType)
       cwSpeed = 1200 / ((CAT_BUFF[2] & 0x3F) + 4);
       printLineF2(F("CW Speed set!"));
       EEPROM.put(CW_SPEED, cwSpeed);
-      delay(500);
+      delay(300);
       printLine2("");
 
       break;
@@ -629,7 +629,6 @@ void Check_Cat(byte fromType)
   }
   else if (Serial.available() < 5)
   {
-    /*
     //First Arrived
     if (rxBufferCheckCount == 0)
     {
@@ -649,8 +648,6 @@ void Check_Cat(byte fromType)
       rxBufferCheckCount = Serial.available();
       rxBufferArriveTime = millis() + CAT_RECEIVE_TIMEOUT;  //Set time for timeout
     }
-    */
-    
     return;
   }
 
