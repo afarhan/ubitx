@@ -211,7 +211,7 @@ unsigned long vfoA=7150000L, vfoB=14200000L, sideTone=800, usbCarrier;
 unsigned long vfoA_eeprom, vfoB_eeprom; //for protect eeprom life
 unsigned long frequency, ritRxFrequency, ritTxFrequency;  //frequency is the current frequency on the dial
 
-int cwSpeed = 100; //this is actuall the dot period in milliseconds
+unsigned int cwSpeed = 100; //this is actuall the dot period in milliseconds
 extern int32_t calibration;
 
 //for store the mode in eeprom
@@ -320,8 +320,8 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
   loadMode = (byte)(resultFreq >> 30);
   resultFreq = resultFreq & 0x3FFFFFFF;
   
-  if ((resultFreq / 1000) < hamBandRange[findedIndex][0] || (resultFreq / 1000) > hamBandRange[findedIndex][1])
-    resultFreq = (unsigned long)(hamBandRange[findedIndex][0]) * 1000;
+  if ((resultFreq / 1000) < hamBandRange[(unsigned char)findedIndex][0] || (resultFreq / 1000) > hamBandRange[(unsigned char)findedIndex][1])
+    resultFreq = (unsigned long)(hamBandRange[(unsigned char)findedIndex][0]) * 1000;
 
   setFrequency(resultFreq);
   byteWithFreqToMode(loadMode);
@@ -344,7 +344,7 @@ unsigned long delayBeforeTime = 0;
 byte delay_background(unsigned delayTime, byte fromType){ //fromType : 4 autoCWKey -> Check Paddle
   delayBeforeTime = millis();
 
-  while (millis() <= delayBeforeTime + delayTime) {
+  while (millis() - delayBeforeTime <= delayTime) {
 
     if (fromType == 4)
     {
@@ -422,8 +422,6 @@ void setTXFilters(unsigned long freq){
  */
  
 void setFrequency(unsigned long f){
-  uint64_t osc_f;
-
   //1 digits discarded
   f = (f / 50) * 50;
   
@@ -448,8 +446,6 @@ void setFrequency(unsigned long f){
  */
  
 void startTx(byte txMode, byte isDisplayUpdate){
-  unsigned long tx_freq = 0;
-
   //Check Hamband only TX //Not found Hamband index by now frequency
   if (tuneTXType >= 100 && getIndexHambanBbyFreq(ritOn ? ritTxFrequency :  frequency) == -1) {
     //no message
@@ -545,8 +541,6 @@ void checkPTT(){
 }
 
 void checkButton(){
-  int i, t1, t2, knob, new_knob;
-
   //only if the button is pressed
   if (!btnDown())
     return;
@@ -575,7 +569,7 @@ void checkButton(){
 void doTuning(){
   int s = 0;
   unsigned long prev_freq;
-  int incdecValue = 0;
+  long incdecValue = 0;
 
   if ((vfoActive == VFO_A && ((isDialLock & 0x01) == 0x01)) ||
     (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02)))
@@ -610,7 +604,7 @@ void doTuning(){
 
     if (incdecValue > 0 && frequency + incdecValue > HIGHEST_FREQ_DIAL)
         frequency = HIGHEST_FREQ_DIAL;      
-    else if (incdecValue < 0 && frequency < -incdecValue + LOWEST_FREQ_DIAL)  //for compute and compare based integer type.
+    else if (incdecValue < 0 && frequency < (unsigned long)(-incdecValue + LOWEST_FREQ_DIAL))  //for compute and compare based integer type.
       frequency = LOWEST_FREQ_DIAL;
     else
       frequency += incdecValue;
@@ -630,8 +624,6 @@ void doTuning(){
  * RIT only steps back and forth by 100 hz at a time
  */
 void doRIT(){
-  unsigned long newFreq;
- 
   int knob = enc_read();
   unsigned long old_freq = frequency;
 
