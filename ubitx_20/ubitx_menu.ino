@@ -13,7 +13,7 @@
 #define printLineF1(x) (printLineF(1, x))
 #define printLineF2(x) (printLineF(0, x))
 
-int menuBand(int btn){
+void menuBand(int btn){
   int knob = 0;
   int stepChangeCount = 0;
   byte btnPressCount = 0;
@@ -302,7 +302,7 @@ void menuExit(int btn){
   }
 }
 
-int menuCWSpeed(int btn){
+void menuCWSpeed(int btn){
     int knob = 0;
     int wpm;
 
@@ -357,7 +357,7 @@ int menuCWSpeed(int btn){
     menuOn = 0;
 }
 
-int menuCWAutoKey(int btn){
+void menuCWAutoKey(int btn){
     if (!btn){
      printLineF2(F("CW AutoKey Mode?"));
      return;
@@ -380,7 +380,7 @@ int menuCWAutoKey(int btn){
     menuOn = 0;
 }
 
-int menuSetupCwDelay(int btn){
+void menuSetupCwDelay(int btn){
     int knob = 0;
     int tmpCWDelay = cwDelayTime * 10;
      
@@ -428,7 +428,7 @@ int menuSetupCwDelay(int btn){
     menuOn = 0;
 }
 
-int menuSetupTXCWInterval(int btn){
+void menuSetupTXCWInterval(int btn){
     int knob = 0;
     int tmpTXCWInterval = delayBeforeCWStartTime * 2;
      
@@ -491,10 +491,8 @@ int menuSetupTXCWInterval(int btn){
 extern int32_t calibration;
 extern uint32_t si5351bx_vcoa;
 
-int factoryCalibration(int btn){
+void factoryCalibration(int btn){
   int knob = 0;
-  int32_t prev_calibration;
-
 
   //keep clear of any previous button press
   while (btnDown())
@@ -503,10 +501,9 @@ int factoryCalibration(int btn){
    
   if (!btn){
     printLineF2(F("Set Calibration?"));
-    return 0;
+    return;
   }
 
-  prev_calibration = calibration;
   calibration = 0;
 
   isUSB = true;
@@ -561,13 +558,13 @@ int factoryCalibration(int btn){
   delay(100);
 }
 
-int menuSetupCalibration(int btn){
+void menuSetupCalibration(int btn){
   int knob = 0;
   int32_t prev_calibration;
    
   if (!btn){
     printLineF2(F("Set Calibration?"));
-    return 0;
+    return;
   }
 
   printLineF1(F("Set to Zero-beat,"));

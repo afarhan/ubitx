@@ -398,7 +398,7 @@ void ReadEEPRom_FT817(byte fromType)
 
 void WriteEEPRom_FT817(byte fromType)
 {
-  byte temp0 = CAT_BUFF[0];
+  //byte temp0 = CAT_BUFF[0];
   byte temp1 = CAT_BUFF[1];
 
   CAT_BUFF[0] = 0;

@@ -115,7 +115,7 @@ void drawMeter(int8_t needle){
 */
 
 // The generic routine to display one line on the LCD 
-void printLine(char linenmbr, char *c) {
+void printLine(unsigned char linenmbr, const char *c) {
   if (strcmp(c, printBuff[linenmbr])) {     // only refresh the display when there was a change
     lcd.setCursor(0, linenmbr);             // place the cursor at the beginning of the selected line
     lcd.print(c);
@@ -160,11 +160,11 @@ void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, b
 }
 
 //  short cut to print to the first line
-void printLine1(char *c){
+void printLine1(const char *c){
   printLine(1,c);
 }
 //  short cut to print to the first line
-void printLine2(char *c){
+void printLine2(const char *c){
   printLine(0,c);
 }
 
@@ -312,9 +312,9 @@ int enc_read(void) {
   byte newState;
   int enc_speed = 0;
   
-  long stop_by = millis() + 50;
+  unsigned long start_at = millis();
   
-  while (millis() < stop_by) { // check if the previous state was stable
+  while (millis() - start_at < 50) { // check if the previous state was stable
     newState = enc_state(); // Get current state  
     
     if (newState != enc_prev_state)

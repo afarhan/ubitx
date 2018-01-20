@@ -208,9 +208,13 @@ void sendCWChar(char cwKeyChar)
         charLength = ((tmpChar >> 6) & 0x03) + 3;
         
         for (j = 0; j < charLength; j++)
-          sendBuff[j] = (tmpChar << j + 2) & 0x80;
+          sendBuff[j] = (tmpChar << (j + 2)) & 0x80;
 
         break;
+      }
+      else
+      {
+        charLength = 0;
       }
     }
   }
@@ -257,7 +261,7 @@ unsigned long scrollDispayTime = 0;
 #define scrollSpeed 500
 byte displayScrolStep = 0;
 
-int controlAutoCW(){
+void controlAutoCW(){
     int knob = 0;
     byte i;
 
