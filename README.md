@@ -1,7 +1,10 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- Beta 0.26 and Beta 0.261, Beta 0.262, Beta 0.27 is complete test
-- You can download and use it.
+-Working on version 0.29 now. Download the source from the release section rather than the master branch version.
+ Master version is working now.
+ 
+- Beta 0.26 and Beta 0.261, Beta 0.262,0.27 is complete test, 0.28 is tested.
+- You can download and use it (Release section).
 
 #NOTICE
 ----------------------------------------------------------------------------
