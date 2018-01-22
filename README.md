@@ -58,6 +58,10 @@ Prepared or finished tasks for the next version
                   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+0.28
+ - Fixed CAT problem with hamlib on Linux
+ - restore Protocol autorecovery logic
+
 0.27 
    (First alpha test version, This will be renamed to the major version 1.0)
  - Dual VFO Dial Lock (vfoA Dial lock)
