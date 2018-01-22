@@ -7,14 +7,14 @@
 - You can download and use it (Release section).
 
 # Current work list (for Version 0.29)
-  -Testing CAT Control with Software using hamlib on Linux
-  -BFO setting based on current value - complete
-  -Select Tune Step - Testing
-  -Change Tune control type, Do not keep the original source - Complete
+  1 Testing CAT Control with Software using hamlib on Linux
+  2 BFO setting based on current value - complete
+  3 Select Tune Step - Testing
+  4 Change Tune control type, Do not keep the original source - Complete
     - Coded differently after clearing the original source
     - Prevent malfunction by applying threshold
-  -stabilize and remove many warning messages - by Pullrequest and merge
-  -Study on improvement method for cw keying - need idea
+  5 stabilize and remove many warning messages - by Pullrequest and merge
+  6 Study on improvement method for cw keying - need idea
     - set ADC Range value
 
 #NOTICE
