@@ -787,7 +787,7 @@ void doMenu(){
 
       if (isNeedDisplay) {
         strcpy(b, "Tune Step:");
-        itoa(arTuneStep[tuneStepIndex], c, 10);
+        itoa(arTuneStep[tuneStepIndex -1], c, 10);
         strcat(b, c);
         printLine2(b);
         isNeedDisplay = 0;
@@ -799,18 +799,12 @@ void doMenu(){
         select += (i > 0 ? 1 : -1);
 
         if (select * select >= 25) {  //Threshold 5 * 5 = 25
-          if (select < 0)
-          {
-            if (tuneStepIndex == 0)
-              tuneStepIndex = 4;
-            else
+          if (select < 0) {
+            if (tuneStepIndex > 1)
               tuneStepIndex--;
           }
-          else
-          {
-            if (tuneStepIndex == 4)
-              tuneStepIndex = 0;
-            else
+          else {
+            if (tuneStepIndex < 5)
               tuneStepIndex++;
           }
           select = 0;
@@ -841,10 +835,13 @@ void doMenu(){
       if (!modeCalibrate && select + i < 80)
         select += i;
     }
-    if (i < 0 && select - i >= 0)
+    //if (i < 0 && select - i >= 0)
+    if (i < 0 && select - i >= -10)
       select += i;      //caught ya, i is already -ve here, so you add it
 
-    if (select < 10)
+    if (select < -5)
+      menuExit(btnState);
+    else if (select < 10)
       menuBand(btnState);
     else if (select < 20)
       menuRitToggle(btnState);

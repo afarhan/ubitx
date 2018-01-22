@@ -237,7 +237,7 @@ byte sideToneSub = 0;
 byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
 byte arTuneStep[5];
-byte tuneStepIndex;
+byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -424,10 +424,7 @@ void setTXFilters(unsigned long freq){
  */
  
 void setFrequency(unsigned long f){
-  //1 digits discarded
-  //byte arTuneStep[] = {10, 20, 50, 100, 200};
-  //byte tuneStepIndex = 2;
-  f = (f / arTuneStep[tuneStepIndex]) * arTuneStep[tuneStepIndex];
+  f = (f / arTuneStep[tuneStepIndex -1]) * arTuneStep[tuneStepIndex -1];
   
   setTXFilters(f);
 
@@ -605,7 +602,7 @@ void doTuning(){
 
   prev_freq = frequency;
   //incdecValue = tuningStep * s;
-  frequency += (arTuneStep[tuneStepIndex] * s);
+  frequency += (arTuneStep[tuneStepIndex -1] * s);
     
   if (prev_freq < 10000000l && frequency > 10000000l)
     isUSB = true;
@@ -780,8 +777,11 @@ void initSettings(){
     arTuneStep[2] = 50;
     arTuneStep[3] = 100;
     arTuneStep[4] = 200;
-    tuneStepIndex = 2;
   }
+
+  if (tuneStepIndex == 0) //New User
+    tuneStepIndex = 3;
+  
 
   if (cwDelayTime < 1 || cwDelayTime > 250)
     cwDelayTime = 60;
