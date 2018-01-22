@@ -152,6 +152,7 @@ int count = 0;          //to generally count ticks, loops, etc
 #define TX_TUNE_TYPE 261  //
 #define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
 #define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
+#define TUNING_STEP 342   //TUNING STEP * 6 (index 1 + STEPS 5)
 
 //Check Firmware type and version
 #define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
@@ -235,7 +236,8 @@ byte sideToneSub = 0;
 //DialLock
 byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
-
+byte arTuneStep[5];
+byte tuneStepIndex;
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -423,7 +425,9 @@ void setTXFilters(unsigned long freq){
  
 void setFrequency(unsigned long f){
   //1 digits discarded
-  f = (f / 50) * 50;
+  //byte arTuneStep[] = {10, 20, 50, 100, 200};
+  //byte tuneStepIndex = 2;
+  f = (f / arTuneStep[tuneStepIndex]) * arTuneStep[tuneStepIndex];
   
   setTXFilters(f);
 
@@ -559,13 +563,15 @@ void checkButton(){
 }
 
 
-/**
- * The tuning jumps by 50 Hz on each step when you tune slowly
- * As you spin the encoder faster, the jump size also increases 
- * This way, you can quickly move to another band by just spinning the 
- * tuning knob
- */
-
+/************************************
+Replace function by KD8CEC
+prevent error controls
+applied Threshold for reduct errors,  dial Lock, dynamic Step
+ *************************************/
+byte threshold = 2;  //noe action for count
+unsigned long lastEncInputtime = 0;
+int encodedSumValue = 0;
+#define encodeTimeOut 1000
 void doTuning(){
   int s = 0;
   unsigned long prev_freq;
@@ -578,46 +584,37 @@ void doTuning(){
   if (isCWAutoMode == 0 || cwAutoDialType == 1)
     s = enc_read();
 
-  if (s){
-    prev_freq = frequency;
-    
-    if (s > 10)
-      incdecValue = 200000l;
-    if (s > 7)
-      incdecValue = 10000l;
-    else if (s > 4)
-      incdecValue = 1000l;
-    else if (s > 2)
-      incdecValue = 500;
-    else if (s > 0)
-      incdecValue =  50l;
-    else if (s > -2)
-      incdecValue = -50l;
-    else if (s > -4)
-      incdecValue = -500l;
-    else if (s > -7)
-      incdecValue = -1000l;
-    else if (s > -9)
-      incdecValue = -10000l;
-    else
-      incdecValue = -200000l;
-
-    if (incdecValue > 0 && frequency + incdecValue > HIGHEST_FREQ_DIAL)
-        frequency = HIGHEST_FREQ_DIAL;      
-    else if (incdecValue < 0 && frequency < (unsigned long)(-incdecValue + LOWEST_FREQ_DIAL))  //for compute and compare based integer type.
-      frequency = LOWEST_FREQ_DIAL;
-    else
-      frequency += incdecValue;
-      
-    if (prev_freq < 10000000l && frequency > 10000000l)
-      isUSB = true;
-      
-    if (prev_freq > 10000000l && frequency < 10000000l)
-      isUSB = false;
-
-    setFrequency(frequency);
-    updateDisplay();
+  //if time is exceeded, it is recognized as an error,
+  //ignore exists values, because of errors
+  if (s == 0) {
+    if (encodedSumValue != 0 && (millis() - encodeTimeOut) > lastEncInputtime)
+      encodedSumValue = 0;
+    return;
   }
+  lastEncInputtime = millis();
+
+  //for check moving direction
+  encodedSumValue += (s > 0 ? 1 : -1);
+
+  //check threshold
+  if ((encodedSumValue *  encodedSumValue) <= (threshold * threshold))
+    return;
+
+  //Valid Action without noise
+  encodedSumValue = 0;
+
+  prev_freq = frequency;
+  //incdecValue = tuningStep * s;
+  frequency += (arTuneStep[tuneStepIndex] * s);
+    
+  if (prev_freq < 10000000l && frequency > 10000000l)
+    isUSB = true;
+    
+  if (prev_freq > 10000000l && frequency < 10000000l)
+    isUSB = false;
+
+  setFrequency(frequency);
+  updateDisplay();
 }
 
 /**
@@ -730,19 +727,62 @@ void initSettings(){
   EEPROM.get(HAM_BAND_COUNT, useHamBandCount);
   EEPROM.get(TX_TUNE_TYPE, tuneTXType);
 
-  
-  if ((3 < tuneTXType && tuneTXType < 100) || 103 < tuneTXType || useHamBandCount < 1)
-    tuneTXType = 0;
+  byte findedValidValueCount = 0;
     
   //Read band Information
   for (byte i = 0; i < useHamBandCount; i++) {
     unsigned int tmpReadValue = 0;
     EEPROM.get(HAM_BAND_RANGE + 4 * i, tmpReadValue);
     hamBandRange[i][0] = tmpReadValue;
+
+    if (tmpReadValue > 1 && tmpReadValue < 55000)
+      findedValidValueCount++;
+
     EEPROM.get(HAM_BAND_RANGE + 4 * i + 2, tmpReadValue);
     hamBandRange[i][1] = tmpReadValue;
   }
+
+  //Check Value Range and default Set for new users
+  if ((3 < tuneTXType && tuneTXType < 100) || 103 < tuneTXType || useHamBandCount < 1 || findedValidValueCount < 5)
+  {
+    tuneTXType = 2;
+    //if empty band Information, auto insert default region 1 frequency range
+    //This part is made temporary for people who have difficulty setting up, so can remove it when you run out of memory.
+    useHamBandCount = 10;
+    hamBandRange[0][0] = 1810; hamBandRange[0][1] = 2000; 
+    hamBandRange[1][0] = 3500; hamBandRange[1][1] = 3800; 
+    hamBandRange[2][0] = 5351; hamBandRange[2][1] = 5367; 
+    hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7200; 
+    hamBandRange[4][0] = 10100; hamBandRange[4][1] = 10150; 
+    hamBandRange[5][0] = 14000; hamBandRange[5][1] = 14350; 
+    hamBandRange[6][0] = 18068; hamBandRange[6][1] = 18168; 
+    hamBandRange[7][0] = 21000; hamBandRange[7][1] = 21450; 
+    hamBandRange[8][0] = 24890; hamBandRange[8][1] = 24990; 
+    hamBandRange[9][0] = 28000; hamBandRange[9][1] = 29700; 
+  }
   
+
+  //Read Tuning Step Index, and steps
+  findedValidValueCount = 0;
+  EEPROM.get(TUNING_STEP, tuneStepIndex);
+  for (byte i = 0; i < 5; i++) {
+    arTuneStep[i] = EEPROM.read(TUNING_STEP + i + 1);
+    if (arTuneStep[i] >= 1 && arTuneStep[i] < 251) //Maximum 250 for check valid Value
+       findedValidValueCount++;
+  }
+
+  //Check Value Range and default Set for new users
+  if (findedValidValueCount < 5)
+  {
+    //Default Setting
+    arTuneStep[0] = 10;
+    arTuneStep[1] = 20;
+    arTuneStep[2] = 50;
+    arTuneStep[3] = 100;
+    arTuneStep[4] = 200;
+    tuneStepIndex = 2;
+  }
+
   if (cwDelayTime < 1 || cwDelayTime > 250)
     cwDelayTime = 60;
 

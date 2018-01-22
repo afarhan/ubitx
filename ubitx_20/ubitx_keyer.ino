@@ -122,6 +122,8 @@ void cwKeyer(){
       // we will time out, and return out of this routine 
       delay(5);
       */
+
+      Check_Cat(2); //for uBITX on Raspberry pi, when straight keying, disconnect / test complete
       continue;
     }
 
