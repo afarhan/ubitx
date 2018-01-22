@@ -6,6 +6,15 @@
 - Beta 0.26 and Beta 0.261, Beta 0.262,0.27 is complete test, 0.28 is tested.
 - You can download and use it (Release section).
 
+- Current work list (for Version 0.29)
+  1.Testing CAT Control with Software using hamlib on Linux
+  2.BFO setting based on current value - complete
+  3.Select Tune Step - Testing
+  4.Change Tune control type, Do not keep the original source - Complete
+    - Coded differently after clearing the original source
+    - Prevent malfunction by applying threshold
+  5.stabilize and remove many warning messages - by Pullrequest and merge
+
 #NOTICE
 ----------------------------------------------------------------------------
 I received uBITX a month ago and found that many features are required, and began coding with the idea of implementing minimal functionality as a general hf transceiver rather than an experimental device.
