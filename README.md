@@ -14,6 +14,8 @@
     - Coded differently after clearing the original source
     - Prevent malfunction by applying threshold
   5.stabilize and remove many warning messages - by Pullrequest and merge
+  6.Study on improvement method for cw keying - need idea
+    - set ADC Range value
 
 #NOTICE
 ----------------------------------------------------------------------------
