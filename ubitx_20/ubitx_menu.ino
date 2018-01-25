@@ -229,6 +229,41 @@ void menuSidebandToggle(int btn){
   }
 }
 
+void menuSetupKeyType(int btn){
+  if (!btn && digitalRead(PTT) == HIGH){
+      if (Iambic_Key)
+        printLineF2(F("Key: Straight?"));
+      else
+        printLineF2(F("Key: Fn=A, PTT=B"));
+  }
+  else {
+      if (Iambic_Key)
+      {
+        printLineF2(F("Straight Key!"));
+        Iambic_Key = false;
+      }
+      else
+      {
+        Iambic_Key = true;
+        if (btn)
+        {
+          keyerControl &= ~IAMBICB;
+          printLineF2(F("IAMBICA Key!"));
+        }
+        else
+        {
+          keyerControl |= IAMBICB;
+          printLineF2(F("IAMBICB Key!"));
+        }
+      }
+      
+    delay_background(500, 0);
+    printLine2ClearAndUpdate();
+    menuOn = 0;
+  }
+}
+
+
 void menuTxOnOff(int btn, byte optionType){
   if (!btn){
     if ((isTxType & optionType) == 0)
@@ -830,7 +865,7 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 150)
+      if (modeCalibrate && select + i < 160)
         select += i;
       if (!modeCalibrate && select + i < 80)
         select += i;
@@ -868,8 +903,10 @@ void doMenu(){
     else if (select < 130 && modeCalibrate)
       menuSetupTXCWInterval(btnState);
     else if (select < 140 && modeCalibrate)
-      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+      menuSetupKeyType(btnState);
     else if (select < 150 && modeCalibrate)
+      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+    else if (select < 160 && modeCalibrate)
       menuExit(btnState);
 
     Check_Cat(0);  //To prevent disconnections
