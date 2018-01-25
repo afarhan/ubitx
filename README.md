@@ -1,7 +1,21 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- Beta 0.26 and Beta 0.261, Beta 0.262, Beta 0.27 is complete test
-- You can download and use it.
+-Working on version 0.29 now. Download the source from the release section rather than the master branch version.
+ Master version is working now.
+ 
+- Beta 0.26 and Beta 0.261, Beta 0.262,0.27 is complete test, 0.28 is tested.
+- You can download and use it (Release section).
+
+# Current work list (for Version 0.29)
+  1 Testing CAT Control with Software using hamlib on Linux
+  2 BFO setting based on current value - complete
+  3 Select Tune Step - Testing
+  4 Change Tune control type, Do not keep the original source - Complete
+    - Coded differently after clearing the original source
+    - Prevent malfunction by applying threshold
+  5 stabilize and remove many warning messages - by Pullrequest and merge
+  6 Study on improvement method for cw keying - need idea
+    - set ADC Range value
 
 #NOTICE
 ----------------------------------------------------------------------------
@@ -46,6 +60,10 @@ Prepared or finished tasks for the next version
                   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+0.28
+ - Fixed CAT problem with hamlib on Linux
+ - restore Protocol autorecovery logic
+
 0.27 
    (First alpha test version, This will be renamed to the major version 1.0)
  - Dual VFO Dial Lock (vfoA Dial lock)
