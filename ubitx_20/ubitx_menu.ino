@@ -36,21 +36,6 @@ void menuBand(int btn){
       }
       else {
         tuneTXType = 2;
-        //if empty band Information, auto insert default region 1 frequency range
-        //This part is made temporary for people who have difficulty setting up, so can remove it when you run out of memory.
-        if (useHamBandCount < 1) {
-          useHamBandCount = 10;
-          hamBandRange[0][0] = 1810; hamBandRange[0][1] = 2000; 
-          hamBandRange[1][0] = 3500; hamBandRange[1][1] = 3800; 
-          hamBandRange[2][0] = 5351; hamBandRange[2][1] = 5367; 
-          hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7200; 
-          hamBandRange[4][0] = 10100; hamBandRange[4][1] = 10150; 
-          hamBandRange[5][0] = 14000; hamBandRange[5][1] = 14350; 
-          hamBandRange[6][0] = 18068; hamBandRange[6][1] = 18168; 
-          hamBandRange[7][0] = 21000; hamBandRange[7][1] = 21450; 
-          hamBandRange[8][0] = 24890; hamBandRange[8][1] = 24990; 
-          hamBandRange[9][0] = 28000; hamBandRange[9][1] = 29700; 
-        }
         printLineF2(F("Ham band mode"));
       }
       delay_background(1000, 0);
@@ -653,7 +638,8 @@ void menuSetupCarrier(int btn){
   printLineF1(F("PTT to confirm. "));
   delay_background(1000, 0);
 
-  usbCarrier = 11995000l;
+  //usbCarrier = 11995000l; //Remarked by KD8CEC, Suggest from many user, if entry routine factoryrest
+  
   si5351bx_setfreq(0, usbCarrier);
   printCarrierFreq(usbCarrier);
 
@@ -756,22 +742,29 @@ void setDialLock(byte tmpLock, byte fromMode) {
   printLine2ClearAndUpdate();
 }
 
-int btnDownTimeCount;
+unsigned int btnDownTimeCount;
+
+#define PRESS_ADJUST_TUNE 1000
+#define PRESS_LOCK_CONTROL 2000
 
 void doMenu(){
   int select=0, i,btnState;
+  char isNeedDisplay = 0;
   
   //for DialLock On/Off function
   btnDownTimeCount = 0;
   
   //wait for the button to be raised up
+
+  //Appened Lines by KD8CEC for Adjust Tune step and Set Dial lock
   while(btnDown()){
     delay(50);
     Check_Cat(0);  //To prevent disconnections
     
-    //btnDownTimeCount++;
-    //check long time Down Button -> 3 Second
-    if (btnDownTimeCount++ > (2000 / 50)) {
+    if (btnDownTimeCount++ == (PRESS_ADJUST_TUNE / 50)) { //Set Tune Step 
+      printLineF2(F("Set Tune Step?"));
+    }
+    else if (btnDownTimeCount > (PRESS_LOCK_CONTROL / 50)) {  //check long time Down Button -> 2.5 Second => Lock
       if (vfoActive == VFO_A)
         setDialLock((isDialLock & 0x01) == 0x01 ? 0 : 1, 0); //Reverse Dial lock
       else
@@ -781,6 +774,55 @@ void doMenu(){
   }
   delay(50);  //debounce
 
+  //ADJUST TUNE STEP 
+  if (btnDownTimeCount > (PRESS_ADJUST_TUNE / 50))
+  {
+    printLineF1(F("Press Key to set"));
+    isNeedDisplay = 1; //check to need display for display current value
+    
+    while (digitalRead(PTT) == HIGH && !btnDown())
+    {
+      Check_Cat(0);  //To prevent disconnections
+      delay(50);  //debounce    
+
+      if (isNeedDisplay) {
+        strcpy(b, "Tune Step:");
+        itoa(arTuneStep[tuneStepIndex -1], c, 10);
+        strcat(b, c);
+        printLine2(b);
+        isNeedDisplay = 0;
+      }
+        
+      i = enc_read();
+
+      if (i != 0) {
+        select += (i > 0 ? 1 : -1);
+
+        if (select * select >= 25) {  //Threshold 5 * 5 = 25
+          if (select < 0) {
+            if (tuneStepIndex > 1)
+              tuneStepIndex--;
+          }
+          else {
+            if (tuneStepIndex < 5)
+              tuneStepIndex++;
+          }
+          select = 0;
+          isNeedDisplay = 1;
+        }
+      }
+    } //end of while
+
+    printLineF2(F("Changed Step!"));
+    //SAVE EEPROM
+    EEPROM.put(TUNING_STEP, tuneStepIndex);
+    delay_background(500, 0);
+    printLine2ClearAndUpdate();
+    return;
+  }   //set tune step
+
+  //Below codes are origial code with modified by KD8CEC
+  //Select menu
   menuOn = 2;
   
   while (menuOn){
@@ -793,10 +835,13 @@ void doMenu(){
       if (!modeCalibrate && select + i < 80)
         select += i;
     }
-    if (i < 0 && select - i >= 0)
+    //if (i < 0 && select - i >= 0)
+    if (i < 0 && select - i >= -10)
       select += i;      //caught ya, i is already -ve here, so you add it
 
-    if (select < 10)
+    if (select < -5)
+      menuExit(btnState);
+    else if (select < 10)
       menuBand(btnState);
     else if (select < 20)
       menuRitToggle(btnState);

@@ -1,5 +1,7 @@
 /**
  * CW Keyer
+ * CW Key logic change with ron's code (ubitx_keyer.cpp) <=== **********************************
+ * The file you are working on. The code only applies and is still in testing. <==== ***********
  * 
  * The CW keyer handles either a straight key or an iambic / paddle key.
  * They all use just one analog input line. This is how it works.
@@ -33,7 +35,6 @@
 //to alternatively send dots and dashes 
 //when both are simultaneously pressed
 char lastPaddle = 0;
-
 
 //reads the analog keyer pin and reports the paddle
 byte getPaddle(){
@@ -81,13 +82,218 @@ void cwKeyUp(){
   cwTimeout = millis() + cwDelayTime * 10;
 }
 
+/*****************************************************************************
+// New logic, by RON
+// modified by KD8CEC
+******************************************************************************/
+#define DIT_L 0x01 // DIT latch
+#define DAH_L 0x02 // DAH latch
+#define DIT_PROC 0x04 // DIT is being processed
+#define PDLSWAP 0x08 // 0 for normal, 1 for swap
+#define IAMBICB 0x10 // 0 for Iambic A, 1 for Iambic B
+enum KSTYPE {IDLE, CHK_DIT, CHK_DAH, KEYED_PREP, KEYED, INTER_ELEMENT };
+
+static long ktimer;
+
+bool Iambic_Key = true;
+unsigned char keyerControl = IAMBICB;
+unsigned char keyerState = IDLE;
+
+//Below is a test to reduce the keying error.
+/*
+char update_PaddleLatch(byte isUpdateKeyState) {
+  int paddle = analogRead(ANALOG_KEYER);
+  unsigned char tmpKeyerControl;
+
+  if (paddle > 800)               // above 4v is up
+    tmpKeyerControl = 0;
+  //else if (paddle > 600)         // 4-3v is DASH
+  else if (paddle > 693 && paddle < 700)         // 4-3v is DASH
+    tmpKeyerControl |= DAH_L;
+  //else if (paddle > 300)        //1-2v is DOT
+  else if (paddle > 323 && paddle < 328)        //1-2v is DOT
+    tmpKeyerControl |= DIT_L;
+  //else if (paddle > 50)
+  else if (paddle > 280 && paddle < 290)
+    tmpKeyerControl |= (DAH_L | DIT_L) ;     //both are between 1 and 2v
+  else
+    tmpKeyerControl = 0 ;   //STRAIGHT KEY in original code
+    //keyerControl |= (DAH_L | DIT_L) ;   //STRAIGHT KEY in original code
+  
+  if (isUpdateKeyState == 1) {
+    keyerControl |= tmpKeyerControl;
+  }
+
+  byte buff[17];
+  sprintf(buff, "Key : %d", paddle);
+  if (tmpKeyerControl > 0)
+    printLine2(buff);
+  
+  return tmpKeyerControl;
+
+  //if (analogRead(ANALOG_DOT)   < 600 ) keyerControl |= DIT_L;
+  //if (analogRead(ANALOG_DASH)  < 600 ) keyerControl |= DAH_L;
+}
+*/
+
+//create by KD8CEC for compatible with new CW Logic
+char update_PaddleLatch(byte isUpdateKeyState) {
+  int paddle = analogRead(ANALOG_KEYER);
+  unsigned char tmpKeyerControl;
+
+  if (paddle > 800)               // above 4v is up
+    tmpKeyerControl = 0;
+  else if (paddle > 600)         // 4-3v is DASH
+    tmpKeyerControl |= DAH_L;
+  else if (paddle > 300)        //1-2v is DOT
+    tmpKeyerControl |= DIT_L;
+  else if (paddle > 50)
+    tmpKeyerControl |= (DAH_L | DIT_L) ;     //both are between 1 and 2v
+  else
+    tmpKeyerControl = 0 ;   //STRAIGHT KEY in original code
+    //keyerControl |= (DAH_L | DIT_L) ;   //STRAIGHT KEY in original code
+  
+  if (isUpdateKeyState == 1) {
+    keyerControl |= tmpKeyerControl;
+  }
+
+  return tmpKeyerControl;
+  //if (analogRead(ANALOG_DOT)   < 600 ) keyerControl |= DIT_L;
+  //if (analogRead(ANALOG_DASH)  < 600 ) keyerControl |= DAH_L;
+}
+
+void cwKeyer(void){
+  byte paddle;
+  lastPaddle = 0;
+  int dot,dash;
+  bool continue_loop = true;
+  unsigned tmpKeyControl = 0;
+if( Iambic_Key ){
+
+while(continue_loop){
+  switch (keyerState) {
+    case IDLE:
+      tmpKeyControl = update_PaddleLatch(0);
+      if ( tmpKeyControl == DAH_L || tmpKeyControl == DIT_L || 
+        tmpKeyControl == (DAH_L | DIT_L) || (keyerControl & 0x03)) {
+        //DIT or DASH or current state DIT & DASH
+        //(analogRead(ANALOG_DOT)  < 600) ||  //DIT
+        //(analogRead(ANALOG_DASH)  < 600) || //DIT
+        //   (keyerControl & 0x03)) {
+         update_PaddleLatch(1);
+         keyerState = CHK_DIT;
+      }else{
+        if (0 < cwTimeout && cwTimeout < millis()){
+          cwTimeout = 0;
+          stopTx();
+        }
+        continue_loop = false;
+      }
+      break;
+
+    case CHK_DIT:
+      if (keyerControl & DIT_L) {
+        keyerControl |= DIT_PROC;
+        ktimer = cwSpeed;
+        keyerState = KEYED_PREP;
+      }else{
+        keyerState = CHK_DAH;
+      }
+      break;
+
+    case CHK_DAH:
+      if (keyerControl & DAH_L) {
+        ktimer = cwSpeed*3;
+        keyerState = KEYED_PREP;
+      }else{
+        keyerState = IDLE;
+      }
+      break;
+
+    case KEYED_PREP:
+      ktimer += millis(); // set ktimer to interval end time
+      keyerControl &= ~(DIT_L + DAH_L); // clear both paddle latch bits
+      keyerState = KEYED; // next state
+      if (!inTx){
+        keyDown = 0;
+        cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
+        startTx(TX_CW, 0);
+      }
+      cwKeydown();
+      break;
+
+    case KEYED:
+      if (millis() > ktimer) { // are we at end of key down ?
+       cwKeyUp();
+       ktimer = millis() + cwSpeed; // inter-element time
+        keyerState = INTER_ELEMENT; // next state
+      }else if (keyerControl & IAMBICB) {
+        update_PaddleLatch(1); // early paddle latch in Iambic B mode
+      }
+      break;
+
+    case INTER_ELEMENT:
+      // Insert time between dits/dahs
+      update_PaddleLatch(1); // latch paddle state
+      if (millis() > ktimer) { // are we at end of inter-space ?
+        if (keyerControl & DIT_PROC) { // was it a dit or dah ?
+          keyerControl &= ~(DIT_L + DIT_PROC); // clear two bits
+          keyerState = CHK_DAH; // dit done, check for dah
+        }else{
+          keyerControl &= ~(DAH_L); // clear dah latch
+          keyerState = IDLE; // go idle
+        }
+      }
+      break;
+  }
+} //end of while
+
+}else{
+  while(1){
+    //if (analogRead(ANALOG_DOT) < 600){
+      if (update_PaddleLatch(0) == DIT_L) {
+      // if we are here, it is only because the key is pressed
+      if (!inTx){
+        keyDown = 0;
+        cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT; 
+        startTx(TX_CW, 0);
+      }
+      // start the transmission)
+      cwKeydown();
+      //while ( analogRead(ANALOG_DOT) < 600 ) delay(1);
+      while ( update_PaddleLatch(0) == DIT_L ) delay(1);
+      cwKeyUp();
+    }else{
+      if (0 < cwTimeout && cwTimeout < millis()){
+        cwTimeout = 0;
+        keyDown = 0;
+        stopTx();
+      }
+      if (!cwTimeout)
+        return;
+      // got back to the beginning of the loop, if no further activity happens on straight key
+      // we will time out, and return out of this routine 
+      delay(5);
+      continue;
+   }
+} //end of else
+}
+}
+
+
+
+//=======================================================================================
+//Before logic
+//by Farhan and modified by KD8CEC
+//======================================================================================
+
 /**
  * The keyer handles the straight key as well as the iambic key
  * This module keeps looping until the user stops sending cw
  * if the cwTimeout is set to 0, then it means, we have to exit the keyer loop
  * Each time the key is hit the cwTimeout is pushed to a time in the future by cwKeyDown()
  */
- 
+ /*
 void cwKeyer(){
   byte paddle;
   lastPaddle = 0;
@@ -111,17 +317,7 @@ void cwKeyer(){
       if (!cwTimeout)
         return;
 
-      //if a paddle was used (not a straight key) we should extend the space to be a full dash 
-      //by adding two more dots long space (one has already been added at the end of the dot or dash)
-      /*
-      if (cwTimeout > 0 && lastPaddle != PADDLE_STRAIGHT)
-        delay_background(cwSpeed * 2, 3);
-        //delay(cwSpeed * 2);
-
-      // got back to the begining of the loop, if no further activity happens on the paddle or the straight key
-      // we will time out, and return out of this routine 
-      delay(5);
-      */
+      Check_Cat(2); //for uBITX on Raspberry pi, when straight keying, disconnect / test complete
       continue;
     }
 
@@ -184,3 +380,6 @@ void cwKeyer(){
       delay(cwSpeed);
   }
 }
+*/
+
+
