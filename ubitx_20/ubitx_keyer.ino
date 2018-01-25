@@ -95,7 +95,7 @@ enum KSTYPE {IDLE, CHK_DIT, CHK_DAH, KEYED_PREP, KEYED, INTER_ELEMENT };
 
 static long ktimer;
 
-bool Iambic_Key = false;
+bool Iambic_Key = true;
 unsigned char keyerControl = IAMBICB;
 unsigned char keyerState = IDLE;
 
