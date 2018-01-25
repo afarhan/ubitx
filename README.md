@@ -1,13 +1,11 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- 0.29 Version Test only download.
+- 0.296 Version Test only download. almost complete
   replace keyer logic to Ron's code
-  Currently, it does not work with straight keys for testing purposes.
-  If you are using a straight key, please download it up in a few days.
+  Currently, default key type is IAMBICB
+  If you are using a straight key or IAMBICB, you can change key type at setup menu.
+  default Band select is Ham Band mode, if you want common type, long press function key at band select menu
 
--Working on version 0.29 now. Download the source from the release section rather than the master branch version.
- Master version is working now.
- 
 - Beta 0.26 and Beta 0.261, Beta 0.262,0.27 is complete test, 0.28 is tested.
 - You can download and use it (Release section).
 
