@@ -150,16 +150,17 @@ char update_PaddleLatch(byte isUpdateKeyState) {
   else if (paddle > 50)
     tmpKeyerControl |= (DAH_L | DIT_L) ;     //both are between 1 and 2v
   else
-    tmpKeyerControl = 0 ;   //STRAIGHT KEY in original code
-    //keyerControl |= (DAH_L | DIT_L) ;   //STRAIGHT KEY in original code
-  
-  if (isUpdateKeyState == 1) {
-    keyerControl |= tmpKeyerControl;
+  {    //STRAIGHT KEY in original code
+    if (Iambic_Key)
+      tmpKeyerControl = 0 ;
+    else
+      tmpKeyerControl = DIT_L ;
   }
+  
+  if (isUpdateKeyState == 1)
+    keyerControl |= tmpKeyerControl;
 
   return tmpKeyerControl;
-  //if (analogRead(ANALOG_DOT)   < 600 ) keyerControl |= DIT_L;
-  //if (analogRead(ANALOG_DASH)  < 600 ) keyerControl |= DAH_L;
 }
 
 void cwKeyer(void){
@@ -217,7 +218,7 @@ while(continue_loop){
       if (!inTx){
         keyDown = 0;
         cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
-        startTx(TX_CW, 0);
+        startTx(TX_CW, 1);
       }
       cwKeydown();
       break;
@@ -256,7 +257,7 @@ while(continue_loop){
       if (!inTx){
         keyDown = 0;
         cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT; 
-        startTx(TX_CW, 0);
+        startTx(TX_CW, 1);
       }
       // start the transmission)
       cwKeydown();
