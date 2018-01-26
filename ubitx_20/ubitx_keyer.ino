@@ -1,8 +1,9 @@
 /**
- * CW Keyer
- * CW Key logic change with ron's code (ubitx_keyer.cpp) <=== **********************************
- * The file you are working on. The code only applies and is still in testing. <==== ***********
- * 
+ CW Keyer
+ CW Key logic change with ron's code (ubitx_keyer.cpp)
+ Ron's logic has been modified to work with the original uBITX by KD8CEC
+
+ Original Comment ----------------------------------------------------------------------------
  * The CW keyer handles either a straight key or an iambic / paddle key.
  * They all use just one analog input line. This is how it works.
  * The analog line has the internal pull-up resistor enabled. 
@@ -163,6 +164,7 @@ char update_PaddleLatch(byte isUpdateKeyState) {
   return tmpKeyerControl;
 }
 
+//This function is Ron's Logic.
 void cwKeyer(void){
   byte paddle;
   lastPaddle = 0;
@@ -280,7 +282,6 @@ while(continue_loop){
 } //end of else
 }
 }
-
 
 
 //=======================================================================================

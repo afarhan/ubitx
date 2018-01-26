@@ -1,4 +1,5 @@
 /*************************************************************************
+  KD8CEC's CAT Library for uBITX and HAM
   This source code is written for uBITX, but it can also be used on other radios.
   
   The CAT protocol is used by many radios to provide remote control to comptuers through

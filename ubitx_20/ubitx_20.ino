@@ -1,4 +1,10 @@
 /**
+ Since KD8CEC Version 0.29, most of the original code is no longer available.
+ Most features(TX, Frequency Range, Ham Band, TX Control, CW delay, start Delay... more) have been added by KD8CEC.
+ However, the license rules are subject to the original source rules.
+ DE Ian KD8CEC
+
+ Original source comment            -------------------------------------------------------------
  * This source file is under General Public License version 3.
  * 
  * This verision uses a built-in Si5351 library
