@@ -1,4 +1,6 @@
 /*************************************************************************
+  KD8CEC'S Memory Keyer for HAM
+  
   This source code is written for All amateur radio operator, 
   I have not had amateur radio communication for a long time. CW has been 
   around for a long time, and I do not know what kind of keyer and keying 
@@ -13,6 +15,7 @@
   I wrote this code myself, so there is no license restriction. 
   So this code allows anyone to write with confidence.
   But keep it as long as the original author of the code.
+  DE Ian KD8CEC
 -----------------------------------------------------------------------------
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
