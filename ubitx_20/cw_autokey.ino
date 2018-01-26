@@ -1,5 +1,5 @@
 /*************************************************************************
-  KD8CEC'S Memory Keyer for HAM
+  KD8CEC's Memory Keyer for HAM
   
   This source code is written for All amateur radio operator, 
   I have not had amateur radio communication for a long time. CW has been 

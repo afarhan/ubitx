@@ -158,7 +158,17 @@ int count = 0;          //to generally count ticks, loops, etc
 #define TX_TUNE_TYPE 261  //
 #define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
 #define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
-#define TUNING_STEP 342   //TUNING STEP * 6 (index 1 + STEPS 5)
+#define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)
+
+//for reduce cw key error, eeprom address
+#define CW_ADC_ST_FROM   348   //CW ADC Range STRAIGHT KEY from
+#define CW_ADC_ST_TO     349   //CW ADC Range STRAIGHT KEY to
+#define CW_ADC_DOT_FROM  350   //CW ADC Range DOT  from
+#define CW_ADC_DOT_TO    351   //CW ADC Range DOT  to
+#define CW_ADC_DASH_FROM 352   //CW ADC Range DASH from
+#define CW_ADC_DASH_TO   353   //CW ADC Range DASH to
+#define CW_ADC_BOTH_FROM 354   //CW ADC Range BOTH from
+#define CW_ADC_BOTH_TO   355   //CW ADC Range BOTH to
 
 //Check Firmware type and version
 #define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
@@ -244,6 +254,16 @@ byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
 byte arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
+
+//CW ADC Range
+byte cwAdcSTFrom = 0;
+byte cwAdcSTTo = 0;
+byte cwAdcDotFrom = 0;
+byte cwAdcDotTo = 0;
+byte cwAdcDashtFrom = 0;
+byte cwAdcDashTo = 0;
+byte cwAdcBothFrom = 0;
+byte cwAdcBothTo = 0;
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -686,7 +706,10 @@ void initSettings(){
   EEPROM.get(VFO_B, vfoB);
   EEPROM.get(CW_SIDETONE, sideTone);
   EEPROM.get(CW_SPEED, cwSpeed);
-
+  //End of original code
+  
+  //----------------------------------------------------------------
+  //Add Lines by KD8CEC
   //for custom source Section =============================
   //ID & Version Check from EEProm 
   //if found different firmware, erase eeprom (32
@@ -787,6 +810,44 @@ void initSettings(){
 
   if (tuneStepIndex == 0) //New User
     tuneStepIndex = 3;
+
+  //CW Key ADC Range ======= adjust set value for reduce cw keying error
+  //by KD8CEC
+  EEPROM.get(CW_ADC_ST_FROM, cwAdcSTFrom);
+  EEPROM.get(CW_ADC_ST_TO, cwAdcSTTo);
+
+  EEPROM.get(CW_ADC_DOT_FROM, cwAdcDotFrom);
+  EEPROM.get(CW_ADC_DOT_TO, cwAdcDotTo);
+  
+  EEPROM.get(CW_ADC_DASH_FROM, cwAdcDashtFrom);
+  EEPROM.get(CW_ADC_DASH_TO, cwAdcDashTo);
+
+  EEPROM.get(CW_ADC_BOTH_FROM, cwAdcBothFrom);
+  EEPROM.get(CW_ADC_BOTH_TO, cwAdcBothTo);
+
+  //default Value (for original hardware)
+  if (cwAdcSTFrom >= cwAdcSTTo)
+  {
+    cwAdcSTFrom = 0;
+    cwAdcSTTo = 50;
+  }
+
+  if (cwAdcBothFrom >= cwAdcBothTo)
+  {
+    cwAdcBothFrom = 51;
+    cwAdcBothTo = 300;
+  }
+  
+  if (cwAdcDotFrom >= cwAdcDotTo)
+  {
+    cwAdcDotFrom = 301;
+    cwAdcDotTo = 600;
+  }
+  if (cwAdcDashtFrom >= cwAdcDashTo)
+  {
+    cwAdcDashtFrom = 601;
+    cwAdcDashTo = 800;
+  }
   
 
   if (cwDelayTime < 1 || cwDelayTime > 250)
@@ -798,6 +859,7 @@ void initSettings(){
   if (vfoB_mode < 2)
     vfoB_mode = 3;
 
+  //original code with modified by kd8cec
   if (usbCarrier > 12010000l || usbCarrier < 11990000l)
     usbCarrier = 11995000l;
     
@@ -810,8 +872,9 @@ void initSettings(){
      vfoB = 14150000l;  
      vfoB_mode = 3;
   }
+  //end of original code section
 
-  //for protect eeprom life
+  //for protect eeprom life by KD8CEC
   vfoA_eeprom = vfoA;
   vfoB_eeprom = vfoB;
   vfoA_mode_eeprom = vfoA_mode;
