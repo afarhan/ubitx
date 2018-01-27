@@ -133,112 +133,118 @@ void cwKeyer(void){
   int dot,dash;
   bool continue_loop = true;
   unsigned tmpKeyControl = 0;
-if( Iambic_Key ){
-
-while(continue_loop){
-  switch (keyerState) {
-    case IDLE:
-      tmpKeyControl = update_PaddleLatch(0);
-      if ( tmpKeyControl == DAH_L || tmpKeyControl == DIT_L || 
-        tmpKeyControl == (DAH_L | DIT_L) || (keyerControl & 0x03)) {
-         update_PaddleLatch(1);
-         keyerState = CHK_DIT;
-      }else{
+  
+  if( Iambic_Key ) {
+    while(continue_loop) {
+      switch (keyerState) {
+        case IDLE:
+          tmpKeyControl = update_PaddleLatch(0);
+          if ( tmpKeyControl == DAH_L || tmpKeyControl == DIT_L || 
+            tmpKeyControl == (DAH_L | DIT_L) || (keyerControl & 0x03)) {
+             update_PaddleLatch(1);
+             keyerState = CHK_DIT;
+          }else{
+            if (0 < cwTimeout && cwTimeout < millis()){
+              cwTimeout = 0;
+              stopTx();
+            }
+            continue_loop = false;
+          }
+          break;
+    
+        case CHK_DIT:
+          if (keyerControl & DIT_L) {
+            keyerControl |= DIT_PROC;
+            ktimer = cwSpeed;
+            keyerState = KEYED_PREP;
+          }else{
+            keyerState = CHK_DAH;
+          }
+          break;
+    
+        case CHK_DAH:
+          if (keyerControl & DAH_L) {
+            ktimer = cwSpeed*3;
+            keyerState = KEYED_PREP;
+          }else{
+            keyerState = IDLE;
+          }
+          break;
+    
+        case KEYED_PREP:
+          ktimer += millis(); // set ktimer to interval end time
+          keyerControl &= ~(DIT_L + DAH_L); // clear both paddle latch bits
+          keyerState = KEYED; // next state
+          if (!inTx){
+            keyDown = 0;
+            cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
+            startTx(TX_CW, 1);
+          }
+          cwKeydown();
+          break;
+    
+        case KEYED:
+          if (millis() > ktimer) { // are we at end of key down ?
+           cwKeyUp();
+           ktimer = millis() + cwSpeed; // inter-element time
+            keyerState = INTER_ELEMENT; // next state
+          }else if (keyerControl & IAMBICB) {
+            update_PaddleLatch(1); // early paddle latch in Iambic B mode
+          }
+          break;
+    
+        case INTER_ELEMENT:
+          // Insert time between dits/dahs
+          update_PaddleLatch(1); // latch paddle state
+          if (millis() > ktimer) { // are we at end of inter-space ?
+            if (keyerControl & DIT_PROC) { // was it a dit or dah ?
+              keyerControl &= ~(DIT_L + DIT_PROC); // clear two bits
+              keyerState = CHK_DAH; // dit done, check for dah
+            }else{
+              keyerControl &= ~(DAH_L); // clear dah latch
+              keyerState = IDLE; // go idle
+            }
+          }
+          break;
+      }
+  
+      Check_Cat(3);
+    } //end of while
+  }
+  else{
+    while(1){
+      if (update_PaddleLatch(0) == DIT_L) {
+        // if we are here, it is only because the key is pressed
+        if (!inTx){
+          keyDown = 0;
+          cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT; 
+          startTx(TX_CW, 1);
+        }
+        cwKeydown();
+        
+        while ( update_PaddleLatch(0) == DIT_L ) 
+          delay_background(1, 3);
+          
+        cwKeyUp();
+      }
+      else{
         if (0 < cwTimeout && cwTimeout < millis()){
           cwTimeout = 0;
+          keyDown = 0;
           stopTx();
         }
-        continue_loop = false;
+        if (!cwTimeout)
+          return;
+        // got back to the beginning of the loop, if no further activity happens on straight key
+        // we will time out, and return out of this routine 
+        //delay(5);
+        delay_background(5, 3);
+        continue;
       }
-      break;
 
-    case CHK_DIT:
-      if (keyerControl & DIT_L) {
-        keyerControl |= DIT_PROC;
-        ktimer = cwSpeed;
-        keyerState = KEYED_PREP;
-      }else{
-        keyerState = CHK_DAH;
-      }
-      break;
-
-    case CHK_DAH:
-      if (keyerControl & DAH_L) {
-        ktimer = cwSpeed*3;
-        keyerState = KEYED_PREP;
-      }else{
-        keyerState = IDLE;
-      }
-      break;
-
-    case KEYED_PREP:
-      ktimer += millis(); // set ktimer to interval end time
-      keyerControl &= ~(DIT_L + DAH_L); // clear both paddle latch bits
-      keyerState = KEYED; // next state
-      if (!inTx){
-        keyDown = 0;
-        cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
-        startTx(TX_CW, 1);
-      }
-      cwKeydown();
-      break;
-
-    case KEYED:
-      if (millis() > ktimer) { // are we at end of key down ?
-       cwKeyUp();
-       ktimer = millis() + cwSpeed; // inter-element time
-        keyerState = INTER_ELEMENT; // next state
-      }else if (keyerControl & IAMBICB) {
-        update_PaddleLatch(1); // early paddle latch in Iambic B mode
-      }
-      break;
-
-    case INTER_ELEMENT:
-      // Insert time between dits/dahs
-      update_PaddleLatch(1); // latch paddle state
-      if (millis() > ktimer) { // are we at end of inter-space ?
-        if (keyerControl & DIT_PROC) { // was it a dit or dah ?
-          keyerControl &= ~(DIT_L + DIT_PROC); // clear two bits
-          keyerState = CHK_DAH; // dit done, check for dah
-        }else{
-          keyerControl &= ~(DAH_L); // clear dah latch
-          keyerState = IDLE; // go idle
-        }
-      }
-      break;
-  }
-} //end of while
-
-}else{
-  while(1){
-    //if (analogRead(ANALOG_DOT) < 600){
-      if (update_PaddleLatch(0) == DIT_L) {
-      // if we are here, it is only because the key is pressed
-      if (!inTx){
-        keyDown = 0;
-        cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT; 
-        startTx(TX_CW, 1);
-      }
-      // start the transmission)
-      cwKeydown();
-      //while ( analogRead(ANALOG_DOT) < 600 ) delay(1);
-      while ( update_PaddleLatch(0) == DIT_L ) delay(1);
-      cwKeyUp();
-    }else{
-      if (0 < cwTimeout && cwTimeout < millis()){
-        cwTimeout = 0;
-        keyDown = 0;
-        stopTx();
-      }
-      if (!cwTimeout)
-        return;
-      // got back to the beginning of the loop, if no further activity happens on straight key
-      // we will time out, and return out of this routine 
-      delay(5);
-      continue;
-   }
-} //end of else
-}
+      Check_Cat(2);
+    } //end of while
+  }   //end of elese
 }
 
 

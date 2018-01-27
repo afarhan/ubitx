@@ -597,8 +597,13 @@ applied Threshold for reduct errors,  dial Lock, dynamic Step
 byte threshold = 2;  //noe action for count
 unsigned long lastEncInputtime = 0;
 int encodedSumValue = 0;
+unsigned long lastTunetime = 0; //if continous moving, skip threshold processing
+byte lastMovedirection = 0; //0 : stop, 1 : cw, 2 : ccw
+
+#define skipThresholdTime 100
 #define encodeTimeOut 1000
-void doTuning(){
+
+void doTuningWithThresHold(){
   int s = 0;
   unsigned long prev_freq;
   long incdecValue = 0;
@@ -615,6 +620,8 @@ void doTuning(){
   if (s == 0) {
     if (encodedSumValue != 0 && (millis() - encodeTimeOut) > lastEncInputtime)
       encodedSumValue = 0;
+
+    lastMovedirection = 0;
     return;
   }
   lastEncInputtime = millis();
@@ -622,23 +629,25 @@ void doTuning(){
   //for check moving direction
   encodedSumValue += (s > 0 ? 1 : -1);
 
-  //check threshold
-  if ((encodedSumValue *  encodedSumValue) <= (threshold * threshold))
+  //check threshold and operator actions (hold dial speed = continous moving, skip threshold check)
+  if ((lastTunetime < millis() - skipThresholdTime) && ((encodedSumValue *  encodedSumValue) <= (threshold * threshold)))
     return;
+
+  lastTunetime = millis();
 
   //Valid Action without noise
   encodedSumValue = 0;
 
   prev_freq = frequency;
   //incdecValue = tuningStep * s;
-  frequency += (arTuneStep[tuneStepIndex -1] * s);
+  frequency += (arTuneStep[tuneStepIndex -1] * s * (s * s < 10 ? 1 : 3));  //appield weight (s is speed)
     
   if (prev_freq < 10000000l && frequency > 10000000l)
     isUSB = true;
     
   if (prev_freq > 10000000l && frequency < 10000000l)
     isUSB = false;
-
+    
   setFrequency(frequency);
   updateDisplay();
 }
@@ -1036,7 +1045,7 @@ void loop(){
     if (ritOn)
       doRIT();
     else 
-      doTuning();
+      doTuningWithThresHold();
   }
 
   //we check CAT after the encoder as it might put the radio into TX
