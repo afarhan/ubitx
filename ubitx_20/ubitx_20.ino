@@ -161,14 +161,17 @@ int count = 0;          //to generally count ticks, loops, etc
 #define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)
 
 //for reduce cw key error, eeprom address
-#define CW_ADC_ST_FROM   348   //CW ADC Range STRAIGHT KEY from
-#define CW_ADC_ST_TO     349   //CW ADC Range STRAIGHT KEY to
-#define CW_ADC_DOT_FROM  350   //CW ADC Range DOT  from
-#define CW_ADC_DOT_TO    351   //CW ADC Range DOT  to
-#define CW_ADC_DASH_FROM 352   //CW ADC Range DASH from
-#define CW_ADC_DASH_TO   353   //CW ADC Range DASH to
-#define CW_ADC_BOTH_FROM 354   //CW ADC Range BOTH from
-#define CW_ADC_BOTH_TO   355   //CW ADC Range BOTH to
+#define CW_ADC_MOST_BIT1 348   //most 2bits of  DOT_TO , DOT_FROM, ST_TO, ST_FROM
+#define CW_ADC_ST_FROM   349   //CW ADC Range STRAIGHT KEY from (Lower 8 bit)
+#define CW_ADC_ST_TO     350   //CW ADC Range STRAIGHT KEY to   (Lower 8 bit)
+#define CW_ADC_DOT_FROM  351   //CW ADC Range DOT  from         (Lower 8 bit)
+#define CW_ADC_DOT_TO    352   //CW ADC Range DOT  to           (Lower 8 bit)
+
+#define CW_ADC_MOST_BIT2 353   //most 2bits of BOTH_TO, BOTH_FROM, DASH_TO, DASH_FROM
+#define CW_ADC_DASH_FROM 354   //CW ADC Range DASH from         (Lower 8 bit)
+#define CW_ADC_DASH_TO   355   //CW ADC Range DASH to           (Lower 8 bit)
+#define CW_ADC_BOTH_FROM 356   //CW ADC Range BOTH from         (Lower 8 bit)
+#define CW_ADC_BOTH_TO   357   //CW ADC Range BOTH to           (Lower 8 bit)
 
 //Check Firmware type and version
 #define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
@@ -256,14 +259,14 @@ byte arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
 
 //CW ADC Range
-byte cwAdcSTFrom = 0;
-byte cwAdcSTTo = 0;
-byte cwAdcDotFrom = 0;
-byte cwAdcDotTo = 0;
-byte cwAdcDashtFrom = 0;
-byte cwAdcDashTo = 0;
-byte cwAdcBothFrom = 0;
-byte cwAdcBothTo = 0;
+int cwAdcSTFrom = 0;
+int cwAdcSTTo = 0;
+int cwAdcDotFrom = 0;
+int cwAdcDotTo = 0;
+int cwAdcDashFrom = 0;
+int cwAdcDashTo = 0;
+int cwAdcBothFrom = 0;
+int cwAdcBothTo = 0;
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -813,17 +816,18 @@ void initSettings(){
 
   //CW Key ADC Range ======= adjust set value for reduce cw keying error
   //by KD8CEC
-  EEPROM.get(CW_ADC_ST_FROM, cwAdcSTFrom);
-  EEPROM.get(CW_ADC_ST_TO, cwAdcSTTo);
-
-  EEPROM.get(CW_ADC_DOT_FROM, cwAdcDotFrom);
-  EEPROM.get(CW_ADC_DOT_TO, cwAdcDotTo);
+  unsigned int tmpMostBits = 0;
+  tmpMostBits = EEPROM.read(CW_ADC_MOST_BIT1);
+  cwAdcSTFrom = EEPROM.read(CW_ADC_ST_FROM)   | ((tmpMostBits & 0x03) << 8);
+  cwAdcSTTo = EEPROM.read(CW_ADC_ST_TO)       | ((tmpMostBits & 0x0C) << 6);
+  cwAdcDotFrom = EEPROM.read(CW_ADC_DOT_FROM) | ((tmpMostBits & 0x30) << 4);
+  cwAdcDotTo = EEPROM.read(CW_ADC_DOT_TO)     | ((tmpMostBits & 0xC0) << 2);
   
-  EEPROM.get(CW_ADC_DASH_FROM, cwAdcDashtFrom);
-  EEPROM.get(CW_ADC_DASH_TO, cwAdcDashTo);
-
-  EEPROM.get(CW_ADC_BOTH_FROM, cwAdcBothFrom);
-  EEPROM.get(CW_ADC_BOTH_TO, cwAdcBothTo);
+  tmpMostBits = EEPROM.read(CW_ADC_MOST_BIT2);
+  cwAdcDashFrom = EEPROM.read(CW_ADC_DASH_FROM) | ((tmpMostBits & 0x03) << 8);
+  cwAdcDashTo = EEPROM.read(CW_ADC_DASH_TO)     | ((tmpMostBits & 0x0C) << 6);
+  cwAdcBothFrom = EEPROM.read(CW_ADC_BOTH_FROM) | ((tmpMostBits & 0x30) << 4);
+  cwAdcBothTo = EEPROM.read(CW_ADC_BOTH_TO)     | ((tmpMostBits & 0xC0) << 2);
 
   //default Value (for original hardware)
   if (cwAdcSTFrom >= cwAdcSTTo)
@@ -843,13 +847,13 @@ void initSettings(){
     cwAdcDotFrom = 301;
     cwAdcDotTo = 600;
   }
-  if (cwAdcDashtFrom >= cwAdcDashTo)
+  if (cwAdcDashFrom >= cwAdcDashTo)
   {
-    cwAdcDashtFrom = 601;
+    cwAdcDashFrom = 601;
     cwAdcDashTo = 800;
   }
+  //end of CW Keying Variables
   
-
   if (cwDelayTime < 1 || cwDelayTime > 250)
     cwDelayTime = 60;
 

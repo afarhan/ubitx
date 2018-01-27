@@ -98,20 +98,15 @@ unsigned char keyerState = IDLE;
 //Below is a test to reduce the keying error. do not delete lines
 //create by KD8CEC for compatible with new CW Logic
 char update_PaddleLatch(byte isUpdateKeyState) {
-  int paddle = analogRead(ANALOG_KEYER);
   unsigned char tmpKeyerControl;
+  int paddle = analogRead(ANALOG_KEYER);
 
-  //if (paddle > 800)               // above 4v is up
-  // tmpKeyerControl = 0;
-  //else if (paddle > 600)         // 4-3v is DASH
-  if (paddle > cwAdcDashtFrom && cwAdcDashTo < 700)         // 4-3v is DASH
+  if (paddle > cwAdcDashFrom && paddle < cwAdcDashTo)
     tmpKeyerControl |= DAH_L;
-  //else if (paddle > 300)        //1-2v is DOT
-  else if (paddle > cwAdcDotFrom && paddle < cwAdcDotTo)        //1-2v is DOT
+  else if (paddle > cwAdcDotFrom && paddle < cwAdcDotTo)
     tmpKeyerControl |= DIT_L;
-  //else if (paddle > 50)
   else if (paddle > cwAdcBothFrom && paddle < cwAdcBothTo)
-    tmpKeyerControl |= (DAH_L | DIT_L) ;     //both are between 1 and 2v
+    tmpKeyerControl |= (DAH_L | DIT_L) ;     
   else 
   {
     if (Iambic_Key)
@@ -122,52 +117,11 @@ char update_PaddleLatch(byte isUpdateKeyState) {
        tmpKeyerControl = 0 ; 
   }
   
-    tmpKeyerControl = 0 ;   //STRAIGHT KEY in original code
-    //keyerControl |= (DAH_L | DIT_L) ;   //STRAIGHT KEY in original code
-  
-  if (isUpdateKeyState == 1) {
-    keyerControl |= tmpKeyerControl;
-  }
-
-  byte buff[17];
-  sprintf(buff, "Key : %d", paddle);
-  if (tmpKeyerControl > 0)
-    printLine2(buff);
-  
-  return tmpKeyerControl;
-
-  //if (analogRead(ANALOG_DOT)   < 600 ) keyerControl |= DIT_L;
-  //if (analogRead(ANALOG_DASH)  < 600 ) keyerControl |= DAH_L;
-}
-
-/*
-//create by KD8CEC for compatible with new CW Logic
-char update_PaddleLatch(byte isUpdateKeyState) {
-  int paddle = analogRead(ANALOG_KEYER);
-  unsigned char tmpKeyerControl;
-
-  if (paddle > 800)               // above 4v is up
-    tmpKeyerControl = 0;
-  else if (paddle > 600)         // 4-3v is DASH
-    tmpKeyerControl |= DAH_L;
-  else if (paddle > 300)        //1-2v is DOT
-    tmpKeyerControl |= DIT_L;
-  else if (paddle > 50)
-    tmpKeyerControl |= (DAH_L | DIT_L) ;     //both are between 1 and 2v
-  else
-  {    //STRAIGHT KEY in original code
-    if (Iambic_Key)
-      tmpKeyerControl = 0 ;
-    else
-      tmpKeyerControl = DIT_L ;
-  }
-  
   if (isUpdateKeyState == 1)
     keyerControl |= tmpKeyerControl;
 
   return tmpKeyerControl;
 }
-*/
 
 /*****************************************************************************
 // New logic, by RON
@@ -187,10 +141,6 @@ while(continue_loop){
       tmpKeyControl = update_PaddleLatch(0);
       if ( tmpKeyControl == DAH_L || tmpKeyControl == DIT_L || 
         tmpKeyControl == (DAH_L | DIT_L) || (keyerControl & 0x03)) {
-        //DIT or DASH or current state DIT & DASH
-        //(analogRead(ANALOG_DOT)  < 600) ||  //DIT
-        //(analogRead(ANALOG_DASH)  < 600) || //DIT
-        //   (keyerControl & 0x03)) {
          update_PaddleLatch(1);
          keyerState = CHK_DIT;
       }else{
