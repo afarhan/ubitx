@@ -1,24 +1,11 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- 0.296 Version Test only download. almost complete
-  replace keyer logic to Ron's code
-  Currently, default key type is IAMBICB
-  If you are using a straight key or IAMBICB, you can change key type at setup menu.
-  default Band select is Ham Band mode, if you want common type, long press function key at band select menu
-
+- 0.30 Version Test only download. almost complete
 - Beta 0.26 and Beta 0.261, Beta 0.262,0.27 is complete test, 0.28 is tested.
 - You can download and use it (Release section).
 
-# Current work list (for Version 0.29)
+# Current work list (for Version 0.31)
   1 Testing CAT Control with Software using hamlib on Linux
-  2 BFO setting based on current value - complete
-  3 Select Tune Step - Testing
-  4 Change Tune control type, Do not keep the original source - Complete
-    - Coded differently after clearing the original source
-    - Prevent malfunction by applying threshold
-  5 stabilize and remove many warning messages - by Pullrequest and merge
-  6 Study on improvement method for cw keying - need idea
-    - set ADC Range value
 
 #NOTICE
 ----------------------------------------------------------------------------
@@ -63,6 +50,20 @@ Prepared or finished tasks for the next version
                   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+0.30
+ - implemented the function to monitor the value of all analog inputs. This allows you to monitor the status of the CW keys connected to your uBITX. 
+ - possible to set the ADC range for CW Keying. If no setting is made, it will have the same range as the original code. If you set the CW Keying ADC Values using uBITX Manager 0.3, you can reduce the key error.
+ - Added the function to select Straight Key, IAMBICA, IAMBICB key from the menu.
+ - default Band select is Ham Band mode, if you want common type, long press function key at band select menu, uBITX Manager can be used to modify frequencies to suit your country.
+
+0.29
+ - Remove the use of initialization values in BFO settings - using crruent value, if factory reset
+ - Select Tune Step, default 0, 20, 50, 100, 200, Use the uBITX Manager to set the steps value you want. You can select Step by pressing and holding the Function Key (1sec ~ 2sec).
+ - Modify Dial Lock Function, Press the Function key for more than 3 seconds to toggle dial lock.
+ - created a new frequency tune method. remove original source codes, Threshold has been applied to reduce malfunction. checked the continuity of the user operating to make natural tune possible.
+ - stabilize and remove many warning messages - by Pullrequest and merge
+ - Changed cw keying method. removed the original code and applied Ron's code and Improved compatibility with original hardware and CAT commnication. It can be used without modification of hardware.
+ 
 0.28
  - Fixed CAT problem with hamlib on Linux
  - restore Protocol autorecovery logic
