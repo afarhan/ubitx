@@ -158,7 +158,20 @@ int count = 0;          //to generally count ticks, loops, etc
 #define TX_TUNE_TYPE 261  //
 #define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
 #define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
-#define TUNING_STEP 342   //TUNING STEP * 6 (index 1 + STEPS 5)
+#define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)
+
+//for reduce cw key error, eeprom address
+#define CW_ADC_MOST_BIT1 348   //most 2bits of  DOT_TO , DOT_FROM, ST_TO, ST_FROM
+#define CW_ADC_ST_FROM   349   //CW ADC Range STRAIGHT KEY from (Lower 8 bit)
+#define CW_ADC_ST_TO     350   //CW ADC Range STRAIGHT KEY to   (Lower 8 bit)
+#define CW_ADC_DOT_FROM  351   //CW ADC Range DOT  from         (Lower 8 bit)
+#define CW_ADC_DOT_TO    352   //CW ADC Range DOT  to           (Lower 8 bit)
+
+#define CW_ADC_MOST_BIT2 353   //most 2bits of BOTH_TO, BOTH_FROM, DASH_TO, DASH_FROM
+#define CW_ADC_DASH_FROM 354   //CW ADC Range DASH from         (Lower 8 bit)
+#define CW_ADC_DASH_TO   355   //CW ADC Range DASH to           (Lower 8 bit)
+#define CW_ADC_BOTH_FROM 356   //CW ADC Range BOTH from         (Lower 8 bit)
+#define CW_ADC_BOTH_TO   357   //CW ADC Range BOTH to           (Lower 8 bit)
 
 //Check Firmware type and version
 #define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
@@ -244,6 +257,16 @@ byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
 byte arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
+
+//CW ADC Range
+int cwAdcSTFrom = 0;
+int cwAdcSTTo = 0;
+int cwAdcDotFrom = 0;
+int cwAdcDotTo = 0;
+int cwAdcDashFrom = 0;
+int cwAdcDashTo = 0;
+int cwAdcBothFrom = 0;
+int cwAdcBothTo = 0;
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -574,8 +597,13 @@ applied Threshold for reduct errors,  dial Lock, dynamic Step
 byte threshold = 2;  //noe action for count
 unsigned long lastEncInputtime = 0;
 int encodedSumValue = 0;
+unsigned long lastTunetime = 0; //if continous moving, skip threshold processing
+byte lastMovedirection = 0; //0 : stop, 1 : cw, 2 : ccw
+
+#define skipThresholdTime 100
 #define encodeTimeOut 1000
-void doTuning(){
+
+void doTuningWithThresHold(){
   int s = 0;
   unsigned long prev_freq;
   long incdecValue = 0;
@@ -592,6 +620,8 @@ void doTuning(){
   if (s == 0) {
     if (encodedSumValue != 0 && (millis() - encodeTimeOut) > lastEncInputtime)
       encodedSumValue = 0;
+
+    lastMovedirection = 0;
     return;
   }
   lastEncInputtime = millis();
@@ -599,23 +629,25 @@ void doTuning(){
   //for check moving direction
   encodedSumValue += (s > 0 ? 1 : -1);
 
-  //check threshold
-  if ((encodedSumValue *  encodedSumValue) <= (threshold * threshold))
+  //check threshold and operator actions (hold dial speed = continous moving, skip threshold check)
+  if ((lastTunetime < millis() - skipThresholdTime) && ((encodedSumValue *  encodedSumValue) <= (threshold * threshold)))
     return;
+
+  lastTunetime = millis();
 
   //Valid Action without noise
   encodedSumValue = 0;
 
   prev_freq = frequency;
   //incdecValue = tuningStep * s;
-  frequency += (arTuneStep[tuneStepIndex -1] * s);
+  frequency += (arTuneStep[tuneStepIndex -1] * s * (s * s < 10 ? 1 : 3));  //appield weight (s is speed)
     
   if (prev_freq < 10000000l && frequency > 10000000l)
     isUSB = true;
     
   if (prev_freq > 10000000l && frequency < 10000000l)
     isUSB = false;
-
+    
   setFrequency(frequency);
   updateDisplay();
 }
@@ -686,7 +718,10 @@ void initSettings(){
   EEPROM.get(VFO_B, vfoB);
   EEPROM.get(CW_SIDETONE, sideTone);
   EEPROM.get(CW_SPEED, cwSpeed);
-
+  //End of original code
+  
+  //----------------------------------------------------------------
+  //Add Lines by KD8CEC
   //for custom source Section =============================
   //ID & Version Check from EEProm 
   //if found different firmware, erase eeprom (32
@@ -787,8 +822,47 @@ void initSettings(){
 
   if (tuneStepIndex == 0) //New User
     tuneStepIndex = 3;
-  
 
+  //CW Key ADC Range ======= adjust set value for reduce cw keying error
+  //by KD8CEC
+  unsigned int tmpMostBits = 0;
+  tmpMostBits = EEPROM.read(CW_ADC_MOST_BIT1);
+  cwAdcSTFrom = EEPROM.read(CW_ADC_ST_FROM)   | ((tmpMostBits & 0x03) << 8);
+  cwAdcSTTo = EEPROM.read(CW_ADC_ST_TO)       | ((tmpMostBits & 0x0C) << 6);
+  cwAdcDotFrom = EEPROM.read(CW_ADC_DOT_FROM) | ((tmpMostBits & 0x30) << 4);
+  cwAdcDotTo = EEPROM.read(CW_ADC_DOT_TO)     | ((tmpMostBits & 0xC0) << 2);
+  
+  tmpMostBits = EEPROM.read(CW_ADC_MOST_BIT2);
+  cwAdcDashFrom = EEPROM.read(CW_ADC_DASH_FROM) | ((tmpMostBits & 0x03) << 8);
+  cwAdcDashTo = EEPROM.read(CW_ADC_DASH_TO)     | ((tmpMostBits & 0x0C) << 6);
+  cwAdcBothFrom = EEPROM.read(CW_ADC_BOTH_FROM) | ((tmpMostBits & 0x30) << 4);
+  cwAdcBothTo = EEPROM.read(CW_ADC_BOTH_TO)     | ((tmpMostBits & 0xC0) << 2);
+
+  //default Value (for original hardware)
+  if (cwAdcSTFrom >= cwAdcSTTo)
+  {
+    cwAdcSTFrom = 0;
+    cwAdcSTTo = 50;
+  }
+
+  if (cwAdcBothFrom >= cwAdcBothTo)
+  {
+    cwAdcBothFrom = 51;
+    cwAdcBothTo = 300;
+  }
+  
+  if (cwAdcDotFrom >= cwAdcDotTo)
+  {
+    cwAdcDotFrom = 301;
+    cwAdcDotTo = 600;
+  }
+  if (cwAdcDashFrom >= cwAdcDashTo)
+  {
+    cwAdcDashFrom = 601;
+    cwAdcDashTo = 800;
+  }
+  //end of CW Keying Variables
+  
   if (cwDelayTime < 1 || cwDelayTime > 250)
     cwDelayTime = 60;
 
@@ -798,6 +872,7 @@ void initSettings(){
   if (vfoB_mode < 2)
     vfoB_mode = 3;
 
+  //original code with modified by kd8cec
   if (usbCarrier > 12010000l || usbCarrier < 11990000l)
     usbCarrier = 11995000l;
     
@@ -810,8 +885,9 @@ void initSettings(){
      vfoB = 14150000l;  
      vfoB_mode = 3;
   }
+  //end of original code section
 
-  //for protect eeprom life
+  //for protect eeprom life by KD8CEC
   vfoA_eeprom = vfoA;
   vfoB_eeprom = vfoB;
   vfoA_mode_eeprom = vfoA_mode;
@@ -969,7 +1045,7 @@ void loop(){
     if (ritOn)
       doRIT();
     else 
-      doTuning();
+      doTuningWithThresHold();
   }
 
   //we check CAT after the encoder as it might put the radio into TX

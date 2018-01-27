@@ -13,6 +13,7 @@
 #define printLineF1(x) (printLineF(1, x))
 #define printLineF2(x) (printLineF(0, x))
 
+//Ham band move by KD8CEC
 void menuBand(int btn){
   int knob = 0;
   int stepChangeCount = 0;
@@ -117,6 +118,7 @@ void menuBand(int btn){
   menuOn = 0;
 }
 
+//Convert Mode, Number by KD8CEC
 //0: default, 1:not use, 2:LSB, 3:USB, 4:CW, 5:AM, 6:FM
 byte modeToByte(){
   if (isUSB)
@@ -125,12 +127,15 @@ byte modeToByte(){
     return 2;
 }
 
+//Convert Number to Mode by KD8CEC
 void byteToMode(byte modeValue){
   if (modeValue == 3)
     isUSB = 1;
   else
     isUSB = 0;
 }
+
+//Convert Number to Mode by KD8CEC
 void byteWithFreqToMode(byte modeValue){
   if (modeValue == 3)
     isUSB = 1;
@@ -140,6 +145,7 @@ void byteWithFreqToMode(byte modeValue){
     isUSB = 0;
 }
 
+//VFO Toggle and save VFO Information, modified by KD8CEC
 void menuVfoToggle(int btn, char isUseDelayTime)
 {
   if (!btn){
@@ -229,6 +235,7 @@ void menuSidebandToggle(int btn){
   }
 }
 
+//Select CW Key Type by KD8CEC
 void menuSetupKeyType(int btn){
   if (!btn && digitalRead(PTT) == HIGH){
       if (Iambic_Key)
@@ -263,7 +270,88 @@ void menuSetupKeyType(int btn){
   }
 }
 
+//Analog pin monitoring with CW Key and function keys connected.
+//by KD8CEC
+void menuADCMonitor(int btn){
+  int adcPinA0 = 0;  //A0(BLACK, EncoderA)
+  int adcPinA1 = 0;  //A1(BROWN, EncoderB)
+  int adcPinA2 = 0;  //A2(RED, Function Key)
+  int adcPinA3 = 0;  //A3(ORANGE, CW Key)
+  int adcPinA6 = 0;  //A6(BLUE, Ptt)
+  int adcPinA7 = 0;  //A7(VIOLET, Spare)
+  unsigned long pressKeyTime = 0;
+  
+  if (!btn){
+        printLineF2(F("ADC Line Monitor"));
+        return;
+  }
+  
+  printLineF2(F("Exit:Long PTT"));
+  delay_background(2000, 0);
+  printLineF1(F("A0   A1   A2"));
+  printLineF2(F("A3   A6   A7"));
+  delay_background(3000, 0);
+  
+  while (true) {
+    adcPinA0 = analogRead(A0);  //A0(BLACK, EncoderA)
+    adcPinA1 = analogRead(A1);  //A1(BROWN, EncoderB)
+    adcPinA2 = analogRead(A2);  //A2(RED, Function Key)
+    adcPinA3 = analogRead(A3);  //A3(ORANGE, CW Key)
+    adcPinA6 = analogRead(A6);  //A6(BLUE, Ptt)
+    adcPinA7 = analogRead(A7);  //A7(VIOLET, Spare)
 
+/*
+  sprintf(c, "%4d %4d %4d", adcPinA0, adcPinA1, adcPinA2);
+  printLine1(c);
+  sprintf(c, "%4d %4d %4d", adcPinA3, adcPinA6, adcPinA7);
+  printLine2(c);
+*/  
+  
+    if (adcPinA6 < 10) {
+      if (pressKeyTime == 0)
+        pressKeyTime = millis();
+      else if (pressKeyTime < (millis() - 3000))
+          break;
+    }
+    else
+      pressKeyTime = 0;
+    
+    ltoa(adcPinA0, c, 10);
+    //strcat(b, c);
+    strcpy(b, c);
+    strcat(b, ", ");
+    
+    ltoa(adcPinA1, c, 10);
+    strcat(b, c);
+    strcat(b, ", ");
+    
+    ltoa(adcPinA2, c, 10);
+    strcat(b, c);
+
+    printLine1(b);
+
+    //strcpy(b, " ");
+    ltoa(adcPinA3, c, 10);
+    strcpy(b, c);
+    strcat(b, ", ");
+
+    ltoa(adcPinA6, c, 10);
+    strcat(b, c);
+    strcat(b, ", ");
+    
+    ltoa(adcPinA7, c, 10);
+    strcat(b, c);
+    printLine2(b);
+    
+    delay_background(200, 0);
+  } //end of while
+      
+  printLine2ClearAndUpdate();
+  menuOn = 0;
+}
+
+//Function to disbled transmission
+//by KD8CEC
 void menuTxOnOff(int btn, byte optionType){
   if (!btn){
     if ((isTxType & optionType) == 0)
@@ -377,6 +465,7 @@ void menuCWSpeed(int btn){
     menuOn = 0;
 }
 
+//Builtin CW Keyer Logic by KD8CEC
 void menuCWAutoKey(int btn){
     if (!btn){
      printLineF2(F("CW AutoKey Mode?"));
@@ -400,6 +489,7 @@ void menuCWAutoKey(int btn){
     menuOn = 0;
 }
 
+//Modified by KD8CEC
 void menuSetupCwDelay(int btn){
     int knob = 0;
     int tmpCWDelay = cwDelayTime * 10;
@@ -448,6 +538,7 @@ void menuSetupCwDelay(int btn){
     menuOn = 0;
 }
 
+//CW Time delay by KD8CEC
 void menuSetupTXCWInterval(int btn){
     int knob = 0;
     int tmpTXCWInterval = delayBeforeCWStartTime * 2;
@@ -659,6 +750,7 @@ void printCarrierFreq(unsigned long freq){
   printLine2(c);    
 }
 
+//modified by KD8CEC (just 1 line remarked //usbCarrier = ...
 void menuSetupCarrier(int btn){
   int knob = 0;
   unsigned long prevCarrier;
@@ -712,6 +804,7 @@ void menuSetupCarrier(int btn){
   menuOn = 0; 
 }
 
+//Modified by KD8CEC
 void menuSetupCwTone(int btn){
     int knob = 0;
     int prev_sideTone;
@@ -760,6 +853,7 @@ void menuSetupCwTone(int btn){
     menuOn = 0; 
  }
 
+//Lock Dial move by KD8CEC
 void setDialLock(byte tmpLock, byte fromMode) {
   if (tmpLock == 1)
     isDialLock |= (vfoActive == VFO_A ? 0x01 : 0x02);
@@ -782,6 +876,7 @@ unsigned int btnDownTimeCount;
 #define PRESS_ADJUST_TUNE 1000
 #define PRESS_LOCK_CONTROL 2000
 
+//Modified by KD8CEC
 void doMenu(){
   int select=0, i,btnState;
   char isNeedDisplay = 0;
@@ -865,7 +960,7 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 160)
+      if (modeCalibrate && select + i < 170)
         select += i;
       if (!modeCalibrate && select + i < 80)
         select += i;
@@ -905,8 +1000,10 @@ void doMenu(){
     else if (select < 140 && modeCalibrate)
       menuSetupKeyType(btnState);
     else if (select < 150 && modeCalibrate)
-      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+      menuADCMonitor(btnState);
     else if (select < 160 && modeCalibrate)
+      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+    else if (select < 170 && modeCalibrate)
       menuExit(btnState);
 
     Check_Cat(0);  //To prevent disconnections
