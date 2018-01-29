@@ -84,6 +84,7 @@
 #define PTT   (A3)
 #define ANALOG_KEYER (A6)
 #define ANALOG_SPARE (A7)
+#define ANALOG_SMETER (A7)  //by KD8CEC
 
 /** 
  * The Raduino board is the size of a standard 16x2 LCD panel. It has three connectors:
@@ -172,6 +173,10 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_ADC_DASH_TO   355   //CW ADC Range DASH to           (Lower 8 bit)
 #define CW_ADC_BOTH_FROM 356   //CW ADC Range BOTH from         (Lower 8 bit)
 #define CW_ADC_BOTH_TO   357   //CW ADC Range BOTH to           (Lower 8 bit)
+#define CW_KEY_TYPE      358
+
+#define DISPLAY_OPTION1  361   //Display Option1
+#define DISPLAY_OPTION2  362   //Display Option2
 
 //Check Firmware type and version
 #define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
@@ -258,6 +263,9 @@ byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
 byte arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
 
+byte displayOption1 = 0;
+byte displayOption2 = 0;
+
 //CW ADC Range
 int cwAdcSTFrom = 0;
 int cwAdcSTTo = 0;
@@ -267,6 +275,10 @@ int cwAdcDashFrom = 0;
 int cwAdcDashTo = 0;
 int cwAdcBothFrom = 0;
 int cwAdcBothTo = 0;
+byte cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
+bool Iambic_Key = true;
+#define IAMBICB 0x10 // 0 for Iambic A, 1 for Iambic B
+unsigned char keyerControl = IAMBICB;
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -296,6 +308,10 @@ unsigned long dbgCount = 0;   //not used now
 unsigned char txFilter = 0;   //which of the four transmit filters are in use
 boolean modeCalibrate = false;//this mode of menus shows extended menus to calibrate the oscillators and choose the proper
                               //beat frequency
+
+unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
+byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
+                              
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
  * you start hacking around
@@ -756,6 +772,24 @@ void initSettings(){
 
   //CW interval between TX and CW Start
   EEPROM.get(CW_START, delayBeforeCWStartTime);
+  EEPROM.get(CW_KEY_TYPE, cwKeyType);
+  if (cwKeyType > 2)
+    cwKeyType = 0;
+
+  if (cwKeyType == 0)
+    Iambic_Key = false;
+  else
+  {
+    Iambic_Key = true;
+    if (cwKeyType = 1)
+      keyerControl &= ~IAMBICB;
+    else
+      keyerControl |= IAMBICB;
+  }
+    
+
+  EEPROM.get(DISPLAY_OPTION1, displayOption1);
+  EEPROM.get(DISPLAY_OPTION2, displayOption2);
 
   //User callsign information
   if (EEPROM.read(USER_CALLSIGN_KEY) == 0x59)
@@ -923,6 +957,7 @@ void initPorts(){
 
   pinMode(PTT, INPUT_PULLUP);
   pinMode(ANALOG_KEYER, INPUT_PULLUP);
+  pinMode(ANALOG_SMETER, INPUT); //by KD8CEC
 
   pinMode(CW_TONE, OUTPUT);  
   digitalWrite(CW_TONE, 0);
@@ -958,7 +993,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v0.30")); 
+  printLineF(1, F("CECBT v0.31")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
@@ -972,7 +1007,7 @@ void setup()
   else {
     printLineF(0, F("uBITX v0.20")); 
     delay(500);
-    printLine2(""); 
+    clearLine2();
   }
   
   initPorts();     
@@ -1046,7 +1081,12 @@ void loop(){
       doRIT();
     else 
       doTuningWithThresHold();
-  }
+
+    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 200) {
+      idle_process();
+      beforeIdle_ProcessTime = millis();
+    }
+  } //end of check TX Status
 
   //we check CAT after the encoder as it might put the radio into TX
   Check_Cat(inTx? 1 : 0);

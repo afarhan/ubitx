@@ -91,8 +91,6 @@ void cwKeyUp(){
 #define IAMBICB 0x10 // 0 for Iambic A, 1 for Iambic B
 enum KSTYPE {IDLE, CHK_DIT, CHK_DAH, KEYED_PREP, KEYED, INTER_ELEMENT };
 static long ktimer;
-bool Iambic_Key = true;
-unsigned char keyerControl = IAMBICB;
 unsigned char keyerState = IDLE;
 
 //Below is a test to reduce the keying error. do not delete lines
@@ -101,17 +99,17 @@ char update_PaddleLatch(byte isUpdateKeyState) {
   unsigned char tmpKeyerControl;
   int paddle = analogRead(ANALOG_KEYER);
 
-  if (paddle > cwAdcDashFrom && paddle < cwAdcDashTo)
+  if (paddle >= cwAdcDashFrom && paddle <= cwAdcDashTo)
     tmpKeyerControl |= DAH_L;
-  else if (paddle > cwAdcDotFrom && paddle < cwAdcDotTo)
+  else if (paddle >= cwAdcDotFrom && paddle <= cwAdcDotTo)
     tmpKeyerControl |= DIT_L;
-  else if (paddle > cwAdcBothFrom && paddle < cwAdcBothTo)
+  else if (paddle >= cwAdcBothFrom && paddle <= cwAdcBothTo)
     tmpKeyerControl |= (DAH_L | DIT_L) ;     
   else 
   {
     if (Iambic_Key)
       tmpKeyerControl = 0 ;
-    else if (paddle > cwAdcSTFrom && paddle < cwAdcSTTo)
+    else if (paddle >= cwAdcSTFrom && paddle <= cwAdcSTTo)
       tmpKeyerControl = DIT_L ;
      else
        tmpKeyerControl = 0 ; 

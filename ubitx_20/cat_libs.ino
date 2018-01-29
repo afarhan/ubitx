@@ -472,7 +472,7 @@ void WriteEEPRom_FT817(byte fromType)
         printLineF2(F("Sidetone set! CAT"));
         EEPROM.put(CW_SIDETONE, sideTone);
         delay(300);                       //If timeout errors occur in the calling software, remove them
-        printLine2("");                   //Ham radio deluxe is the only one that supports this feature yet. and ham radio deluxe has wait time as greater than 500ms
+        clearLine2();
       }
       break;
 
@@ -484,7 +484,8 @@ void WriteEEPRom_FT817(byte fromType)
         printLineF2(F("Sidetone set! CAT"));
         EEPROM.put(CW_SIDETONE, sideTone);
         delay(300);                   //If timeout errors occur in the calling software, remove them
-        printLine2("");               //Ham radio deluxe is the only one that supports this feature yet. and ham radio deluxe has wait time as greater than 500ms
+        clearLine2();
+        line2DisplayStatus = 0;
       }
       break;
 
@@ -504,7 +505,7 @@ void WriteEEPRom_FT817(byte fromType)
       printLineF2(F("CW Speed set!"));
       EEPROM.put(CW_DELAY, cwDelayTime);
       delay(300);
-      printLine2("");
+      clearLine2();
       break;
     case 0x62 : //
       //5-0  CW Speed (4-60 WPM) (#21) From 0 to 38 (HEX) with 0 = 4 WPM and 38 = 60 WPM (1 WPM steps)
@@ -513,7 +514,7 @@ void WriteEEPRom_FT817(byte fromType)
       printLineF2(F("CW Speed set!"));
       EEPROM.put(CW_SPEED, cwSpeed);
       delay(300);
-      printLine2("");
+      clearLine2();
 
       break;
       /*
