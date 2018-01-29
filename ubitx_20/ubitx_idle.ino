@@ -17,7 +17,103 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
+byte line2Buffer[17];
+//KD8CEC 200Hz ST
+//L14.150 200Hz ST
+//U14.150 +150khz
 
+//Example Line2 Optinal Display
+void updateLine2Buffer()
+{
+  unsigned long tmpFreq = 0;
+
+  if (ritOn)
+  {
+    line2Buffer[0] = 'R';
+    line2Buffer[1] = 'i';
+    line2Buffer[2] = 't';
+    line2Buffer[3] = 'T';
+    line2Buffer[4] = 'X';
+    line2Buffer[5] = ':';
+
+    //display frequency
+    tmpFreq = ritTxFrequency;
+    for (int i = 15; i >= 6; i--) {
+      if (tmpFreq > 0) {
+        if (i == 12 || i == 8) line2Buffer[i] = '.';
+        else {
+          line2Buffer[i] = tmpFreq % 10 + 0x30;
+          tmpFreq /= 10;
+        }
+      }
+      else
+        line2Buffer[i] = ' ';
+    }
+
+    return;
+  }
+  
+  if (vfoActive == VFO_B)
+  {
+    tmpFreq = vfoA;
+    //line2Buffer[0] = 'A';
+  }
+  else 
+  {
+    tmpFreq = vfoB;
+    //line2Buffer[0] = 'B';
+  }
+
+  //U14.150.100
+  //display frequency
+  for (int i = 9; i >= 0; i--) {
+    if (tmpFreq > 0) {
+      if (i == 2 || i == 6) line2Buffer[i] = '.';
+      else {
+        line2Buffer[i] = tmpFreq % 10 + 0x30;
+        tmpFreq /= 10;
+      }
+    }
+    else
+      line2Buffer[i] = ' ';
+  }
+
+  line2Buffer[6] = 'k';
+  
+  line2Buffer[7] = ' ';
+
+  //Step
+  byte tmpStep = arTuneStep[tuneStepIndex -1];
+  for (int i = 10; i >= 8; i--) {
+    if (tmpStep > 0) {
+        line2Buffer[i] = tmpStep % 10 + 0x30;
+        tmpStep /= 10;
+    }
+    else
+      line2Buffer[i] = ' ';
+  }
+  line2Buffer[11] = 'H';
+  line2Buffer[12] = 'z';
+
+  line2Buffer[13] = ' ';
+  //if (
+  //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
+  if (cwKeyType == 0)
+  {
+    line2Buffer[14] = 'S';
+    line2Buffer[15] = 'T';
+  }
+  else if (cwKeyType == 1)
+  {
+    line2Buffer[14] = 'I';
+    line2Buffer[15] = 'A';
+  }
+  else
+  {
+    line2Buffer[14] = 'I';
+    line2Buffer[15] = 'B';
+  }
+}
 
 void idle_process()
 {
@@ -25,6 +121,11 @@ void idle_process()
   if (menuOn == 0)
   {
     //if line2DisplayStatus == 0 <-- this condition is clear Line, you can display any message
+    //if (line2DisplayStatus == 0) {
+      updateLine2Buffer();
+      printLine2(line2Buffer);
+      line2DisplayStatus = 2;
+    //}
   }
 }
 

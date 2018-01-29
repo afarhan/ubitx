@@ -379,7 +379,6 @@ void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
     EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
 }
 
-
 /*
   KD8CEC
   When using the basic delay of the Arduino, the program freezes.
@@ -824,7 +823,7 @@ void initSettings(){
     hamBandRange[0][0] = 1810; hamBandRange[0][1] = 2000; 
     hamBandRange[1][0] = 3500; hamBandRange[1][1] = 3800; 
     hamBandRange[2][0] = 5351; hamBandRange[2][1] = 5367; 
-    hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7200; 
+    hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7300;   //region 1
     hamBandRange[4][0] = 10100; hamBandRange[4][1] = 10150; 
     hamBandRange[5][0] = 14000; hamBandRange[5][1] = 14350; 
     hamBandRange[6][0] = 18068; hamBandRange[6][1] = 18168; 
@@ -1082,7 +1081,7 @@ void loop(){
     else 
       doTuningWithThresHold();
 
-    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 200) {
+    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 500) {
       idle_process();
       beforeIdle_ProcessTime = millis();
     }
