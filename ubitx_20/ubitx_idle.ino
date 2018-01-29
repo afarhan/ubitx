@@ -21,7 +21,7 @@ byte line2Buffer[16];
 //KD8CEC 200Hz ST
 //L14.150 200Hz ST
 //U14.150 +150khz
-
+int freqScrollPosition = 0;
 //Example Line2 Optinal Display
 void updateLine2Buffer()
 {
@@ -64,6 +64,7 @@ void updateLine2Buffer()
     //line2Buffer[0] = 'B';
   }
 
+  // EXAMPLE 1 & 2
   //U14.150.100
   //display frequency
   for (int i = 9; i >= 0; i--) {
@@ -78,8 +79,41 @@ void updateLine2Buffer()
       line2Buffer[i] = ' ';
   }
 
-  line2Buffer[6] = 'k';
+  //EXAMPLE #1
+  if ((displayOption1 & 0x04) == 0x00)
+    line2Buffer[6] = 'k';
+  else
+  {
+    //example #2
+    if (freqScrollPosition++ > 18)
+    {
+      line2Buffer[6] = 'k';
+      if (freqScrollPosition > 25)
+        freqScrollPosition = -1;
+    }
+    else
+    {
+      line2Buffer[10] = 'H';
+      line2Buffer[11] = 'z';
   
+      if (freqScrollPosition < 7)
+      {
+        for (int i = 11; i > 0; i--)
+          if (i - (7 - freqScrollPosition) >= 0)
+            line2Buffer[i] = line2Buffer[i - (7 - freqScrollPosition)];
+          else
+            line2Buffer[i] = ' ';
+      }
+      else
+      {
+        for (int i = 0; i < 11; i++)
+          if (i + (freqScrollPosition - 7) <= 11)
+            line2Buffer[i] = line2Buffer[i + (freqScrollPosition - 7)];
+          else
+            line2Buffer[i] = ' ';
+      }
+    }
+  }
   line2Buffer[7] = ' ';
 
   //Step
@@ -121,7 +155,7 @@ void idle_process()
   if (menuOn == 0)
   {
     //if line2DisplayStatus == 0 <-- this condition is clear Line, you can display any message
-    if (line2DisplayStatus == 0) {
+    if (line2DisplayStatus == 0 || (((displayOption1 & 0x04) == 0x04) && line2DisplayStatus == 2)) {
       updateLine2Buffer();
       printLine2(line2Buffer);
       line2DisplayStatus = 2;
