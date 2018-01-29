@@ -17,7 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
-byte line2Buffer[17];
+byte line2Buffer[16];
 //KD8CEC 200Hz ST
 //L14.150 200Hz ST
 //U14.150 +150khz
@@ -121,11 +121,11 @@ void idle_process()
   if (menuOn == 0)
   {
     //if line2DisplayStatus == 0 <-- this condition is clear Line, you can display any message
-    //if (line2DisplayStatus == 0) {
+    if (line2DisplayStatus == 0) {
       updateLine2Buffer();
       printLine2(line2Buffer);
       line2DisplayStatus = 2;
-    //}
+    }
   }
 }
 
