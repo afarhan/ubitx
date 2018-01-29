@@ -14,6 +14,7 @@ void btnWaitForClick(){
 void factory_alignment(){
         
   factoryCalibration(1);
+  line2DisplayStatus = 1;
 
   if (calibration == 0){
     printLine2("Setup Aborted");

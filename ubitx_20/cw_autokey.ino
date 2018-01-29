@@ -298,8 +298,12 @@ void controlAutoCW(){
           }
           
           printLineFromEEPRom(0, 2, cwStartIndex + displayScrolStep + CW_DATA_OFSTADJ, cwEndIndex + CW_DATA_OFSTADJ); 
+
+          byte diplayAutoCWLine = 0;
+          if ((displayOption1 & 0x01) == 0x01)
+            diplayAutoCWLine = 1;
           
-          lcd.setCursor(0,0);
+          lcd.setCursor(0, diplayAutoCWLine);
           lcd.write(byteToChar(selectedCWTextIndex));
           lcd.write(':');
           isNeedScroll = (cwEndIndex - cwStartIndex) > 14 ? 1 : 0;

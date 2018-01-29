@@ -116,6 +116,9 @@ void drawMeter(int8_t needle){
 
 // The generic routine to display one line on the LCD 
 void printLine(unsigned char linenmbr, const char *c) {
+  if ((displayOption1 & 0x01) == 0x01)
+    linenmbr = (linenmbr == 0 ? 1 : 0); //Line Toggle
+    
   if (strcmp(c, printBuff[linenmbr])) {     // only refresh the display when there was a change
     lcd.setCursor(0, linenmbr);             // place the cursor at the beginning of the selected line
     lcd.print(c);
@@ -145,6 +148,9 @@ void printLineF(char linenmbr, const __FlashStringHelper *c)
 
 #define LCD_MAX_COLUMN 16
 void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, byte eepromEndIndex) {
+  if ((displayOption1 & 0x01) == 0x01)
+    linenmbr = (linenmbr == 0 ? 1 : 0); //Line Toggle
+  
   lcd.setCursor(lcdColumn, linenmbr);
 
   for (byte i = eepromStartIndex; i <= eepromEndIndex; i++)
@@ -168,6 +174,12 @@ void printLine2(const char *c){
   printLine(0,c);
 }
 
+void clearLine2()
+{
+  printLine2("");
+  line2DisplayStatus = 0;
+}
+
 //  short cut to print to the first line
 void printLine1Clear(){
   printLine(1,"");
@@ -179,6 +191,7 @@ void printLine2Clear(){
 
 void printLine2ClearAndUpdate(){
   printLine(0, "");
+  line2DisplayStatus = 0;  
   updateDisplay();
 }
 
@@ -251,18 +264,22 @@ void updateDisplay() {
   //  strcat(c, " TX");
   printLine(1, c);
 
+  byte diplayVFOLine = 1;
+  if ((displayOption1 & 0x01) == 0x01)
+    diplayVFOLine = 0;
+
   if ((vfoActive == VFO_A && ((isDialLock & 0x01) == 0x01)) ||
     (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02))) {
-    lcd.setCursor(5,1);
+    lcd.setCursor(5,diplayVFOLine);
     lcd.write((uint8_t)0);
   }
   else if (isCWAutoMode == 2){
-    lcd.setCursor(5,1);
+    lcd.setCursor(5,diplayVFOLine);
     lcd.write(0x7E);
   }
   else
   {
-    lcd.setCursor(5,1);
+    lcd.setCursor(5,diplayVFOLine);
     lcd.write(":");
   }
 

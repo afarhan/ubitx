@@ -235,6 +235,7 @@ void menuSidebandToggle(int btn){
   }
 }
 
+/*
 //Select CW Key Type by KD8CEC
 void menuSetupKeyType(int btn){
   if (!btn && digitalRead(PTT) == HIGH){
@@ -265,6 +266,71 @@ void menuSetupKeyType(int btn){
       }
       
     delay_background(500, 0);
+    printLine2ClearAndUpdate();
+    menuOn = 0;
+  }
+}
+*/
+
+//Select CW Key Type by KD8CEC
+void menuSetupKeyType(int btn){
+  int knob = 0;
+  int selectedKeyType = 0;
+  int moveStep = 0;
+  if (!btn && digitalRead(PTT) == HIGH){
+        printLineF2(F("Change Key Type?"));
+  }
+  else {
+    printLineF2(F("Press PTT to set"));
+    delay_background(500, 0);
+    selectedKeyType = cwKeyType;
+    while(!btnDown() && digitalRead(PTT) == HIGH){
+
+      //Display Key Type
+      if (selectedKeyType == 0)
+        printLineF1(F("Straight"));
+      else if (selectedKeyType == 1)
+        printLineF1(F("IAMBICA"));
+      else if (selectedKeyType == 2)
+        printLineF1(F("IAMBICB"));
+
+      knob = enc_read();
+
+      if (knob != 0)
+      {
+        moveStep += (knob > 0 ? 1 : -1);
+        if (selectedKeyType > 0 && moveStep < -3) {
+          selectedKeyType--;
+          moveStep = 0;
+        }
+        else if (selectedKeyType < 2 && moveStep > 3) {
+          selectedKeyType++;
+          moveStep = 0;
+        }
+      }
+
+      Check_Cat(0);  //To prevent disconnections
+    }
+    
+    //save the setting
+    if (digitalRead(PTT) == LOW){
+      printLineF2(F("CW Key Type set!"));
+      cwKeyType = selectedKeyType;
+      EEPROM.put(CW_KEY_TYPE, cwKeyType);
+
+      if (cwKeyType == 0)
+        Iambic_Key = false;
+      else
+      {
+        Iambic_Key = true;
+        if (cwKeyType = 1)
+          keyerControl &= ~IAMBICB;
+        else
+          keyerControl |= IAMBICB;
+      }
+      delay_background(2000, 0);
+    }
+    
     printLine2ClearAndUpdate();
     menuOn = 0;
   }
@@ -733,7 +799,6 @@ void menuSetupCalibration(int btn){
   printLine2ClearAndUpdate();
   menuOn = 0;
 }
-
 
 void printCarrierFreq(unsigned long freq){
 
