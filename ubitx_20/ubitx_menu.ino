@@ -452,8 +452,6 @@ void menuSelectMode(int btn){
   }
 }
 
-
-
 void menuSplitOnOff(int btn){
   if (!btn){
     if (splitOn == 0)
@@ -477,8 +475,6 @@ void menuSplitOnOff(int btn){
     menuOn = 0;
   }
 }
-
-
 
 /*
 //Select CW Key Type by KD8CEC
@@ -522,14 +518,14 @@ void menuSetupKeyType(int btn){
   int knob = 0;
   int selectedKeyType = 0;
   int moveStep = 0;
-  if (!btn && digitalRead(PTT) == HIGH){
+  if (!btn){
         printLineF2(F("Change Key Type?"));
   }
   else {
-    printLineF2(F("Press PTT to set"));
+    printLineF2(F("Press to set Key"));
     delay_background(500, 0);
     selectedKeyType = cwKeyType;
-    while(!btnDown() && digitalRead(PTT) == HIGH){
+    while(!btnDown()){
 
       //Display Key Type
       if (selectedKeyType == 0)
@@ -559,24 +555,21 @@ void menuSetupKeyType(int btn){
       Check_Cat(0);  //To prevent disconnections
     }
     
-    //save the setting
-    if (digitalRead(PTT) == LOW){
-      printLineF2(F("CW Key Type set!"));
-      cwKeyType = selectedKeyType;
-      EEPROM.put(CW_KEY_TYPE, cwKeyType);
+    printLineF2(F("CW Key Type set!"));
+    cwKeyType = selectedKeyType;
+    EEPROM.put(CW_KEY_TYPE, cwKeyType);
 
-      if (cwKeyType == 0)
-        Iambic_Key = false;
+    if (cwKeyType == 0)
+      Iambic_Key = false;
+    else
+    {
+      Iambic_Key = true;
+      if (cwKeyType = 1)
+        keyerControl &= ~IAMBICB;
       else
-      {
-        Iambic_Key = true;
-        if (cwKeyType = 1)
-          keyerControl &= ~IAMBICB;
-        else
-          keyerControl |= IAMBICB;
-      }
-      delay_background(2000, 0);
+        keyerControl |= IAMBICB;
     }
+    delay_background(2000, 0);
     
     printLine2ClearAndUpdate();
     menuOn = 0;
@@ -738,7 +731,7 @@ void menuCWSpeed(int btn){
      return;
     }
 
-    printLineF1(F("Press PTT to set"));
+    printLineF1(F("Press to set WPm"));
     strcpy(b, "WPM:");
     itoa(wpm,c, 10);
     strcat(b, c);
@@ -768,12 +761,12 @@ void menuCWSpeed(int btn){
     }
     
     //save the setting
-    if (digitalRead(PTT) == LOW){
+    //if (digitalRead(PTT) == LOW){
       printLineF2(F("CW Speed set!"));
       cwSpeed = 1200/wpm;
       EEPROM.put(CW_SPEED, cwSpeed);
       delay_background(2000, 0);
-    }
+    //}
     printLine2ClearAndUpdate();
     menuOn = 0;
 }
@@ -813,7 +806,7 @@ void menuSetupCwDelay(int btn){
      return;
     }
 
-    printLineF1(F("Press PTT to set"));
+    printLineF1(F("Press, set Delay"));
     strcpy(b, "DELAY:");
     itoa(tmpCWDelay,c, 10);
     strcat(b, c);
@@ -841,12 +834,12 @@ void menuSetupCwDelay(int btn){
     }
     
     //save the setting
-    if (digitalRead(PTT) == LOW){
+    //if (digitalRead(PTT) == LOW){
       printLineF2(F("CW Delay set!"));
       cwDelayTime = tmpCWDelay / 10;
       EEPROM.put(CW_DELAY, cwDelayTime);
       delay_background(2000, 0);
-    }
+    //}
     printLine2ClearAndUpdate();
     menuOn = 0;
 }
@@ -862,7 +855,7 @@ void menuSetupTXCWInterval(int btn){
      return;
     }
 
-    printLineF1(F("Press PTT to set"));
+    printLineF1(F("Press, set Delay"));
     strcpy(b, "Start Delay:");
     itoa(tmpTXCWInterval,c, 10);
     strcat(b, c);
@@ -890,12 +883,12 @@ void menuSetupTXCWInterval(int btn){
     }
     
     //save the setting
-    if (digitalRead(PTT) == LOW){
+    //if (digitalRead(PTT) == LOW){
       printLineF2(F("CW Start set!"));
       delayBeforeCWStartTime = tmpTXCWInterval / 2;
       EEPROM.put(CW_START, delayBeforeCWStartTime);
       delay_background(2000, 0);
-    }
+    //}
     printLine2ClearAndUpdate();
     menuOn = 0;
 }
