@@ -122,22 +122,34 @@ void updateLine2Buffer(char isDirectCall)
   
   if (isIFShift)
   {
+    if (isDirectCall == 1)
+      for (int i = 0; i < 16; i++)
+        line2Buffer[i] = ' ';
+      
       //IFShift Offset Value 
     line2Buffer[8] = 'I';
     line2Buffer[9] = 'F';
-  
-    line2Buffer[10] = ifShiftValue >= 0 ? '+' : 0;
-    line2Buffer[11] = 0;
-    line2Buffer[12] = ' ';
-    line2Buffer[13] = ' ';
-    line2Buffer[14] = ' ';
-    line2Buffer[15] = ' ';
-  
-    //11, 12, 13, 14, 15
-    memset(b, 0, sizeof(b));
-    ltoa(ifShiftValue, b, DEC);
-    strncat(line2Buffer, b, 5);
 
+    if (ifShiftValue == 0)
+    {
+      line2Buffer[10] = 'S';
+      line2Buffer[11] = ':';
+      line2Buffer[12] = 'O';
+      line2Buffer[13] = 'F';
+      line2Buffer[14] = 'F';
+    }
+    else
+    {
+      line2Buffer[10] = ifShiftValue >= 0 ? '+' : 0;
+      line2Buffer[11] = 0;
+      line2Buffer[12] = ' ';
+    
+      //11, 12, 13, 14, 15
+      memset(b, 0, sizeof(b));
+      ltoa(ifShiftValue, b, DEC);
+      strncat(line2Buffer, b, 5);
+    }
+    
     if (isDirectCall == 1)  //if call by encoder (not scheduler), immediate print value
         printLine2(line2Buffer);    
   }

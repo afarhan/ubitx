@@ -239,6 +239,7 @@ void menuRitToggle(int btn){
   }
 }
 
+/*
 void menuIFSToggle(int btn){
   if (!btn){
     if (isIFShift == 1)
@@ -257,6 +258,69 @@ void menuIFSToggle(int btn){
       }
       menuOn = 0;
       delay_background(500, 0);
+      printLine2ClearAndUpdate();
+  }
+}
+*/
+void menuIFSToggle(int btn){
+  int knob = 0;
+  char needApplyChangeValue = 1;
+  
+  if (!btn){
+    if (isIFShift == 1)
+      printLineF2(F("IF Shift Change?"));
+    else
+      printLineF2(F("IF Shift:Off, On?"));
+  }
+  else {
+      if (isIFShift == 0){
+        printLineF2(F("IF Shift is ON"));
+        delay_background(500, 0);
+        isIFShift = 1;
+      }
+
+      delay_background(500, 0);
+      updateLine2Buffer(1);
+      setFrequency(frequency);
+
+      //Off or Change Value
+      while(!btnDown() && digitalRead(PTT) == HIGH){
+        if (needApplyChangeValue ==1)
+        {
+          updateLine2Buffer(1);
+          setFrequency(frequency);
+        
+          if (cwMode == 0)
+            si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+          else
+            si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+
+          needApplyChangeValue = 0;
+        }
+        
+        knob = enc_read();
+        if (knob != 0){
+          if (knob < 0)
+            ifShiftValue -= 1l;
+          else if (knob > 0)
+            ifShiftValue += 1;
+
+          needApplyChangeValue = 1;
+        }
+      }
+
+      delay_background(500, 0); //for check Long Press function key
+      
+      if (btnDown() || digitalRead(PTT) == LOW || ifShiftValue == 0)
+      {
+        isIFShift = 0;
+        printLineF2(F("IF Shift is OFF"));
+        setFrequency(frequency);
+        delay_background(500, 0);
+      }
+      
+      menuOn = 0;
+      //delay_background(500, 0);
       printLine2ClearAndUpdate();
   }
 }
@@ -377,9 +441,9 @@ void menuSelectMode(int btn){
     }
 
   if (cwMode == 0)
-    si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
   else
-    si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
     
     setFrequency(frequency);
     delay_background(500, 0);

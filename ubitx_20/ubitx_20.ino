@@ -755,6 +755,7 @@ void doRIT(){
   }
 }
 
+/*
 void doIFShift(){
   int knob = enc_read();
   unsigned long old_freq = frequency;
@@ -770,6 +771,7 @@ void doIFShift(){
     setFrequency(frequency);
   }
 }
+*/
 
 /**
  save Frequency and mode to eeprom
@@ -1169,8 +1171,8 @@ void loop(){
   if (!inTx){
     if (ritOn)
       doRIT();
-    else if (isIFShift)
-      doIFShift();
+    //else if (isIFShift)
+    //  doIFShift();
     else 
       doTuningWithThresHold();
 
