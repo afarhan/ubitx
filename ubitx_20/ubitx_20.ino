@@ -249,7 +249,6 @@ byte saveIntervalSec = 10;  //second
 unsigned long saveCheckTime = 0;
 unsigned long saveCheckFreq = 0;
 
-bool isSplitOn = false;
 byte cwDelayTime = 60;
 byte delayBeforeCWStartTime = 50;
 
@@ -298,7 +297,7 @@ byte userCallsignLength = 0;    //7 : display callsign at system startup, 6~0 : 
  */
 boolean txCAT = false;        //turned on if the transmitting due to a CAT command
 char inTx = 0;                //it is set to 1 if in transmit mode (whatever the reason : cw, ptt or cat)
-char splitOn = 0;             //working split, uses VFO B as the transmit frequency, (NOT IMPLEMENTED YET)
+char splitOn = 0;             //working split, uses VFO B as the transmit frequency
 char keyDown = 0;             //in cw mode, denotes the carrier is being transmitted
 char isUSB = 0;               //upper sideband was selected, this is reset to the default for the 
                               //frequency when it crosses the frequency border of 10 MHz
@@ -378,7 +377,6 @@ void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
   if (bandIndex >= 0)
     EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
 }
-
 
 /*
   KD8CEC
@@ -508,6 +506,21 @@ void startTx(byte txMode, byte isDisplayUpdate){
     ritRxFrequency = frequency;
     setFrequency(ritTxFrequency);
   }
+  else if (splitOn == 1) {
+      if (vfoActive == VFO_B) {
+        vfoActive = VFO_A;
+        frequency = vfoA;
+        byteToMode(vfoA_mode);
+      }
+      else if (vfoActive == VFO_A){
+        vfoActive = VFO_B;
+        frequency = vfoB;
+        byteToMode(vfoB_mode);
+      }
+
+      setFrequency(frequency);
+  } //end of else
+  
 
   if (txMode == TX_CW){
     //turn off the second local oscillator and the bfo
@@ -536,6 +549,20 @@ void stopTx(){
 
   if (ritOn)
     setFrequency(ritRxFrequency);
+  else if (splitOn == 1) {
+      //vfo Change
+      if (vfoActive == VFO_B){
+        vfoActive = VFO_A;
+        frequency = vfoA;
+        byteToMode(vfoA_mode);
+      }
+      else if (vfoActive == VFO_A){
+        vfoActive = VFO_B;
+        frequency = vfoB;
+        byteToMode(vfoB_mode);
+      }
+      setFrequency(frequency);
+  } //end of else
   else
     setFrequency(frequency);
   
@@ -824,7 +851,7 @@ void initSettings(){
     hamBandRange[0][0] = 1810; hamBandRange[0][1] = 2000; 
     hamBandRange[1][0] = 3500; hamBandRange[1][1] = 3800; 
     hamBandRange[2][0] = 5351; hamBandRange[2][1] = 5367; 
-    hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7200; 
+    hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7300;   //region 1
     hamBandRange[4][0] = 10100; hamBandRange[4][1] = 10150; 
     hamBandRange[5][0] = 14000; hamBandRange[5][1] = 14350; 
     hamBandRange[6][0] = 18068; hamBandRange[6][1] = 18168; 
@@ -993,7 +1020,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v0.31")); 
+  printLineF(1, F("CECBT v0.32")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
@@ -1082,7 +1109,7 @@ void loop(){
     else 
       doTuningWithThresHold();
 
-    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 200) {
+    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 500) {
       idle_process();
       beforeIdle_ProcessTime = millis();
     }
