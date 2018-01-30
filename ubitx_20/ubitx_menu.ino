@@ -119,30 +119,56 @@ void menuBand(int btn){
 }
 
 //Convert Mode, Number by KD8CEC
-//0: default, 1:not use, 2:LSB, 3:USB, 4:CW, 5:AM, 6:FM
+//0: default, 1:not use, 2:LSB, 3:USB, 4:CWL, 5:CWU, 6:FM
 byte modeToByte(){
-  if (isUSB)
-    return 3;
+  if (cwMode == 0)
+  {
+    if (isUSB)
+      return 3;
+    else
+      return 2;
+  }
+  else if (cwMode == 1)
+  {
+    return 4;
+  }
   else
-    return 2;
+  {
+    return 5;
+  }
 }
 
 //Convert Number to Mode by KD8CEC
 void byteToMode(byte modeValue){
-  if (modeValue == 3)
-    isUSB = 1;
+  if (modeValue == 4)
+    cwMode = 1;
+  else if (modeValue == 5)
+    cwMode = 2;
   else
-    isUSB = 0;
+  {
+    cwMode = 0;
+    if (modeValue == 3)
+      isUSB = 1;
+    else
+      isUSB = 0;
+  }
 }
 
 //Convert Number to Mode by KD8CEC
 void byteWithFreqToMode(byte modeValue){
-  if (modeValue == 3)
-    isUSB = 1;
-  else if (modeValue == 0)  //Not Set
-    isUSB = (frequency > 10000000l) ? true : false;
-  else
-    isUSB = 0;
+  if (modeValue == 4)
+    cwMode = 1;
+  else if (modeValue == 5)
+    cwMode = 2;
+  else  {
+    cwMode = 0;
+    if (modeValue == 3)
+      isUSB = 1;
+    else if (modeValue == 0)  //Not Set
+      isUSB = (frequency > 10000000l) ? true : false;
+    else
+      isUSB = 0;
+  }
 }
 
 //VFO Toggle and save VFO Information, modified by KD8CEC
@@ -212,6 +238,7 @@ void menuRitToggle(int btn){
   }
 }
 
+/* 
 void menuSidebandToggle(int btn){
   if (!btn){
     if (isUSB == true)
@@ -220,6 +247,7 @@ void menuSidebandToggle(int btn){
       printLineF2(F("Select USB?"));
   }
   else {
+      cwMode = 0;
       if (isUSB == true){
         isUSB = false;
         printLineF2(F("LSB Selected"));
@@ -234,6 +262,108 @@ void menuSidebandToggle(int btn){
     menuOn = 0;
   }
 }
+*/
+void menuSelectMode(int btn){
+  int knob = 0;
+  int selectModeType = 0;
+  int beforeMode = 0;
+  int moveStep = 0;
+  
+  if (!btn){
+      printLineF2(F("Select Mode?"));
+  }
+  else {
+    delay_background(500, 0);
+
+    //LSB, USB, CWL, CWU
+    if (cwMode == 0 && isUSB == 0)
+      selectModeType = 0;
+    else if (cwMode == 0 && isUSB == 1)
+      selectModeType = 1;
+    else if (cwMode == 1)
+      selectModeType = 2;
+    else
+      selectModeType = 3;
+
+    beforeMode = selectModeType;
+    
+    while(!btnDown() && digitalRead(PTT) == HIGH){
+      //Display Mode Name
+      if (selectModeType == 0)
+        printLineF1(F("LSB"));
+      else if (selectModeType == 1)
+        printLineF1(F("USB"));
+      else if (selectModeType == 2)
+        printLineF1(F("CWL"));
+      else if (selectModeType == 3)
+        printLineF1(F("CWU"));
+
+      knob = enc_read();
+
+      if (knob != 0)
+      {
+        moveStep += (knob > 0 ? 1 : -1);
+        if (moveStep < -3) {
+          if (selectModeType > 0)
+            selectModeType--;
+            
+          moveStep = 0;
+        }
+        else if (moveStep > 3) {
+          if (selectModeType < 3)
+            selectModeType++;
+            
+          moveStep = 0;
+        }
+      }
+
+      Check_Cat(0);  //To prevent disconnections
+    }
+
+    if (beforeMode != selectModeType) {
+      printLineF1(F("Changed Mode"));
+      
+      if (selectModeType == 0) {
+        cwMode = 0; isUSB = 0;
+      }
+      else if (selectModeType == 1) {
+        cwMode = 0; isUSB = 1;
+      }
+      else if (selectModeType == 2) {
+        cwMode = 1;
+      }
+      else if (selectModeType == 3) {
+        cwMode = 2;
+      }
+
+      //Save Frequency & Mode Information
+      if (vfoActive == VFO_A)
+      {
+        vfoA = frequency;
+        vfoA_mode = modeToByte();
+        storeFrequencyAndMode(1);
+      }
+      else
+      {
+        vfoB = frequency;
+        vfoB_mode = modeToByte();
+        storeFrequencyAndMode(2);
+      }
+    }
+
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+  else
+    si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+    
+    setFrequency(frequency);
+    delay_background(500, 0);
+    printLine2ClearAndUpdate();
+    menuOn = 0;
+  }
+}
+
+
 
 void menuSplitOnOff(int btn){
   if (!btn){
@@ -325,12 +455,14 @@ void menuSetupKeyType(int btn){
       if (knob != 0)
       {
         moveStep += (knob > 0 ? 1 : -1);
-        if (selectedKeyType > 0 && moveStep < -3) {
-          selectedKeyType--;
+        if (moveStep < -3) {
+          if (selectedKeyType > 0)
+            selectedKeyType--;
           moveStep = 0;
         }
-        else if (selectedKeyType < 2 && moveStep > 3) {
-          selectedKeyType++;
+        else if (moveStep > 3) {
+          if (selectedKeyType < 2)
+            selectedKeyType++;
           moveStep = 0;
         }
       }
@@ -709,6 +841,7 @@ void factoryCalibration(int btn){
 
   calibration = 0;
 
+  cwMode = 0;
   isUSB = true;
 
   //turn off the second local oscillator and the bfo
@@ -837,7 +970,7 @@ void printCarrierFreq(unsigned long freq){
   strcat(c, ".");
   strncat(c, &b[2], 3);
   strcat(c, ".");
-  strncat(c, &b[5], 1);
+  strncat(c, &b[5], 3);
   printLine2(c);    
 }
 
@@ -889,12 +1022,71 @@ void menuSetupCarrier(int btn){
   else 
     usbCarrier = prevCarrier;
 
-  si5351bx_setfreq(0, usbCarrier);          
+  //si5351bx_setfreq(0, usbCarrier);          
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+  else
+    si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+  
   setFrequency(frequency);    
   printLine2ClearAndUpdate();
   menuOn = 0; 
 }
 
+//Append by KD8CEC
+void menuSetupCWCarrier(int btn){
+  int knob = 0;
+  unsigned long prevCarrier;
+   
+  if (!btn){
+      printLineF2(F("Set CW RX BFO"));
+    return;
+  }
+
+  prevCarrier = cwmCarrier;
+  printLineF1(F("PTT to confirm. "));
+  delay_background(1000, 0);
+
+  si5351bx_setfreq(0, cwmCarrier);
+  printCarrierFreq(cwmCarrier);
+
+  //disable all clock 1 and clock 2 
+  while (digitalRead(PTT) == HIGH && !btnDown())
+  {
+    knob = enc_read();
+
+    if (knob > 0)
+      cwmCarrier -= 5;
+    else if (knob < 0)
+      cwmCarrier += 5;
+    else
+      continue; //don't update the frequency or the display
+      
+    si5351bx_setfreq(0, cwmCarrier);
+    printCarrierFreq(cwmCarrier);
+
+    Check_Cat(0);  //To prevent disconnections
+    delay(100);
+  }
+
+  //save the setting
+  if (digitalRead(PTT) == LOW){
+    printLineF2(F("Carrier set!"));
+    EEPROM.put(CW_CAL, cwmCarrier);
+    delay_background(1000, 0);
+  }
+  else 
+    cwmCarrier = prevCarrier;
+
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+  else
+    si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+  
+  setFrequency(frequency);    
+  printLine2ClearAndUpdate();
+  menuOn = 0; 
+}
 //Modified by KD8CEC
 void menuSetupCwTone(int btn){
     int knob = 0;
@@ -1051,7 +1243,7 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 180)
+      if (modeCalibrate && select + i < 190)
         select += i;
       if (!modeCalibrate && select + i < 80)
         select += i;
@@ -1069,7 +1261,7 @@ void doMenu(){
     else if (select < 30)
       menuVfoToggle(btnState, 1);
     else if (select < 40)
-      menuSidebandToggle(btnState);
+      menuSelectMode(btnState);
     else if (select < 50)
       menuCWSpeed(btnState);
     else if (select < 60)
@@ -1083,20 +1275,22 @@ void doMenu(){
     else if (select < 100 && modeCalibrate)
       menuSetupCarrier(btnState);       //lsb
     else if (select < 110 && modeCalibrate)
-      menuSetupCwTone(btnState);
+      menuSetupCWCarrier(btnState);       //lsb
     else if (select < 120 && modeCalibrate)
-      menuSetupCwDelay(btnState);
+      menuSetupCwTone(btnState);
     else if (select < 130 && modeCalibrate)
-      menuSetupTXCWInterval(btnState);
+      menuSetupCwDelay(btnState);
     else if (select < 140 && modeCalibrate)
-      menuSetupKeyType(btnState);
+      menuSetupTXCWInterval(btnState);
     else if (select < 150 && modeCalibrate)
-      menuADCMonitor(btnState);
+      menuSetupKeyType(btnState);
     else if (select < 160 && modeCalibrate)
-      menuSplitOnOff(btnState);      //TX OFF / ON
+      menuADCMonitor(btnState);
     else if (select < 170 && modeCalibrate)
-      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+      menuSplitOnOff(btnState);      //SplitOn / off
     else if (select < 180 && modeCalibrate)
+      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+    else if (select < 190 && modeCalibrate)
       menuExit(btnState);
 
     Check_Cat(0);  //To prevent disconnections

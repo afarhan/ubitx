@@ -37,6 +37,7 @@ void factory_alignment(){
 
   
   printLine2("#3:Test 3.5MHz");
+  cwMode = 0;
   isUSB = false;
   setFrequency(3500000l);
   updateDisplay();
@@ -59,6 +60,7 @@ void factory_alignment(){
   btnWaitForClick();
   printLine2("#5:Test 14MHz");
 
+  cwMode = 0;
   isUSB = true;
   setFrequency(14000000l);
   updateDisplay();
@@ -80,6 +82,7 @@ void factory_alignment(){
   printLine2("Alignment done");
   delay(1000);
 
+  cwMode = 0;
   isUSB = false;
   setFrequency(7150000l);
   updateDisplay();  

@@ -130,10 +130,21 @@ void CatGetFreqMode(unsigned long freq, byte fromType)
   }
 
   //Mode Check
-  if (isUSB)
-    CAT_BUFF[4] = CAT_MODE_USB;
+  if (cwMode == 0)
+  {
+    if (isUSB)
+      CAT_BUFF[4] = CAT_MODE_USB;
+    else
+      CAT_BUFF[4] = CAT_MODE_LSB;
+  }
+  else if (cwMode == 1)
+  {
+      CAT_BUFF[4] = CAT_MODE_CW;
+  }
   else
-    CAT_BUFF[4] = CAT_MODE_LSB;
+  {
+      CAT_BUFF[4] = CAT_MODE_CW;
+  }
 
   SendCatData(5);
 }
@@ -198,12 +209,18 @@ void CatSetMode(byte tmpMode, byte fromType)
   
   if (!inTx)
   {
-    if (tmpMode == CAT_MODE_USB)
+    if (tmpMode == CAT_MODE_CW)
     {
+      cwMode = 1;
+    }
+    else if (tmpMode == CAT_MODE_USB)
+    {
+      cwMode = 0;
       isUSB = true;
     }
     else
     {
+      cwMode = 0;
       isUSB = false;
     }
 
@@ -358,10 +375,21 @@ void ReadEEPRom_FT817(byte fromType)
       CAT_BUFF[1] = 0xB2;
       break;      case 0x69 : //FM Mic (#29)  Contains 0-100 (decimal) as displayed
     case 0x78 :
-      if (isUSB)
-        CAT_BUFF[0] = CAT_MODE_USB;
-      else
-        CAT_BUFF[0] = CAT_MODE_LSB;
+      if (cwMode == 0)
+      {
+        if (isUSB)
+          CAT_BUFF[0] = CAT_MODE_USB;
+        else
+          CAT_BUFF[0] = CAT_MODE_LSB;
+      }
+      else if (cwMode == 1)
+      {
+          CAT_BUFF[0] = CAT_MODE_CW;
+      }
+      else if (cwMode == 2)
+      {
+          CAT_BUFF[0] = CAT_MODE_CW;
+      }
         
       if (CAT_BUFF[0] != 0) CAT_BUFF[0] = 1 << 5;
       break;

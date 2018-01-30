@@ -234,10 +234,21 @@ void updateDisplay() {
     if (ritOn)
       strcpy(c, "RIT ");
     else {
-      if (isUSB)
-        strcpy(c, "USB ");
+      if (cwMode == 0)
+      {
+        if (isUSB)
+          strcpy(c, "USB ");
+        else
+          strcpy(c, "LSB ");
+      }
+      else if (cwMode == 1)
+      {
+          strcpy(c, "CWL ");
+      }
       else
-        strcpy(c, "LSB ");
+      {
+          strcpy(c, "CWU ");
+      }
     }
     if (vfoActive == VFO_A) // VFO A is active
       strcat(c, "A:");
