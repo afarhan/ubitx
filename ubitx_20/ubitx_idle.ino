@@ -98,7 +98,7 @@ void updateLine2Buffer()
   
       if (freqScrollPosition < 7)
       {
-        for (int i = 11; i > 0; i--)
+        for (int i = 11; i >= 0; i--)
           if (i - (7 - freqScrollPosition) >= 0)
             line2Buffer[i] = line2Buffer[i - (7 - freqScrollPosition)];
           else

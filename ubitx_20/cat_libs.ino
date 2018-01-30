@@ -384,7 +384,7 @@ void ReadEEPRom_FT817(byte fromType)
       //7A  6 ? ?
       //7A  7 SPL On/Off  0 = Off, 1 = On
 
-      CAT_BUFF[0] = (isSplitOn ? 0xFF : 0x7F);
+      CAT_BUFF[0] = (splitOn ? 0xFF : 0x7F);
       break;
     case 0xB3 : //
       CAT_BUFF[0] = 0x00;

@@ -235,6 +235,32 @@ void menuSidebandToggle(int btn){
   }
 }
 
+void menuSplitOnOff(int btn){
+  if (!btn){
+    if (splitOn == 0)
+      printLineF2(F("Split On?"));
+    else
+      printLineF2(F("Split Off?"));
+  }
+  else {
+      if (splitOn == 1){
+        splitOn = 0;
+        printLineF2(F("Split Off!"));
+      }
+      else {
+        splitOn = 1;
+        if (ritOn == 1)
+          ritOn = 0;
+        printLineF2(F("Split On!"));
+      }
+    delay_background(500, 0);
+    printLine2ClearAndUpdate();
+    menuOn = 0;
+  }
+}
+
+
+
 /*
 //Select CW Key Type by KD8CEC
 void menuSetupKeyType(int btn){
@@ -1025,7 +1051,7 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 170)
+      if (modeCalibrate && select + i < 180)
         select += i;
       if (!modeCalibrate && select + i < 80)
         select += i;
@@ -1067,8 +1093,10 @@ void doMenu(){
     else if (select < 150 && modeCalibrate)
       menuADCMonitor(btnState);
     else if (select < 160 && modeCalibrate)
-      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+      menuSplitOnOff(btnState);      //TX OFF / ON
     else if (select < 170 && modeCalibrate)
+      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+    else if (select < 180 && modeCalibrate)
       menuExit(btnState);
 
     Check_Cat(0);  //To prevent disconnections
