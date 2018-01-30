@@ -205,10 +205,11 @@ void menuVfoToggle(int btn, char isUseDelayTime)
       }
 
       ritDisable();
+      setFrequency(frequency);
 
       if (isUseDelayTime == 1)        //Found Issue in wsjt-x Linux 32bit 
         delay_background(500, 0);
-        
+
       printLine2ClearAndUpdate();
       //exit the menu
       menuOn = 0;
@@ -237,6 +238,29 @@ void menuRitToggle(int btn){
       printLine2ClearAndUpdate();
   }
 }
+
+void menuIFSToggle(int btn){
+  if (!btn){
+    if (isIFShift == 1)
+      printLineF2(F("IF Shift:On, Off?"));
+    else
+      printLineF2(F("IF Shift:Off, On?"));
+  }
+  else {
+      if (isIFShift == 0){
+        printLineF2(F("IF Shift is ON"));
+        isIFShift = 1;
+      }
+      else{
+        printLineF2(F("IF Shift is OFF"));
+        isIFShift = 0;
+      }
+      menuOn = 0;
+      delay_background(500, 0);
+      printLine2ClearAndUpdate();
+  }
+}
+
 
 /* 
 void menuSidebandToggle(int btn){
@@ -286,9 +310,10 @@ void menuSelectMode(int btn){
       selectModeType = 3;
 
     beforeMode = selectModeType;
-    
+
     while(!btnDown() && digitalRead(PTT) == HIGH){
       //Display Mode Name
+      printLineF1(F("LSB USB CWL CWU"));
       if (selectModeType == 0)
         printLineF1(F("LSB"));
       else if (selectModeType == 1)
@@ -1190,7 +1215,7 @@ void doMenu(){
   //ADJUST TUNE STEP 
   if (btnDownTimeCount > (PRESS_ADJUST_TUNE / 50))
   {
-    printLineF1(F("Press Key to set"));
+    printLineF1(F("Press to set step"));
     isNeedDisplay = 1; //check to need display for display current value
     
     while (digitalRead(PTT) == HIGH && !btnDown())
@@ -1243,9 +1268,9 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 190)
+      if (modeCalibrate && select + i < 200)
         select += i;
-      if (!modeCalibrate && select + i < 80)
+      if (!modeCalibrate && select + i < 100)
         select += i;
     }
     //if (i < 0 && select - i >= 0)
@@ -1257,40 +1282,42 @@ void doMenu(){
     else if (select < 10)
       menuBand(btnState);
     else if (select < 20)
-      menuRitToggle(btnState);
-    else if (select < 30)
       menuVfoToggle(btnState, 1);
-    else if (select < 40)
+    else if (select < 30)
       menuSelectMode(btnState);
+    else if (select < 40)
+      menuRitToggle(btnState);
     else if (select < 50)
-      menuCWSpeed(btnState);
+      menuIFSToggle(btnState);
     else if (select < 60)
-      menuCWAutoKey(btnState);
+      menuCWSpeed(btnState);
     else if (select < 70)
-      menuSetup(btnState);
-    else if (select < 80 && !modeCalibrate)
-      menuExit(btnState);
-    else if (select < 90 && modeCalibrate)
-      menuSetupCalibration(btnState);   //crystal
-    else if (select < 100 && modeCalibrate)
-      menuSetupCarrier(btnState);       //lsb
-    else if (select < 110 && modeCalibrate)
-      menuSetupCWCarrier(btnState);       //lsb
-    else if (select < 120 && modeCalibrate)
-      menuSetupCwTone(btnState);
-    else if (select < 130 && modeCalibrate)
-      menuSetupCwDelay(btnState);
-    else if (select < 140 && modeCalibrate)
-      menuSetupTXCWInterval(btnState);
-    else if (select < 150 && modeCalibrate)
-      menuSetupKeyType(btnState);
-    else if (select < 160 && modeCalibrate)
-      menuADCMonitor(btnState);
-    else if (select < 170 && modeCalibrate)
       menuSplitOnOff(btnState);      //SplitOn / off
+    else if (select < 80)
+      menuCWAutoKey(btnState);
+    else if (select < 90)
+      menuSetup(btnState);
+    else if (select < 100)
+      menuExit(btnState);
+    else if (select < 110 && modeCalibrate)
+      menuSetupCalibration(btnState);   //crystal
+    else if (select < 120 && modeCalibrate)
+      menuSetupCarrier(btnState);       //lsb
+    else if (select < 130 && modeCalibrate)
+      menuSetupCWCarrier(btnState);       //lsb
+    else if (select < 140 && modeCalibrate)
+      menuSetupCwTone(btnState);
+    else if (select < 150 && modeCalibrate)
+      menuSetupCwDelay(btnState);
+    else if (select < 160 && modeCalibrate)
+      menuSetupTXCWInterval(btnState);
+    else if (select < 170 && modeCalibrate)
+      menuSetupKeyType(btnState);
     else if (select < 180 && modeCalibrate)
-      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+      menuADCMonitor(btnState);
     else if (select < 190 && modeCalibrate)
+      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+    else if (select < 200 && modeCalibrate)
       menuExit(btnState);
 
     Check_Cat(0);  //To prevent disconnections

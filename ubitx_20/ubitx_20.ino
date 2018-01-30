@@ -315,6 +315,10 @@ boolean modeCalibrate = false;//this mode of menus shows extended menus to calib
 
 unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
+char lcdMeter[17];
+
+byte isIFShift = 0;     //1 = ifShift, 2 extend
+long ifShiftValue = 0;  //
                               
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
@@ -482,22 +486,22 @@ void setFrequency(unsigned long f){
   if (cwMode == 0)
   {
     if (isUSB){
-      si5351bx_setfreq(2, SECOND_OSC_USB - usbCarrier + f);
+      si5351bx_setfreq(2, SECOND_OSC_USB - usbCarrier + f  + (isIFShift ? ifShiftValue : 0));
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
     else{
-      si5351bx_setfreq(2, SECOND_OSC_LSB + usbCarrier + f);
+      si5351bx_setfreq(2, SECOND_OSC_LSB + usbCarrier + f + (isIFShift ? ifShiftValue : 0));
       si5351bx_setfreq(1, SECOND_OSC_LSB);
     }
   }
   else
   {
     if (cwMode == 1){ //CWL
-      si5351bx_setfreq(2, SECOND_OSC_LSB + cwmCarrier + f);
+      si5351bx_setfreq(2, SECOND_OSC_LSB + cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
       si5351bx_setfreq(1, SECOND_OSC_LSB);
     }
     else{             //CWU
-      si5351bx_setfreq(2, SECOND_OSC_USB - cwmCarrier + f);
+      si5351bx_setfreq(2, SECOND_OSC_USB - cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
   }
@@ -581,9 +585,9 @@ void stopTx(){
   digitalWrite(TX_RX, 0);           //turn off the tx
 
   if (cwMode == 0)
-    si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
   else
-    si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
 
   if (ritOn)
     setFrequency(ritRxFrequency);
@@ -748,6 +752,22 @@ void doRIT(){
   if (old_freq != frequency){
     setFrequency(frequency);
     updateDisplay();
+  }
+}
+
+void doIFShift(){
+  int knob = enc_read();
+  unsigned long old_freq = frequency;
+
+  if (knob != 0)
+  {
+    if (knob < 0)
+      ifShiftValue -= 1l;
+    else if (knob > 0)
+      ifShiftValue += 1;
+
+    updateLine2Buffer(1);
+    setFrequency(frequency);
   }
 }
 
@@ -1149,10 +1169,12 @@ void loop(){
   if (!inTx){
     if (ritOn)
       doRIT();
+    else if (isIFShift)
+      doIFShift();
     else 
       doTuningWithThresHold();
 
-    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 500) {
+    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 250) {
       idle_process();
       beforeIdle_ProcessTime = millis();
     }

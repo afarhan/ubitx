@@ -25,8 +25,8 @@ int btnDown(){
  * The current reading of the meter is assembled in the string called meter
  */
 
-//char meter[17];
 
+/*
 const PROGMEM uint8_t s_meter_bitmap[] = {
   B00000,B00000,B00000,B00000,B00000,B00100,B00100,B11011,
   B10000,B10000,B10000,B10000,B10100,B10100,B10100,B11011,
@@ -35,7 +35,18 @@ const PROGMEM uint8_t s_meter_bitmap[] = {
   B00010,B00010,B00010,B00010,B00110,B00110,B00110,B11011,
   B00001,B00001,B00001,B00001,B00101,B00101,B00101,B11011
 };
-PGM_P ps_meter_bitmap = reinterpret_cast<PGM_P>(s_meter_bitmap);
+*/
+
+const PROGMEM uint8_t meters_bitmap[] = {
+  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
+  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000 ,   //custom 2
+  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100 ,   //custom 3
+  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110 ,   //custom 4
+  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111 ,   //custom 5
+  B01000,  B11100,  B01000,  B00000,  B10111,  B10101,  B10101,  B10111     //custom 6
+};
+
+PGM_P p_metes_bitmap = reinterpret_cast<PGM_P>(meters_bitmap);
 
 const PROGMEM uint8_t lock_bitmap[8] = {
   0b01110,
@@ -60,38 +71,56 @@ void initMeter(){
   lcd.createChar(0, tmpbytes);
   
   for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(ps_meter_bitmap + i);
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i);
   lcd.createChar(1, tmpbytes);
 
   for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(ps_meter_bitmap + i + 8);
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 8);
   lcd.createChar(2, tmpbytes);
   
   for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(ps_meter_bitmap + i + 16);
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 16);
   lcd.createChar(3, tmpbytes);
   
   for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(ps_meter_bitmap + i + 24);
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 24);
   lcd.createChar(4, tmpbytes);
   
   for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(ps_meter_bitmap + i + 28);
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 32);
   lcd.createChar(5, tmpbytes);
   
   for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(ps_meter_bitmap + i + 32);
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 40);
   lcd.createChar(6, tmpbytes);
 }
 
-/**
- * The meter is drawn with special characters.
- * character 1 is used to simple draw the blocks of the scale of the meter
- * characters 2 to 6 are used to draw the needle in positions 1 to within the block
- * This displays a meter from 0 to 100, -1 displays nothing
- */
+//by KD8CEC
+//0 ~ 25 : 30 over : + 10
+void drawMeter(int needle) {
+  //5Char + O over
+  int drawCharLength = needle / 5;
+  int drawCharLengthLast = needle % 5;
+  int i;
 
- /*
+  for (i = 0; i < 5; i++) {
+    if (needle >= 5)
+      lcdMeter[i] = 5; //full
+    else if (needle > 0)
+      lcdMeter[i] = needle; //full
+    else  //0
+      lcdMeter[i] = 0x20;
+    
+    needle -= 5;
+  }
+
+  if (needle > 0)
+    lcdMeter[5] = 6;
+  else
+    lcdMeter[5] = 0x20;
+}
+
+/*
 void drawMeter(int8_t needle){
   int16_t best, i, s;
 
@@ -101,19 +130,18 @@ void drawMeter(int8_t needle){
   s = (needle * 4)/10;
   for (i = 0; i < 8; i++){
     if (s >= 5)
-      meter[i] = 1;
+      lcdMeter[i] = 1;
     else if (s >= 0)
-      meter[i] = 2 + s;
+      lcdMeter[i] = 2 + s;
     else
-      meter[i] = 1;
+      lcdMeter[i] = 1;
     s = s - 5;
   }
   if (needle >= 40)
-    meter[i-1] = 6;
-  meter[i] = 0;
+    lcdMeter[i-1] = 6;
+  lcdMeter[i] = 0;
 }
 */
-
 // The generic routine to display one line on the LCD 
 void printLine(unsigned char linenmbr, const char *c) {
   if ((displayOption1 & 0x01) == 0x01)
