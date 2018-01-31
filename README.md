@@ -1,7 +1,8 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- 0.30 Version Test only download. almost complete
+- 0.33 Version Test only download. almost complete
 - Beta 0.26 and Beta 0.261, Beta 0.262,0.27 is complete test, 0.28 is tested.
+- 0.31 is tested but has not critical bug
 - You can download and use it (Release section).
 
 # Current work list (for Version 0.31)
@@ -10,13 +11,6 @@
 #NOTICE
 ----------------------------------------------------------------------------
 I received uBITX a month ago and found that many features are required, and began coding with the idea of implementing minimal functionality as a general hf transceiver rather than an experimental device.
-
-- fixed bugs...
-- Diallock for uBITX's sensitive encoders
-- built in softare Memory keyer and cw options control for CW communication
-- Implementation of CAT communication protocol for Digital Communication (as FT8, JT65, etc)
-- Delay Options for external Linear.
-- and more...
 
 Most of the basic functions of the HF transceiver I thought were implemented.
 The minimum basic specification for uBITX to operate as a radio, I think it is finished.
@@ -50,6 +44,23 @@ Prepared or finished tasks for the next version
                   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+0.33
+  - Added CWL, CWU Mode, (dont complete test yet)
+  - fixed VFO changed bug.
+  - Added Additional BFO for CWL, CWL
+  - Added IF Shift
+  - Change confirmation key PTT -> function key (not critical menus)
+  - Change CW Key Select type, (toggle -> select by dial)
+  
+0.32
+  - Added function Scroll Frequencty on upper line
+  - Added Example code for Draw meter and remarked (you can see and use this code in source codes)
+  - Added Split function, just toggle VFOs when TX/RX
+
+0.31
+  - Fixed CW ADC Range error
+  - Display Message on Upper Line (anothor VFO Frequency, Tune Step, Selected Key Type)
+
 0.30
  - implemented the function to monitor the value of all analog inputs. This allows you to monitor the status of the CW keys connected to your uBITX. 
  - possible to set the ADC range for CW Keying. If no setting is made, it will have the same range as the original code. If you set the CW Keying ADC Values using uBITX Manager 0.3, you can reduce the key error.
