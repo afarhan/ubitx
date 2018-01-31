@@ -5,9 +5,6 @@
 - 0.31 is tested but has not critical bug
 - You can download and use it (Release section).
 
-# Current work list (for Version 0.31)
-  1 Testing CAT Control with Software using hamlib on Linux
-
 #NOTICE
 ----------------------------------------------------------------------------
 I received uBITX a month ago and found that many features are required, and began coding with the idea of implementing minimal functionality as a general hf transceiver rather than an experimental device.
