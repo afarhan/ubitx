@@ -303,9 +303,9 @@ void menuIFSToggle(int btn){
         knob = enc_read();
         if (knob != 0){
           if (knob < 0)
-            ifShiftValue -= 1l;
+            ifShiftValue -= 50l;
           else if (knob > 0)
-            ifShiftValue += 1;
+            ifShiftValue += 50;
 
           needApplyChangeValue = 1;
         }
