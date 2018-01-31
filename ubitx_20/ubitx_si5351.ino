@@ -109,7 +109,11 @@ void initOscillators(){
   //initialize the SI5351
   si5351bx_init();
   si5351bx_vcoa = (SI5351BX_XTAL * SI5351BX_MSA) + calibration; // apply the calibration correction factor
-  si5351bx_setfreq(0, usbCarrier);
+
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));
+ else
+    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));
 }
 
 

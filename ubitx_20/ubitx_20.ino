@@ -151,6 +151,7 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_SPEED 28
 
 //AT328 has 1KBytes EEPROM
+#define CW_CAL 252
 #define VFO_A_MODE 256
 #define VFO_B_MODE 257
 #define CW_DELAY 258
@@ -232,7 +233,7 @@ int count = 0;          //to generally count ticks, loops, etc
 char ritOn = 0;
 char vfoActive = VFO_A;
 int8_t meter_reading = 0; // a -1 on meter makes it invisible
-unsigned long vfoA=7150000L, vfoB=14200000L, sideTone=800, usbCarrier;
+unsigned long vfoA=7150000L, vfoB=14200000L, sideTone=800, usbCarrier, cwmCarrier;
 unsigned long vfoA_eeprom, vfoB_eeprom; //for protect eeprom life
 unsigned long frequency, ritRxFrequency, ritTxFrequency;  //frequency is the current frequency on the dial
 
@@ -300,6 +301,10 @@ char inTx = 0;                //it is set to 1 if in transmit mode (whatever the
 char splitOn = 0;             //working split, uses VFO B as the transmit frequency
 char keyDown = 0;             //in cw mode, denotes the carrier is being transmitted
 char isUSB = 0;               //upper sideband was selected, this is reset to the default for the 
+
+char cwMode = 0;              //compatible original source, and extend mode //if cwMode == 0, mode check : isUSB, cwMode > 0, mode Check : cwMode
+                              //iscwMode = 0 : ssbmode, 1 :cwl, 2 : cwu, 3 : cwn (none tx)
+                              
                               //frequency when it crosses the frequency border of 10 MHz
 byte menuOn = 0;              //set to 1 when the menu is being displayed, if a menu item sets it to zero, the menu is exited
 unsigned long cwTimeout = 0;  //milliseconds to go before the cw transmit line is released and the radio goes back to rx mode
@@ -310,6 +315,10 @@ boolean modeCalibrate = false;//this mode of menus shows extended menus to calib
 
 unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
+char lcdMeter[17];
+
+byte isIFShift = 0;     //1 = ifShift, 2 extend
+long ifShiftValue = 0;  //
                               
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
@@ -363,8 +372,10 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
 
   EEPROM.get(HAM_BAND_FREQS + 4 * findedIndex, resultFreq);
   
-  loadMode = (byte)(resultFreq >> 30);
-  resultFreq = resultFreq & 0x3FFFFFFF;
+  //loadMode = (byte)(resultFreq >> 30);
+  //resultFreq = resultFreq & 0x3FFFFFFF;
+  loadMode = (byte)(resultFreq >> 29);
+  resultFreq = resultFreq & 0x1FFFFFFF;
   
   if ((resultFreq / 1000) < hamBandRange[(unsigned char)findedIndex][0] || (resultFreq / 1000) > hamBandRange[(unsigned char)findedIndex][1])
     resultFreq = (unsigned long)(hamBandRange[(unsigned char)findedIndex][0]) * 1000;
@@ -375,7 +386,8 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
 
 void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
   if (bandIndex >= 0)
-    EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
+    //EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x3FFFFFFF) | (mode << 30) );
+    EEPROM.put(HAM_BAND_FREQS + 4 * bandIndex, (f & 0x1FFFFFFF) | (mode << 29) );
 }
 
 /*
@@ -471,13 +483,27 @@ void setFrequency(unsigned long f){
   
   setTXFilters(f);
 
-  if (isUSB){
-    si5351bx_setfreq(2, SECOND_OSC_USB - usbCarrier + f);
-    si5351bx_setfreq(1, SECOND_OSC_USB);
+  if (cwMode == 0)
+  {
+    if (isUSB){
+      si5351bx_setfreq(2, SECOND_OSC_USB - usbCarrier + f  + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(1, SECOND_OSC_USB);
+    }
+    else{
+      si5351bx_setfreq(2, SECOND_OSC_LSB + usbCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(1, SECOND_OSC_LSB);
+    }
   }
-  else{
-    si5351bx_setfreq(2, SECOND_OSC_LSB + usbCarrier + f);
-    si5351bx_setfreq(1, SECOND_OSC_LSB);
+  else
+  {
+    if (cwMode == 1){ //CWL
+      si5351bx_setfreq(2, SECOND_OSC_LSB + cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(1, SECOND_OSC_LSB);
+    }
+    else{             //CWU
+      si5351bx_setfreq(2, SECOND_OSC_USB - cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(1, SECOND_OSC_USB);
+    }
   }
   
   frequency = f;
@@ -530,10 +556,22 @@ void startTx(byte txMode, byte isDisplayUpdate){
     //shif the first oscillator to the tx frequency directly
     //the key up and key down will toggle the carrier unbalancing
     //the exact cw frequency is the tuned frequency + sidetone
-    if (isUSB)
-      si5351bx_setfreq(2, frequency + sideTone);
-    else
-      si5351bx_setfreq(2, frequency - sideTone); 
+
+    if (cwMode == 0)
+    {
+      if (isUSB)
+        si5351bx_setfreq(2, frequency + sideTone);
+      else
+        si5351bx_setfreq(2, frequency - sideTone); 
+    }
+    else if (cwMode == 1) //CWL
+    {
+        si5351bx_setfreq(2, frequency - sideTone); 
+    }
+    else  //CWU
+    {
+        si5351bx_setfreq(2, frequency + sideTone);
+    }
   }
 
   //reduce latency time when begin of CW mode
@@ -545,7 +583,11 @@ void stopTx(){
   inTx = 0;
 
   digitalWrite(TX_RX, 0);           //turn off the tx
-  si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+  else
+    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
 
   if (ritOn)
     setFrequency(ritRxFrequency);
@@ -713,6 +755,24 @@ void doRIT(){
   }
 }
 
+/*
+void doIFShift(){
+  int knob = enc_read();
+  unsigned long old_freq = frequency;
+
+  if (knob != 0)
+  {
+    if (knob < 0)
+      ifShiftValue -= 1l;
+    else if (knob > 0)
+      ifShiftValue += 1;
+
+    updateLine2Buffer(1);
+    setFrequency(frequency);
+  }
+}
+*/
+
 /**
  save Frequency and mode to eeprom
  */
@@ -788,6 +848,7 @@ void initSettings(){
   if (EEPROM.read(VERSION_ADDRESS) != VERSION_NUM)
     EEPROM.write(VERSION_ADDRESS, VERSION_NUM);
 
+  EEPROM.get(CW_CAL, cwmCarrier);
 
   //for Save VFO_A_MODE to eeprom
   //0: default, 1:not use, 2:LSB, 3:USB, 4:CW, 5:AM, 6:FM
@@ -808,7 +869,7 @@ void initSettings(){
   else
   {
     Iambic_Key = true;
-    if (cwKeyType = 1)
+    if (cwKeyType == 1)
       keyerControl &= ~IAMBICB;
     else
       keyerControl |= IAMBICB;
@@ -936,6 +997,9 @@ void initSettings(){
   //original code with modified by kd8cec
   if (usbCarrier > 12010000l || usbCarrier < 11990000l)
     usbCarrier = 11995000l;
+
+  if (cwmCarrier > 12010000l || cwmCarrier < 11990000l)
+    cwmCarrier = 11995000l;
     
   if (vfoA > 35000000l || 3500000l > vfoA) {
      vfoA = 7150000l;
@@ -1020,7 +1084,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v0.32")); 
+  printLineF(1, F("CECBT v0.33")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
@@ -1038,11 +1102,12 @@ void setup()
   }
   
   initPorts();     
+
+  byteToMode(vfoA_mode);
   initOscillators();
 
   frequency = vfoA;
   saveCheckFreq = frequency;  //for auto save frequency
-  byteToMode(vfoA_mode);
   setFrequency(vfoA);
   updateDisplay();
 
@@ -1106,10 +1171,12 @@ void loop(){
   if (!inTx){
     if (ritOn)
       doRIT();
+    //else if (isIFShift)
+    //  doIFShift();
     else 
       doTuningWithThresHold();
 
-    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 500) {
+    if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 250) {
       idle_process();
       beforeIdle_ProcessTime = millis();
     }
