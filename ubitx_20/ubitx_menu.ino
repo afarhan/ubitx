@@ -87,6 +87,8 @@ void menuBand(int btn){
             stepChangeCount = 0;
           }
         }
+
+      //setFrequency(frequency + 200000l);
       }
       else {  //original source
         if (knob < 0 && frequency > 3000000l)
@@ -525,6 +527,7 @@ void menuSetupKeyType(int btn){
     printLineF2(F("Press to set Key"));
     delay_background(500, 0);
     selectedKeyType = cwKeyType;
+    
     while(!btnDown()){
 
       //Display Key Type
@@ -564,7 +567,7 @@ void menuSetupKeyType(int btn){
     else
     {
       Iambic_Key = true;
-      if (cwKeyType = 1)
+      if (cwKeyType == 1)
         keyerControl &= ~IAMBICB;
       else
         keyerControl |= IAMBICB;

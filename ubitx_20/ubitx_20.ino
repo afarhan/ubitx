@@ -869,7 +869,7 @@ void initSettings(){
   else
   {
     Iambic_Key = true;
-    if (cwKeyType = 1)
+    if (cwKeyType == 1)
       keyerControl &= ~IAMBICB;
     else
       keyerControl |= IAMBICB;
