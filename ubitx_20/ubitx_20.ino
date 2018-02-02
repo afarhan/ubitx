@@ -160,7 +160,8 @@ int count = 0;          //to generally count ticks, loops, etc
 #define TX_TUNE_TYPE 261  //
 #define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
 #define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
-#define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)
+#define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)  //1STEP : 
+  
 
 //for reduce cw key error, eeprom address
 #define CW_ADC_MOST_BIT1 348   //most 2bits of  DOT_TO , DOT_FROM, ST_TO, ST_FROM
@@ -260,7 +261,7 @@ byte sideToneSub = 0;
 //DialLock
 byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
-byte arTuneStep[5];
+long arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
 
 byte displayOption1 = 0;
@@ -806,6 +807,21 @@ void storeFrequencyAndMode(byte saveType)
   }
 }
 
+unsigned int byteToSteps(byte srcByte) {
+    byte powerVal = (byte)(srcByte >> 6);
+    unsigned int baseVal = srcByte & 0x3F;
+
+    if (powerVal == 1)
+        return baseVal * 10;
+    else if (powerVal == 2)
+        return baseVal * 100;
+    else if (powerVal == 3)
+        return baseVal * 1000;
+    else
+        return baseVal;
+}
+
+
 /**
  * The settings are read from EEPROM. The first time around, the values may not be 
  * present or out of range, in this case, some intelligent defaults are copied into the 
@@ -926,8 +942,8 @@ void initSettings(){
   findedValidValueCount = 0;
   EEPROM.get(TUNING_STEP, tuneStepIndex);
   for (byte i = 0; i < 5; i++) {
-    arTuneStep[i] = EEPROM.read(TUNING_STEP + i + 1);
-    if (arTuneStep[i] >= 1 && arTuneStep[i] < 251) //Maximum 250 for check valid Value
+    arTuneStep[i] = byteToSteps(EEPROM.read(TUNING_STEP + i + 1));
+    if (arTuneStep[i] >= 1 && arTuneStep[i] <= 60000) //Maximum 650 for check valid Value
        findedValidValueCount++;
   }
 

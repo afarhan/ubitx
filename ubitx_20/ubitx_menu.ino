@@ -1211,7 +1211,7 @@ void menuSetupCwTone(int btn){
     //save the setting
     if (digitalRead(PTT) == LOW){
       printLineF2(F("Sidetone set!"));
-      EEPROM.put(CW_SIDETONE, usbCarrier);
+      EEPROM.put(CW_SIDETONE, sideTone);
       delay_background(2000, 0);
     }
     else
