@@ -17,7 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
-byte line2Buffer[16];
+char line2Buffer[16];
 //KD8CEC 200Hz ST
 //L14.150 200Hz ST
 //U14.150 +150khz
@@ -53,8 +53,11 @@ void updateLine2Buffer(char isDirectCall)
       }
   
       return;
-    }
-    
+    } //end of ritOn display
+
+    //======================================================
+    //other VFO display
+    //======================================================
     if (vfoActive == VFO_B)
     {
       tmpFreq = vfoA;
@@ -82,23 +85,23 @@ void updateLine2Buffer(char isDirectCall)
     }
   
     //EXAMPLE #1
-    if ((displayOption1 & 0x04) == 0x00)
+    if ((displayOption1 & 0x04) == 0x00)  //none scroll display
       line2Buffer[6] = 'k';
     else
     {
       //example #2
-      if (freqScrollPosition++ > 18)
+      if (freqScrollPosition++ > 18)    //none scroll display time
       {
         line2Buffer[6] = 'k';
         if (freqScrollPosition > 25)
           freqScrollPosition = -1;
       }
-      else
+      else                              //scroll frequency 
       {
         line2Buffer[10] = 'H';
         line2Buffer[11] = 'z';
     
-        if (freqScrollPosition < 7)
+        if (freqScrollPosition < 7)   
         {
           for (int i = 11; i >= 0; i--)
             if (i - (7 - freqScrollPosition) >= 0)
@@ -115,10 +118,10 @@ void updateLine2Buffer(char isDirectCall)
               line2Buffer[i] = ' ';
         }
       }
-    }
+    } //scroll
+    
     line2Buffer[7] = ' ';
   } //check direct call by encoder
-
   
   if (isIFShift)
   {
@@ -152,24 +155,38 @@ void updateLine2Buffer(char isDirectCall)
     
     if (isDirectCall == 1)  //if call by encoder (not scheduler), immediate print value
         printLine2(line2Buffer);    
-  }
-  else
+  }       // end of display IF
+  else    // step display
   {
     if (isDirectCall != 0)
       return;
-      
+
+    memset(&line2Buffer[8], ' ', 8);
     //Step
-    byte tmpStep = arTuneStep[tuneStepIndex -1];
-    for (int i = 10; i >= 8; i--) {
+    long tmpStep = arTuneStep[tuneStepIndex -1];
+    
+    byte isStepKhz = 0;
+    if (tmpStep >= 1000)
+    {
+      isStepKhz = 2;
+    }
+      
+    for (int i = 10; i >= 8 - isStepKhz; i--) {
       if (tmpStep > 0) {
-          line2Buffer[i] = tmpStep % 10 + 0x30;
+          line2Buffer[i + isStepKhz] = tmpStep % 10 + 0x30;
           tmpStep /= 10;
       }
       else
-        line2Buffer[i] = ' ';
+        line2Buffer[i +isStepKhz] = ' ';
     }
-    line2Buffer[11] = 'H';
-    line2Buffer[12] = 'z';
+    //if (isStepKhz == 1)
+    //  line2Buffer[10] = 'k';
+
+    if (isStepKhz == 0)
+    {
+      line2Buffer[11] = 'H';
+      line2Buffer[12] = 'z';
+    }
   
     line2Buffer[13] = ' ';
     //if (
@@ -215,6 +232,9 @@ void idle_process()
   //space for user graphic display
   if (menuOn == 0)
   {
+    if ((displayOption1 & 0x10) == 0x10)    //always empty topline
+      return;
+      
     //if line2DisplayStatus == 0 <-- this condition is clear Line, you can display any message
     if (line2DisplayStatus == 0 || (((displayOption1 & 0x04) == 0x04) && line2DisplayStatus == 2)) {
       if (checkCount++ > 1)

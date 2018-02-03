@@ -160,7 +160,8 @@ int count = 0;          //to generally count ticks, loops, etc
 #define TX_TUNE_TYPE 261  //
 #define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
 #define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
-#define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)
+#define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)  //1STEP : 
+  
 
 //for reduce cw key error, eeprom address
 #define CW_ADC_MOST_BIT1 348   //most 2bits of  DOT_TO , DOT_FROM, ST_TO, ST_FROM
@@ -260,7 +261,7 @@ byte sideToneSub = 0;
 //DialLock
 byte isDialLock = 0;  //000000[0]vfoB [0]vfoA 0Bit : A, 1Bit : B
 byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
-byte arTuneStep[5];
+long arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
 
 byte displayOption1 = 0;
@@ -381,7 +382,7 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
     resultFreq = (unsigned long)(hamBandRange[(unsigned char)findedIndex][0]) * 1000;
 
   setFrequency(resultFreq);
-  byteWithFreqToMode(loadMode);
+  byteToMode(loadMode, 1);
 }
 
 void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
@@ -536,12 +537,12 @@ void startTx(byte txMode, byte isDisplayUpdate){
       if (vfoActive == VFO_B) {
         vfoActive = VFO_A;
         frequency = vfoA;
-        byteToMode(vfoA_mode);
+        byteToMode(vfoA_mode, 0);
       }
       else if (vfoActive == VFO_A){
         vfoActive = VFO_B;
         frequency = vfoB;
-        byteToMode(vfoB_mode);
+        byteToMode(vfoB_mode, 0);
       }
 
       setFrequency(frequency);
@@ -596,12 +597,12 @@ void stopTx(){
       if (vfoActive == VFO_B){
         vfoActive = VFO_A;
         frequency = vfoA;
-        byteToMode(vfoA_mode);
+        byteToMode(vfoA_mode, 0);
       }
       else if (vfoActive == VFO_A){
         vfoActive = VFO_B;
         frequency = vfoB;
-        byteToMode(vfoB_mode);
+        byteToMode(vfoB_mode, 0);
       }
       setFrequency(frequency);
   } //end of else
@@ -754,27 +755,8 @@ void doRIT(){
     updateDisplay();
   }
 }
-
 /*
-void doIFShift(){
-  int knob = enc_read();
-  unsigned long old_freq = frequency;
-
-  if (knob != 0)
-  {
-    if (knob < 0)
-      ifShiftValue -= 1l;
-    else if (knob > 0)
-      ifShiftValue += 1;
-
-    updateLine2Buffer(1);
-    setFrequency(frequency);
-  }
-}
-*/
-
-/**
- save Frequency and mode to eeprom
+ save Frequency and mode to eeprom for Auto Save with protected eeprom cycle, by kd8cec
  */
 void storeFrequencyAndMode(byte saveType)
 {
@@ -805,6 +787,22 @@ void storeFrequencyAndMode(byte saveType)
       }
   }
 }
+
+//calculate step size from 1 byte, compatible uBITX Manager, by KD8CEC
+unsigned int byteToSteps(byte srcByte) {
+    byte powerVal = (byte)(srcByte >> 6);
+    unsigned int baseVal = srcByte & 0x3F;
+
+    if (powerVal == 1)
+        return baseVal * 10;
+    else if (powerVal == 2)
+        return baseVal * 100;
+    else if (powerVal == 3)
+        return baseVal * 1000;
+    else
+        return baseVal;
+}
+
 
 /**
  * The settings are read from EEPROM. The first time around, the values may not be 
@@ -926,8 +924,8 @@ void initSettings(){
   findedValidValueCount = 0;
   EEPROM.get(TUNING_STEP, tuneStepIndex);
   for (byte i = 0; i < 5; i++) {
-    arTuneStep[i] = EEPROM.read(TUNING_STEP + i + 1);
-    if (arTuneStep[i] >= 1 && arTuneStep[i] < 251) //Maximum 250 for check valid Value
+    arTuneStep[i] = byteToSteps(EEPROM.read(TUNING_STEP + i + 1));
+    if (arTuneStep[i] >= 1 && arTuneStep[i] <= 60000) //Maximum 650 for check valid Value
        findedValidValueCount++;
   }
 
@@ -1003,12 +1001,12 @@ void initSettings(){
     
   if (vfoA > 35000000l || 3500000l > vfoA) {
      vfoA = 7150000l;
-     vfoA_mode = 2;
+     vfoA_mode = 2; //LSB
   }
   
   if (vfoB > 35000000l || 3500000l > vfoB) {
      vfoB = 14150000l;  
-     vfoB_mode = 3;
+     vfoB_mode = 3; //USB
   }
   //end of original code section
 
@@ -1084,7 +1082,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v0.33")); 
+  printLineF(1, F("CECBT v0.35")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
@@ -1103,7 +1101,7 @@ void setup()
   
   initPorts();     
 
-  byteToMode(vfoA_mode);
+  byteToMode(vfoA_mode, 0);
   initOscillators();
 
   frequency = vfoA;
@@ -1116,13 +1114,11 @@ void setup()
 }
 
 
-/**
- * The loop checks for keydown, ptt, function button and tuning.
- */
 //for debug
 int dbgCnt = 0;
 byte flasher = 0;
 
+//Auto save Frequency and Mode with Protected eeprom life by KD8CEC
 void checkAutoSaveFreqMode()
 {
   //when tx or ritOn, disable auto save

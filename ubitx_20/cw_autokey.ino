@@ -365,6 +365,11 @@ void controlAutoCW(){
         //check interval time, if you want adjust interval between chars, modify below
         if (isAutoCWHold == 0 && (millis() - autoCWbeforeTime > cwSpeed * 3))
         {
+          if (!inTx){                                           //if not TX Status, change RX -> TX
+            keyDown = 0;
+            startTx(TX_CW, 0);  //disable updateDisplay Command for reduce latency time
+          }
+          
           sendCWChar(EEPROM.read(CW_AUTO_DATA + autoCWSendCharIndex++));
 
           if (autoCWSendCharIndex > autoCWSendCharEndIndex) {          //finish auto cw send

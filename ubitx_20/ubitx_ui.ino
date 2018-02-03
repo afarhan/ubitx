@@ -235,7 +235,6 @@ char byteToChar(byte srcByte){
 void updateDisplay() {
   // tks Jack Purdum W8TEE
   // replaced fsprint commmands by str commands for code size reduction
-  
   // replace code for Frequency numbering error (alignment, point...) by KD8CEC
   int i;
   unsigned long tmpFreq = frequency; //
