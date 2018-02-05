@@ -180,6 +180,10 @@ int count = 0;          //to generally count ticks, loops, etc
 #define DISPLAY_OPTION1  361   //Display Option1
 #define DISPLAY_OPTION2  362   //Display Option2
 
+#define CHANNEL_FREQ    630   //Channel 1 ~ 20, 1 Channel = 4 bytes
+#define CHANNEL_DESC    710   //Channel 1 ~ 20, 1 Channel = 4 bytes
+#define RESERVE3        770   //Reserve3 between Channel and Firmware id check
+
 //Check Firmware type and version
 #define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
 #define VERSION_ADDRESS 779   //check Firmware version

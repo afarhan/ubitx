@@ -13,6 +13,7 @@
 #define printLineF1(x) (printLineF(1, x))
 #define printLineF2(x) (printLineF(0, x))
 
+//Current Frequency and mode to active VFO by KD8CEC
 void FrequencyToVFO(byte isSaveFreq)
 {
   //Save Frequency & Mode Information
@@ -34,6 +35,7 @@ void FrequencyToVFO(byte isSaveFreq)
   }
 }
 
+//Commonly called functions when exiting menus by KD8CEC
 void menuClearExit(int delayTime)
 {
   if (delayTime > 0)
@@ -43,7 +45,7 @@ void menuClearExit(int delayTime)
   menuOn = 0;
 }
 
-//Ham band move by KD8CEC
+//Ham band or general band movement by KD8CEC
 void menuBand(int btn){
   int knob = 0;
   int stepChangeCount = 0;
@@ -198,6 +200,7 @@ void byteWithFreqToMode(byte modeValue){
 }
 */
 
+//IF Shift function, BFO Change like RIT, by KD8CEC
 void menuIFSSetup(int btn){
   int knob = 0;
   char needApplyChangeValue = 1;
@@ -261,6 +264,7 @@ void menuIFSSetup(int btn){
   }
 }
 
+//Functions for CWL and CWU by KD8CEC
 void menuSelectMode(int btn){
   int knob = 0;
   int selectModeType = 0;
@@ -350,6 +354,131 @@ void menuSelectMode(int btn){
     menuClearExit(500);
   }
 }
+
+
+//Memory to VFO, VFO to Memory by KD8CEC
+//select between MtoV and VtoM by isMemoryToVfo
+void menuCHMemory(int btn, byte isMemoryToVfo){
+  int knob = 0;
+  int selectChannel = 0;
+  byte isDisplayInfo = 1;
+  byte isCancel = 0;
+  int moveStep = 0;
+  unsigned long resultFreq, tmpFreq = 0;
+  byte loadMode = 0;
+  
+  if (!btn){
+    if (isMemoryToVfo == 1)
+      printLine2("Channel To VFO?");
+   else 
+      printLine2("VFO To Channel?");
+  }
+  else {
+    delay_background(500, 0);
+
+    while(!btnDown()){
+      if (isDisplayInfo == 1) {
+        //Display Channel info *********************************
+        memset(c, 0, sizeof(c));
+
+        if (selectChannel >= 20 || selectChannel <=-1)
+        {
+          strcpy(c, "Exit setup?");
+        }
+        else
+        {
+          //Read Frequency from eeprom
+          EEPROM.get(CHANNEL_FREQ + 4 * selectChannel, resultFreq);
+          
+          loadMode = (byte)(resultFreq >> 29);
+          resultFreq = resultFreq & 0x1FFFFFFF;
+
+          //display channel description
+          if (selectChannel < 10 && EEPROM.read(CHANNEL_DESC + 6 * selectChannel) == 0x33) {  //0x33 is display Chnnel Name
+            //display Channel Name
+            for (int i = 0; i < 5; i++)
+              c[i] = EEPROM.read(CHANNEL_DESC + 6 * selectChannel + i + 1);
+          }
+          else {
+            //Display frequency
+            //1 LINE : Channel Information : CH00
+            strcpy(c, "CH");
+            if (selectChannel < 9)
+              c[2] = '0';
+            
+            ltoa(selectChannel + 1, b, 10);
+            strcat(c, b); //append channel Number;
+            strcat(c, " :"); //append channel Number;
+          }
+          /*
+          if (selectChannel < 10)
+            printLineFromEEPRom(0, 4, 0, userCallsignLength -1); //eeprom to lcd use offset (USER_CALLSIGN_DAT)        
+          */
+  
+          //display frequency
+          tmpFreq = resultFreq;
+          for (int i = 15; i >= 6; i--) {
+            if (tmpFreq > 0) {
+              if (i == 12 || i == 8) c[i] = '.';
+              else {
+                c[i] = tmpFreq % 10 + 0x30;
+                tmpFreq /= 10;
+              }
+            }
+            else
+              c[i] = ' ';
+          }
+        }
+
+        printLine2(c);
+        
+        isDisplayInfo = 0;
+      }
+
+      knob = enc_read();
+
+      if (knob != 0)
+      {
+        moveStep += (knob > 0 ? 1 : -1);
+        if (moveStep < -3) {
+          if (selectChannel > -1)
+            selectChannel--;
+
+          isDisplayInfo = 1;
+          moveStep = 0;
+        }
+        else if (moveStep > 3) {
+          if (selectChannel < 20)
+            selectChannel++;
+            
+          isDisplayInfo = 1;
+          moveStep = 0;
+        }
+      }
+
+      Check_Cat(0);  //To prevent disconnections
+    } //end of while (knob)
+
+    if (selectChannel < 20 && selectChannel >= 0)
+    {
+      if (isMemoryToVfo == 1)
+      {
+        if (resultFreq > 3000 && resultFreq < 60000000)
+        setFrequency(resultFreq);
+        byteToMode(loadMode, 1);
+      }
+      else
+      {
+        //Save current Frequency to Channel (selectChannel)
+        EEPROM.put(CHANNEL_FREQ + 4 * selectChannel, (frequency & 0x1FFFFFFF) | (modeToByte() << 29) );
+        printLine2("Saved Frequency");
+      }
+    }
+    
+    menuClearExit(500);
+  }
+}
+
 
 //Select CW Key Type by KD8CEC
 void menuSetupKeyType(int btn){
@@ -568,6 +697,7 @@ void menuRitToggle(int btn){
   }
 }
 
+//Split communication using VFOA and VFOB by KD8CEC
 void menuSplitOnOff(int btn){
   if (!btn){
     if (splitOn == 0)
@@ -1269,7 +1399,6 @@ void doMenu(){
   }   //set tune step
 
   //Below codes are origial code with modified by KD8CEC
-  //Select menu
   menuOn = 2;
   
   while (menuOn){
@@ -1277,9 +1406,9 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 200)
+      if (modeCalibrate && select + i < 220)
         select += i;
-      if (!modeCalibrate && select + i < 100)
+      if (!modeCalibrate && select + i < 120)
         select += i;
     }
     //if (i < 0 && select - i >= 0)
@@ -1301,32 +1430,36 @@ void doMenu(){
     else if (select < 60)
       menuCWSpeed(btnState);
     else if (select < 70)
-      menuSplitOnOff(btnState);      //SplitOn / off
+      menuSplitOnOff(btnState);       //SplitOn / off
     else if (select < 80)
-      menuCWAutoKey(btnState);
+      menuCHMemory(btnState, 0);      //VFO to Memroy
     else if (select < 90)
-      menuSetup(btnState);
+      menuCHMemory(btnState, 1);      //Memory to VFO
     else if (select < 100)
+      menuCWAutoKey(btnState);
+    else if (select < 110)
+      menuSetup(btnState);
+    else if (select < 120)
       menuExit(btnState);
-    else if (select < 110 && modeCalibrate)
-      menuSetupCalibration(btnState);   //crystal
-    else if (select < 120 && modeCalibrate)
-      menuSetupCarrier(btnState);       //lsb
     else if (select < 130 && modeCalibrate)
-      menuSetupCWCarrier(btnState);       //lsb
+      menuSetupCalibration(btnState);   //crystal
     else if (select < 140 && modeCalibrate)
-      menuSetupCwTone(btnState);
+      menuSetupCarrier(btnState);       //lsb
     else if (select < 150 && modeCalibrate)
-      menuSetupCwDelay(btnState);
+      menuSetupCWCarrier(btnState);       //lsb
     else if (select < 160 && modeCalibrate)
-      menuSetupTXCWInterval(btnState);
+      menuSetupCwTone(btnState);
     else if (select < 170 && modeCalibrate)
-      menuSetupKeyType(btnState);
+      menuSetupCwDelay(btnState);
     else if (select < 180 && modeCalibrate)
-      menuADCMonitor(btnState);
+      menuSetupTXCWInterval(btnState);
     else if (select < 190 && modeCalibrate)
-      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+      menuSetupKeyType(btnState);
     else if (select < 200 && modeCalibrate)
+      menuADCMonitor(btnState);
+    else if (select < 210 && modeCalibrate)
+      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+    else if (select < 220 && modeCalibrate)
       menuExit(btnState);
 
     Check_Cat(0);  //To prevent disconnections
