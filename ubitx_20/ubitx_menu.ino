@@ -394,10 +394,12 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
           resultFreq = resultFreq & 0x1FFFFFFF;
 
           //display channel description
-          if (selectChannel < 10 && EEPROM.read(CHANNEL_DESC + 6 * selectChannel) == 0x33) {  //0x33 is display Chnnel Name
+          if (selectChannel < 10 && EEPROM.read(CHANNEL_DESC + 6 * selectChannel) == 0x03) {  //0x03 is display Chnnel Name
             //display Channel Name
             for (int i = 0; i < 5; i++)
               c[i] = EEPROM.read(CHANNEL_DESC + 6 * selectChannel + i + 1);
+
+           c[5] = ':';
           }
           else {
             //Display frequency
