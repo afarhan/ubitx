@@ -362,7 +362,6 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
   int knob = 0;
   int selectChannel = 0;
   byte isDisplayInfo = 1;
-  byte isCancel = 0;
   int moveStep = 0;
   unsigned long resultFreq, tmpFreq = 0;
   byte loadMode = 0;
@@ -472,7 +471,7 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
       else
       {
         //Save current Frequency to Channel (selectChannel)
-        EEPROM.put(CHANNEL_FREQ + 4 * selectChannel, (frequency & 0x1FFFFFFF) | (modeToByte() << 29) );
+        EEPROM.put(CHANNEL_FREQ + 4 * selectChannel, (frequency & 0x1FFFFFFF) | (((unsigned long)modeToByte()) << 29) );
         printLine2("Saved Frequency");
       }
     }
@@ -629,7 +628,7 @@ void menuADCMonitor(int btn){
 }
 
 //VFO Toggle and save VFO Information, modified by KD8CEC
-void menuVfoToggle(int btn, char isUseDelayTime)
+void menuVfoToggle(int btn)
 {
   if (!btn){
     if (vfoActive == VFO_A)
@@ -1422,7 +1421,7 @@ void doMenu(){
     else if (select < 10)
       menuBand(btnState);
     else if (select < 20)
-      menuVfoToggle(btnState, 1);
+      menuVfoToggle(btnState);
     else if (select < 30)
       menuSelectMode(btnState);
     else if (select < 40)

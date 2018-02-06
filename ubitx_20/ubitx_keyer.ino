@@ -90,13 +90,13 @@ void cwKeyUp(){
 #define PDLSWAP 0x08 // 0 for normal, 1 for swap
 #define IAMBICB 0x10 // 0 for Iambic A, 1 for Iambic B
 enum KSTYPE {IDLE, CHK_DIT, CHK_DAH, KEYED_PREP, KEYED, INTER_ELEMENT };
-static long ktimer;
+static unsigned long ktimer;
 unsigned char keyerState = IDLE;
 
 //Below is a test to reduce the keying error. do not delete lines
 //create by KD8CEC for compatible with new CW Logic
 char update_PaddleLatch(byte isUpdateKeyState) {
-  unsigned char tmpKeyerControl;
+  unsigned char tmpKeyerControl = 0;
   int paddle = analogRead(ANALOG_KEYER);
 
   if (paddle >= cwAdcDashFrom && paddle <= cwAdcDashTo)
@@ -126,9 +126,7 @@ char update_PaddleLatch(byte isUpdateKeyState) {
 // modified by KD8CEC
 ******************************************************************************/
 void cwKeyer(void){
-  byte paddle;
   lastPaddle = 0;
-  int dot,dash;
   bool continue_loop = true;
   unsigned tmpKeyControl = 0;
   

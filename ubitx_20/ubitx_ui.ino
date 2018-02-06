@@ -99,8 +99,6 @@ void initMeter(){
 //0 ~ 25 : 30 over : + 10
 void drawMeter(int needle) {
   //5Char + O over
-  int drawCharLength = needle / 5;
-  int drawCharLengthLast = needle % 5;
   int i;
 
   for (i = 0; i < 5; i++) {

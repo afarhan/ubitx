@@ -213,16 +213,18 @@ void updateLine2Buffer(char isDirectCall)
 //meterType : 0 = S.Meter, 1 : P.Meter
 void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
 {
-  drawMeter(meterValue);  //call original source code
-  int lineNumber = 0;
-  if ((displayOption1 & 0x01) == 0x01)
-    lineNumber = 1;
+  if (meterType == 0 || meterType == 1 || meterType == 2)
+  {
+    drawMeter(meterValue);  //call original source code
+    int lineNumber = 0;
+    if ((displayOption1 & 0x01) == 0x01)
+      lineNumber = 1;
+    
+    lcd.setCursor(drawPosition, lineNumber);
   
-  lcd.setCursor(drawPosition, lineNumber);
-
-  for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
-    lcd.write(lcdMeter[i]);
-
+    for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
+      lcd.write(lcdMeter[i]);
+  }
 }
 
 byte testValue = 0;

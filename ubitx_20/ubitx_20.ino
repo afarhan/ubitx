@@ -696,7 +696,6 @@ byte lastMovedirection = 0; //0 : stop, 1 : cw, 2 : ccw
 void doTuningWithThresHold(){
   int s = 0;
   unsigned long prev_freq;
-  long incdecValue = 0;
 
   if ((vfoActive == VFO_A && ((isDialLock & 0x01) == 0x01)) ||
     (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02)))
