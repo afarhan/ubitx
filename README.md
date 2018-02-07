@@ -1,9 +1,7 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- 0.33 Version Test only download. almost complete
-- Beta 0.26 and Beta 0.261, Beta 0.262,0.27 is complete test, 0.28 is tested.
-- 0.31 is tested but has not critical bug
-- You can download and use it (Release section).
+- Now Release Version 1.0 on my blog (http://www.hamskey.com)
+- You can download and compiled hex file and uBITX Manager application on my blog (http://www.hamskey.com)
 
 #NOTICE
 ----------------------------------------------------------------------------
@@ -31,8 +29,6 @@ The copyright information of the original is below.
 KD8CEC
 ----------------------------------------------------------------------------
 Prepared or finished tasks for the next version
-  - Most of them are implemented and included in version 0.27.
-  - User Interface on LCD -> Option by user (not need)
   - Include WSPR Beacone function - (implement other new repository)
     complete experiment
     need solve : Big code size (over 100%, then remove some functions for experment)
@@ -41,6 +37,20 @@ Prepared or finished tasks for the next version
                   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+1.0 
+  - todo : rename 0.30 to 1.0
+  
+0.35
+  - vfo to channel bug fixed (not saved mode -> fixed, channel has frequency and mode)
+  - add Channel tag (ch.1 ~ 10) by uBITX Manager
+  - add VFO to Channel, Channel To VFO
+  
+0.34
+  - TX Status check in auto Keysend logic
+  - optimize codes
+  - change default tune step size, and fixed bug
+  - change IF shift step (1Hz -> 50Hz)
+  
 0.33
   - Added CWL, CWU Mode, (dont complete test yet)
   - fixed VFO changed bug.
