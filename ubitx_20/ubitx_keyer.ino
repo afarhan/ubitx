@@ -204,7 +204,7 @@ void cwKeyer(void){
           break;
       }
   
-      Check_Cat(3);
+      Check_Cat(2);
     } //end of while
   }
   else{

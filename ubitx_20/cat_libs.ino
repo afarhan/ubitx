@@ -163,7 +163,8 @@ void CatSetSplit(boolean isSplit) //for remove warning messages
 
 void CatSetPTT(boolean isPTTOn, byte fromType)
 {
-  if (fromType == 2 || fromType == 3) {
+  //
+  if ((!inTx) && (fromType == 2 || fromType == 3)) {
     Serial.write(ACK);  
     return;  
   }
