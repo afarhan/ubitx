@@ -64,7 +64,7 @@ void menuBand(int btn){
       btnPressCount = 0;
       if (tuneTXType > 0) { //Just toggle 0 <-> 2, if tuneTXType is 100, 100 -> 0 -> 2
         tuneTXType = 0;
-        printLineF2(F("Full range mode"));
+        printLineF2(F("General mode"));
       }
       else {
         tuneTXType = 2;
@@ -289,18 +289,13 @@ void menuSelectMode(int btn){
 
     beforeMode = selectModeType;
 
-    while(!btnDown() && digitalRead(PTT) == HIGH){
+    while(!btnDown()){
       //Display Mode Name
-      printLineF1(F("LSB USB CWL CWU"));
-      if (selectModeType == 0)
-        printLineF1(F("LSB"));
-      else if (selectModeType == 1)
-        printLineF1(F("USB"));
-      else if (selectModeType == 2)
-        printLineF1(F("CWL"));
-      else if (selectModeType == 3)
-        printLineF1(F("CWU"));
-
+      memset(c, 0, sizeof(c));
+      strcpy(c, " LSB USB CWL CWU");
+      c[selectModeType * 4] = '>';
+      printLine1(c);
+      
       knob = enc_read();
 
       if (knob != 0)
@@ -320,7 +315,8 @@ void menuSelectMode(int btn){
         }
       }
 
-      Check_Cat(0);  //To prevent disconnections
+      //Check_Cat(0);  //To prevent disconnections
+      delay_background(50, 0);
     }
 
     if (beforeMode != selectModeType) {
@@ -368,9 +364,9 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
   
   if (!btn){
     if (isMemoryToVfo == 1)
-      printLine2("Channel To VFO?");
+      printLineF2(F("Channel To VFO?"));
    else 
-      printLine2("VFO To Channel?");
+      printLineF2(F("VFO To Channel?"));
   }
   else {
     delay_background(500, 0);
@@ -490,7 +486,7 @@ void menuSetupKeyType(int btn){
         printLineF2(F("Change Key Type?"));
   }
   else {
-    printLineF2(F("Press to set Key"));
+    //printLineF2(F("Press to set Key")); //for reduce usable flash memory
     delay_background(500, 0);
     selectedKeyType = cwKeyType;
     
@@ -538,10 +534,7 @@ void menuSetupKeyType(int btn){
       else
         keyerControl |= IAMBICB;
     }
-
-    //delay_background(2000, 0);
-    //printLine2ClearAndUpdate();
-    //menuOn = 0;
+    
     menuClearExit(1000);
   }
 }
@@ -572,18 +565,11 @@ void menuADCMonitor(int btn){
     adcPinA0 = analogRead(A0);  //A0(BLACK, EncoderA)
     adcPinA1 = analogRead(A1);  //A1(BROWN, EncoderB)
     adcPinA2 = analogRead(A2);  //A2(RED, Function Key)
-    adcPinA3 = analogRead(A3);  //A3(ORANGE, CW Key)
-    adcPinA6 = analogRead(A6);  //A6(BLUE, Ptt)
+    adcPinA3 = analogRead(A3);  //A3(PTT)
+    adcPinA6 = analogRead(A6);  //A6(KEYER)
     adcPinA7 = analogRead(A7);  //A7(VIOLET, Spare)
 
-/*
-  sprintf(c, "%4d %4d %4d", adcPinA0, adcPinA1, adcPinA2);
-  printLine1(c);
-  sprintf(c, "%4d %4d %4d", adcPinA3, adcPinA6, adcPinA7);
-  printLine2(c);
-*/  
-  
-    if (adcPinA6 < 10) {
+    if (adcPinA3 < 50) {
       if (pressKeyTime == 0)
         pressKeyTime = millis();
       else if (pressKeyTime < (millis() - 3000))
@@ -622,8 +608,6 @@ void menuADCMonitor(int btn){
     delay_background(200, 0);
   } //end of while
       
-  //printLine2ClearAndUpdate();
-  //menuOn = 0;
   menuClearExit(0);
 }
 
@@ -648,7 +632,6 @@ void menuVfoToggle(int btn)
         frequency = vfoA;
         saveCheckFreq = frequency;
         byteToMode(vfoA_mode, 0);
-        //printLineF2(F("Selected VFO A"));
       }
       else {
         //vfoA = frequency;
@@ -664,16 +647,11 @@ void menuVfoToggle(int btn)
 
       ritDisable();
       setFrequency(frequency);
-
-      //if (isUseDelayTime == 1)        //Found Issue in wsjt-x Linux 32bit 
-      //  delay_background(500, 0);
-
-      //printLine2ClearAndUpdate();
-      //menuOn = 0;
       menuClearExit(0);
   }
 }
 
+//modified for reduce used flash memory by KD8CEC
 void menuRitToggle(int btn){
   if (!btn){
     if (ritOn == 1)
@@ -691,9 +669,7 @@ void menuRitToggle(int btn){
         printLineF2(F("RIT is OFF"));
         ritDisable();
       }
-      //delay_background(500, 0);
-      //printLine2ClearAndUpdate();
-      //menuOn = 0;
+      
       menuClearExit(500);
   }
 }
@@ -763,14 +739,18 @@ void menuSetup(int btn){
     else
       printLineF2(F("Setup Off?"));
   }else {
+    modeCalibrate = ! modeCalibrate;
+    /*
     if (!modeCalibrate){
       modeCalibrate = true;
-      printLineF2(F("Setup:On"));
+      //printLineF2(F("Setup:On"));
     }
     else {
       modeCalibrate = false;
-      printLineF2(F("Setup:Off"));
+      //printLineF2(F("Setup:Off"));
     }
+    */
+    
    //delay_background(2000, 0);
    //printLine2Clear();
    //menuOn = 0;
@@ -801,14 +781,14 @@ void menuCWSpeed(int btn){
      return;
     }
 
-    printLineF1(F("Press to set WPm"));
+    printLineF1(F("Press to set WPM"));
     strcpy(b, "WPM:");
     itoa(wpm,c, 10);
     strcat(b, c);
     printLine2(b);
     delay_background(300, 0);
 
-    while(!btnDown() && digitalRead(PTT) == HIGH){
+    while(!btnDown()){
 
       knob = enc_read();
       if (knob != 0){
@@ -872,8 +852,7 @@ void menuSetupCwDelay(int btn){
     int tmpCWDelay = cwDelayTime * 10;
      
     if (!btn){
-     strcpy(b, "CW TX->RX Delay");
-     printLine2(b);
+      printLineF2(F("CW TX->RX Delay"));
      return;
     }
 
@@ -884,7 +863,7 @@ void menuSetupCwDelay(int btn){
     printLine2(b);
     delay_background(300, 0);
 
-    while(!btnDown() && digitalRead(PTT) == HIGH){
+    while(!btnDown()){
       knob = enc_read();
       if (knob != 0){
         if (tmpCWDelay > 3 && knob < 0)
@@ -918,34 +897,47 @@ void menuSetupCwDelay(int btn){
 
 //CW Time delay by KD8CEC
 void menuSetupTXCWInterval(int btn){
+    char needDisplayInformation = 1;
     int knob = 0;
     int tmpTXCWInterval = delayBeforeCWStartTime * 2;
      
     if (!btn){
-     strcpy(b, "CW Start Delay");
-     printLine2(b);
+      printLineF2(F("CW Start Delay"));
      return;
     }
 
     printLineF1(F("Press, set Delay"));
+    /*
     strcpy(b, "Start Delay:");
     itoa(tmpTXCWInterval,c, 10);
     strcat(b, c);
     printLine2(b);
+    */
     delay_background(300, 0);
 
-    while(!btnDown() && digitalRead(PTT) == HIGH){
+    while(!btnDown()){
+
+      if (needDisplayInformation == 1) {
+        strcpy(b, "Start Delay:");
+        itoa(tmpTXCWInterval,c, 10);
+        strcat(b, c);
+        printLine2(b);
+        needDisplayInformation = 0;
+      }
+      
       knob = enc_read();
       if (knob != 0){
         if (tmpTXCWInterval > 0 && knob < 0)
           tmpTXCWInterval -= 2;
         if (tmpTXCWInterval < 500 && knob > 0)
           tmpTXCWInterval += 2;
-
+        /*
         strcpy(b, "Start Delay:");
         itoa(tmpTXCWInterval,c, 10);
         strcat(b, c);
         printLine2(b);
+        */
+        needDisplayInformation = 1;
       }
       //abort if this button is down
       if (btnDown())
@@ -1280,8 +1272,6 @@ void menuSetupCwTone(int btn){
       itoa(sideTone, b, 10);
       printLine2(b);
 
-      //delay(100);
-      //Check_Cat(0);  //To prevent disconnections
       delay_background(100, 0);
     }
     noTone(CW_TONE);
@@ -1307,20 +1297,23 @@ void setDialLock(byte tmpLock, byte fromMode) {
     isDialLock &= ~(vfoActive == VFO_A ? 0x01 : 0x02);
     
   if (fromMode == 2 || fromMode == 3) return;
-  
+
+  //for reduce using flash memory
+  /*
   if (tmpLock == 1)
     printLineF2(F("Dial Lock ON"));
   else
     printLineF2(F("Dial Lock OFF"));
+  */
 
   delay_background(1000, 0);
   printLine2ClearAndUpdate();
 }
 
-unsigned int btnDownTimeCount;
+byte btnDownTimeCount;
 
-#define PRESS_ADJUST_TUNE 1000
-#define PRESS_LOCK_CONTROL 2000
+#define PRESS_ADJUST_TUNE 20 //1000msec 20 * 50 = 1000milisec
+#define PRESS_LOCK_CONTROL 40 //2000msec 40 * 50 = 2000milisec
 
 //Modified by KD8CEC
 void doMenu(){
@@ -1334,14 +1327,12 @@ void doMenu(){
 
   //Appened Lines by KD8CEC for Adjust Tune step and Set Dial lock
   while(btnDown()){
-    //delay(50);
-    //Check_Cat(0);  //To prevent disconnections
     delay_background(50, 0);
     
-    if (btnDownTimeCount++ == (PRESS_ADJUST_TUNE / 50)) { //Set Tune Step 
+    if (btnDownTimeCount++ == (PRESS_ADJUST_TUNE)) { //Set Tune Step 
       printLineF2(F("Set Tune Step?"));
     }
-    else if (btnDownTimeCount > (PRESS_LOCK_CONTROL / 50)) {  //check long time Down Button -> 2.5 Second => Lock
+    else if (btnDownTimeCount > (PRESS_LOCK_CONTROL)) {  //check long time Down Button -> 2.5 Second => Lock
       if (vfoActive == VFO_A)
         setDialLock((isDialLock & 0x01) == 0x01 ? 0 : 1, 0); //Reverse Dial lock
       else
@@ -1352,12 +1343,12 @@ void doMenu(){
   delay(50);  //debounce
 
   //ADJUST TUNE STEP 
-  if (btnDownTimeCount > (PRESS_ADJUST_TUNE / 50))
+  if (btnDownTimeCount > PRESS_ADJUST_TUNE)
   {
     printLineF1(F("Press to set step"));
     isNeedDisplay = 1; //check to need display for display current value
     
-    while (digitalRead(PTT) == HIGH && !btnDown())
+    while (!btnDown())
     {
       //Check_Cat(0);  //To prevent disconnections
       //delay(50);  //debounce    

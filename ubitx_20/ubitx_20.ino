@@ -156,10 +156,10 @@ int count = 0;          //to generally count ticks, loops, etc
 #define VFO_B_MODE 257
 #define CW_DELAY 258
 #define CW_START 259
-#define HAM_BAND_COUNT 260  //
-#define TX_TUNE_TYPE 261  //
-#define HAM_BAND_RANGE 262 //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
-#define HAM_BAND_FREQS 302 //40, 1 BAND = 4Byte most bit is mode
+#define HAM_BAND_COUNT 260    //
+#define TX_TUNE_TYPE 261      //
+#define HAM_BAND_RANGE 262    //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
+#define HAM_BAND_FREQS 302    //40, 1 BAND = 4Byte most bit is mode
 #define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)  //1STEP : 
   
 
@@ -907,13 +907,13 @@ void initSettings(){
   if ((3 < tuneTXType && tuneTXType < 100) || 103 < tuneTXType || useHamBandCount < 1 || findedValidValueCount < 5)
   {
     tuneTXType = 2;
-    //if empty band Information, auto insert default region 1 frequency range
+    //if empty band Information, auto insert default region 2 frequency range
     //This part is made temporary for people who have difficulty setting up, so can remove it when you run out of memory.
     useHamBandCount = 10;
     hamBandRange[0][0] = 1810; hamBandRange[0][1] = 2000; 
     hamBandRange[1][0] = 3500; hamBandRange[1][1] = 3800; 
     hamBandRange[2][0] = 5351; hamBandRange[2][1] = 5367; 
-    hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7300;   //region 1
+    hamBandRange[3][0] = 7000; hamBandRange[3][1] = 7300;     //region 2
     hamBandRange[4][0] = 10100; hamBandRange[4][1] = 10150; 
     hamBandRange[5][0] = 14000; hamBandRange[5][1] = 14350; 
     hamBandRange[6][0] = 18068; hamBandRange[6][1] = 18168; 
@@ -1085,7 +1085,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v0.35")); 
+  printLineF(1, F("CECBT v1.00")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
@@ -1139,6 +1139,7 @@ void checkAutoSaveFreqMode()
     //check time for Frequency auto save
     if (millis() - saveCheckTime > saveIntervalSec * 1000)
     {
+      /*
       if (vfoActive == VFO_A)
       {
         vfoA = frequency;
@@ -1151,6 +1152,8 @@ void checkAutoSaveFreqMode()
         vfoB_mode = modeToByte();
         storeFrequencyAndMode(2);
       }
+      */
+      FrequencyToVFO(1);
     }
   }
 }
