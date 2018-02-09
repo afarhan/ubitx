@@ -1,6 +1,7 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- Now Release Version 1.0 on my blog (http://www.hamskey.com)
+- A bug was found in version 1.0, When CW Keytype is set to IAMBCA and IAMBCB, there was a problem that switching to RX is not performed well when CAT communication is performed. If CW key type is straight, it works normally. This bug has been fixed and changed to version 1.01.
+- Now Release Version 1.01 on my blog (http://www.hamskey.com)
 - You can download and compiled hex file and uBITX Manager application on my blog (http://www.hamskey.com)
 
 #NOTICE
