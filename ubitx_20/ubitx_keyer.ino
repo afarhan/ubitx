@@ -172,6 +172,9 @@ void cwKeyer(void){
           keyerControl &= ~(DIT_L + DAH_L); // clear both paddle latch bits
           keyerState = KEYED; // next state
           if (!inTx){
+            //DelayTime Option
+            delay_background(delayBeforeCWStartTime * 2, 2);
+            
             keyDown = 0;
             cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
             startTx(TX_CW, 1);
@@ -212,6 +215,9 @@ void cwKeyer(void){
       if (update_PaddleLatch(0) == DIT_L) {
         // if we are here, it is only because the key is pressed
         if (!inTx){
+          //DelayTime Option
+          delay_background(delayBeforeCWStartTime * 2, 2);
+          
           keyDown = 0;
           cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT; 
           startTx(TX_CW, 1);
