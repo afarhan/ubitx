@@ -39,11 +39,13 @@ Prepared or finished tasks for the next version
 ----------------------------------------------------------------------------
 ## REVISION RECORD
 1.02 (working)
-  - Applied CW Start Delay to New CW Key logic (This is my mistake when applying the new CW Key Logic.Since uBITX operations are not significantly affected, this does not create a separate Release, It will be reflected in the next release.)
-  
+  - Applied CW Start Delay to New CW Key logic (This is my mistake when applying the new CW Key Logic.Since uBITX operations are not significantly affected, this does not create a separate Release, It will be reflected in the next release.) - complete
+  - Modified CW Key Logic for Auto Key, (available AutoKey function by any cw keytype) - complete
+  - reduce cpu use usage (working)
+  - reduce (working)
+
 1.01
   - Fixed Cat problem with (IAMBIC A or B Selected)
-  
 1.0 
   - rename 0.30 to 1.0
   
