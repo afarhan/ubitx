@@ -1345,7 +1345,7 @@ void doMenu(){
   //ADJUST TUNE STEP 
   if (btnDownTimeCount > PRESS_ADJUST_TUNE)
   {
-    printLineF1(F("Press to set step"));
+    printLineF1(F("Press to set"));
     isNeedDisplay = 1; //check to need display for display current value
     
     while (!btnDown())
@@ -1382,7 +1382,7 @@ void doMenu(){
       }
     } //end of while
 
-    printLineF2(F("Changed Step!"));
+    //printLineF2(F("Changed Step!")); //remarked for reduce program memory by KD8CEC
     //SAVE EEPROM
     EEPROM.put(TUNING_STEP, tuneStepIndex);
     delay_background(500, 0);

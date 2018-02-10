@@ -235,13 +235,14 @@ void cwKeyer(void){
           keyDown = 0;
           stopTx();
         }
-        if (!cwTimeout)
-          return;
+        //if (!cwTimeout) //removed by KD8CEC
+        //   return;
         // got back to the beginning of the loop, if no further activity happens on straight key
         // we will time out, and return out of this routine 
         //delay(5);
-        delay_background(5, 3);
-        continue;
+        //delay_background(5, 3); //removed by KD8CEC
+        //continue;               //removed by KD8CEC
+        return;                   //Tx stop control by Main Loop
       }
 
       Check_Cat(2);
