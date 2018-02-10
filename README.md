@@ -38,8 +38,14 @@ Prepared or finished tasks for the next version
                   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+1.02 (working)
+  - Applied CW Start Delay to New CW Key logic
+  
+1.01
+  - Fixed Cat problem with (IAMBIC A or B Selected)
+  
 1.0 
-  - todo : rename 0.30 to 1.0
+  - rename 0.30 to 1.0
   
 0.35
   - vfo to channel bug fixed (not saved mode -> fixed, channel has frequency and mode)
