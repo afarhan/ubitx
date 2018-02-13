@@ -749,9 +749,11 @@ void doRIT(){
   unsigned long old_freq = frequency;
 
   if (knob < 0)
-    frequency -= 100l;
+    frequency -= (arTuneStep[tuneStepIndex -1]);  //
+    //frequency -= 100l;
   else if (knob > 0)
-    frequency += 100;
+    frequency += (arTuneStep[tuneStepIndex -1]);  //
+    //frequency += 100;
  
   if (old_freq != frequency){
     setFrequency(frequency);
