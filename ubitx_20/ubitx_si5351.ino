@@ -62,7 +62,7 @@ void i2cWriten(uint8_t reg, uint8_t *vals, uint8_t vcnt) {  // write array
 
 
 void si5351bx_init() {                  // Call once at power-up, start PLLA
-  uint8_t reg;  uint32_t msxp1;
+  uint32_t msxp1;
   Wire.begin();
   i2cWrite(149, 0);                     // SpreadSpectrum off
   i2cWrite(3, si5351bx_clken);          // Disable all CLK output drivers
@@ -109,7 +109,11 @@ void initOscillators(){
   //initialize the SI5351
   si5351bx_init();
   si5351bx_vcoa = (SI5351BX_XTAL * SI5351BX_MSA) + calibration; // apply the calibration correction factor
-  si5351bx_setfreq(0, usbCarrier);
+
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));
+ else
+    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));
 }
 
 
