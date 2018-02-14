@@ -172,6 +172,9 @@ void cwKeyer(void){
           keyerControl &= ~(DIT_L + DAH_L); // clear both paddle latch bits
           keyerState = KEYED; // next state
           if (!inTx){
+            //DelayTime Option
+            delay_background(delayBeforeCWStartTime * 2, 2);
+            
             keyDown = 0;
             cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
             startTx(TX_CW, 1);
@@ -212,6 +215,9 @@ void cwKeyer(void){
       if (update_PaddleLatch(0) == DIT_L) {
         // if we are here, it is only because the key is pressed
         if (!inTx){
+          //DelayTime Option
+          delay_background(delayBeforeCWStartTime * 2, 2);
+          
           keyDown = 0;
           cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT; 
           startTx(TX_CW, 1);
@@ -229,13 +235,14 @@ void cwKeyer(void){
           keyDown = 0;
           stopTx();
         }
-        if (!cwTimeout)
-          return;
+        //if (!cwTimeout) //removed by KD8CEC
+        //   return;
         // got back to the beginning of the loop, if no further activity happens on straight key
         // we will time out, and return out of this routine 
         //delay(5);
-        delay_background(5, 3);
-        continue;
+        //delay_background(5, 3); //removed by KD8CEC
+        //continue;               //removed by KD8CEC
+        return;                   //Tx stop control by Main Loop
       }
 
       Check_Cat(2);

@@ -749,9 +749,11 @@ void doRIT(){
   unsigned long old_freq = frequency;
 
   if (knob < 0)
-    frequency -= 100l;
+    frequency -= (arTuneStep[tuneStepIndex -1]);  //
+    //frequency -= 100l;
   else if (knob > 0)
-    frequency += 100;
+    frequency += (arTuneStep[tuneStepIndex -1]);  //
+    //frequency += 100;
  
   if (old_freq != frequency){
     setFrequency(frequency);
@@ -1116,11 +1118,6 @@ void setup()
     factory_alignment();
 }
 
-
-//for debug
-int dbgCnt = 0;
-byte flasher = 0;
-
 //Auto save Frequency and Mode with Protected eeprom life by KD8CEC
 void checkAutoSaveFreqMode()
 {
@@ -1139,21 +1136,8 @@ void checkAutoSaveFreqMode()
     //check time for Frequency auto save
     if (millis() - saveCheckTime > saveIntervalSec * 1000)
     {
-      /*
-      if (vfoActive == VFO_A)
-      {
-        vfoA = frequency;
-        vfoA_mode = modeToByte();
-        storeFrequencyAndMode(1);
-      }
-      else
-      {
-        vfoB = frequency;
-        vfoB_mode = modeToByte();
-        storeFrequencyAndMode(2);
-      }
-      */
       FrequencyToVFO(1);
+      saveCheckTime = 0;  //for reduce cpu use rate
     }
   }
 }
@@ -1180,11 +1164,11 @@ void loop(){
 
     if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 250) {
       idle_process();
+      checkAutoSaveFreqMode();  //move here form out scope for reduce cpu use rate
       beforeIdle_ProcessTime = millis();
     }
   } //end of check TX Status
 
   //we check CAT after the encoder as it might put the radio into TX
   Check_Cat(inTx? 1 : 0);
-  checkAutoSaveFreqMode();
 }
