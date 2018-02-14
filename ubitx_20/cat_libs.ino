@@ -109,7 +109,8 @@ void CatSetFreq(byte fromType)
 //#define BCD_LEN 9
 //PROTOCOL : 0x03
 //Computer <-(frequency)-> TRCV CAT_BUFF
-void CatGetFreqMode(unsigned long freq, byte fromType)
+//void CatGetFreqMode(unsigned long freq, byte fromType)
+void CatGetFreqMode(unsigned long freq) //for remove warning messages
 {
   int i;
   byte tmpValue;
@@ -149,15 +150,21 @@ void CatGetFreqMode(unsigned long freq, byte fromType)
   SendCatData(5);
 }
 
-void CatSetSplit(boolean isSplit, byte fromType)
+//void CatSetSplit(boolean isSplit, byte fromType)
+void CatSetSplit(boolean isSplit) //for remove warning messages
 {
-
+  if (isSplit)
+    splitOn = 1;
+  else
+    splitOn = 0;
+    
   Serial.write(ACK);
 }
 
 void CatSetPTT(boolean isPTTOn, byte fromType)
 {
-  if (fromType == 2 || fromType == 3) {
+  //
+  if ((!inTx) && (fromType == 2 || fromType == 3)) {
     Serial.write(ACK);  
     return;  
   }
@@ -193,7 +200,7 @@ void CatSetPTT(boolean isPTTOn, byte fromType)
 void CatVFOToggle(boolean isSendACK, byte fromType)
 {
   if (fromType != 2 && fromType != 3) {
-    menuVfoToggle(1, 0);
+    menuVfoToggle(1);
   }  
 
   if (isSendACK)
@@ -232,7 +239,8 @@ void CatSetMode(byte tmpMode, byte fromType)
 }
 
 //Read EEProm by uBITX Manager Software
-void ReadEEPRom(byte fromType)
+//void ReadEEPRom(byte fromType)
+void ReadEEPRom() //for remove warnings.
 {
   //5BYTES
   //CAT_BUFF[0] [1] [2] [3] [4] //4 COMMAND
@@ -255,7 +263,8 @@ void ReadEEPRom(byte fromType)
 }
 
 //Write just proecess 1byes
-void WriteEEPRom(byte fromType)
+//void WriteEEPRom(byte fromType)
+void WriteEEPRom(void)  //for remove warning
 {
   //5BYTES
   uint16_t eepromStartIndex = CAT_BUFF[0] + CAT_BUFF[1] * 256;
@@ -275,7 +284,8 @@ void WriteEEPRom(byte fromType)
   }
 }
 
-void ReadEEPRom_FT817(byte fromType)
+//void ReadEEPRom_FT817(byte fromType)
+void ReadEEPRom_FT817(void) //for remove warnings
 {
   byte temp0 = CAT_BUFF[0];
   byte temp1 = CAT_BUFF[1];
@@ -601,7 +611,8 @@ void WriteEEPRom_FT817(byte fromType)
   Serial.write(ACK);
 }
 
-void CatRxStatus(byte fromType) 
+//void CatRxStatus(byte fromType) 
+void CatRxStatus(void)  //for remove warning
 {
   byte sMeterValue = 1;
 
@@ -621,7 +632,8 @@ void CatRxStatus(byte fromType)
 }
 
 
-void CatTxStatus(byte fromType)
+//void CatTxStatus(byte fromType)
+void CatTxStatus(void)  //for remove warning
 {
   boolean isHighSWR = false;
   boolean isSplitOn = false;
@@ -722,11 +734,11 @@ void Check_Cat(byte fromType)
       
     case 0x02 : //Split On
     case 0x82:  //Split Off
-      CatSetSplit(CAT_BUFF[4] == 0x02, fromType);
+      CatSetSplit(CAT_BUFF[4] == 0x02);
       break;
 
     case 0x03 :   //Read Frequency and mode
-      CatGetFreqMode(frequency, fromType);
+      CatGetFreqMode(frequency);
       break;
 
     case 0x07 :   //Set Operating  Mode
@@ -743,24 +755,24 @@ void Check_Cat(byte fromType)
       break;
 
     case 0xDB:  //Read uBITX EEPROM Data
-      ReadEEPRom(fromType); //Call by uBITX Manager Program
+      ReadEEPRom(); //Call by uBITX Manager Program
       break;
     case 0xBB:  //Read FT-817 EEPROM Data  (for comfirtable)
-      ReadEEPRom_FT817(fromType);
+      ReadEEPRom_FT817();
       break;
 
     case 0xDC:  //Write uBITX EEPROM Data
-      WriteEEPRom(fromType); //Call by uBITX Manager Program
+      WriteEEPRom(); //Call by uBITX Manager Program
       break;
     case 0xBC:  //Write FT-817 EEPROM Data  (for comfirtable)
       WriteEEPRom_FT817(fromType);
       break;
 
     case 0xE7 :       //Read RX Status
-      CatRxStatus(fromType);
+      CatRxStatus();
       break;
     case 0xF7:      //Read TX Status
-      CatTxStatus(fromType);
+      CatTxStatus();
       break;
     default:
     /*
