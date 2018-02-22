@@ -1110,7 +1110,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v1.01")); 
+  printLineF(1, F("CECBT v1.03")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
