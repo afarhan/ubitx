@@ -31,12 +31,15 @@ void updateLine2Buffer(char isDirectCall)
   {
     if (ritOn)
     {
+      strcpy(line2Buffer, "RitTX:");
+      /*
       line2Buffer[0] = 'R';
       line2Buffer[1] = 'i';
       line2Buffer[2] = 't';
       line2Buffer[3] = 'T';
       line2Buffer[4] = 'X';
       line2Buffer[5] = ':';
+      */
   
       //display frequency
       tmpFreq = ritTxFrequency;
@@ -61,12 +64,10 @@ void updateLine2Buffer(char isDirectCall)
     if (vfoActive == VFO_B)
     {
       tmpFreq = vfoA;
-      //line2Buffer[0] = 'A';
     }
     else 
     {
       tmpFreq = vfoB;
-      //line2Buffer[0] = 'B';
     }
   
     // EXAMPLE 1 & 2
@@ -133,16 +134,18 @@ void updateLine2Buffer(char isDirectCall)
     line2Buffer[8] = 'I';
     line2Buffer[9] = 'F';
 
-    if (ifShiftValue == 0)
-    {
+    //if (ifShiftValue == 0)
+    //{
+      /*
       line2Buffer[10] = 'S';
       line2Buffer[11] = ':';
       line2Buffer[12] = 'O';
       line2Buffer[13] = 'F';
       line2Buffer[14] = 'F';
-    }
-    else
-    {
+      */
+    //}
+    //else
+    //{
       line2Buffer[10] = ifShiftValue >= 0 ? '+' : 0;
       line2Buffer[11] = 0;
       line2Buffer[12] = ' ';
@@ -151,7 +154,7 @@ void updateLine2Buffer(char isDirectCall)
       memset(b, 0, sizeof(b));
       ltoa(ifShiftValue, b, DEC);
       strncat(line2Buffer, b, 5);
-    }
+    //}
     
     if (isDirectCall == 1)  //if call by encoder (not scheduler), immediate print value
         printLine2(line2Buffer);    

@@ -408,7 +408,6 @@ void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
   When the delay is used, the program will generate an error because it is not communicating, 
   so Create a new delay function that can do background processing.
  */
- 
 unsigned long delayBeforeTime = 0;
 byte delay_background(unsigned delayTime, byte fromType){ //fromType : 4 autoCWKey -> Check Paddle
   delayBeforeTime = millis();
@@ -526,7 +525,6 @@ void setFrequency(unsigned long f){
  * put the uBitx in tx mode. It takes care of rit settings, sideband settings
  * Note: In cw mode, doesnt key the radio, only puts it in tx mode
  */
- 
 void startTx(byte txMode, byte isDisplayUpdate){
   //Check Hamband only TX //Not found Hamband index by now frequency
   if (tuneTXType >= 100 && getIndexHambanBbyFreq(ritOn ? ritTxFrequency :  frequency) == -1) {
@@ -682,7 +680,7 @@ void checkButton(){
     delay(10);
     Check_Cat(0);
   }
-  delay(50);//debounce
+  //delay(50);//debounce
 }
 
 
@@ -697,7 +695,7 @@ int encodedSumValue = 0;
 unsigned long lastTunetime = 0; //if continous moving, skip threshold processing
 byte lastMovedirection = 0; //0 : stop, 1 : cw, 2 : ccw
 
-#define skipThresholdTime 100
+//#define skipThresholdTime 70
 #define encodeTimeOut 1000
 
 void doTuningWithThresHold(){
@@ -726,7 +724,9 @@ void doTuningWithThresHold(){
   encodedSumValue += (s > 0 ? 1 : -1);
 
   //check threshold and operator actions (hold dial speed = continous moving, skip threshold check)
-  if ((lastTunetime < millis() - skipThresholdTime) && ((encodedSumValue *  encodedSumValue) <= (threshold * threshold)))
+  //not use continues changing by Threshold
+  //if ((lastTunetime < (millis() - skipThresholdTime)) && ((encodedSumValue *  encodedSumValue) <= (threshold * threshold)))
+  if (((encodedSumValue *  encodedSumValue) <= (threshold * threshold)))
     return;
 
   lastTunetime = millis();
@@ -736,7 +736,8 @@ void doTuningWithThresHold(){
 
   prev_freq = frequency;
   //incdecValue = tuningStep * s;
-  frequency += (arTuneStep[tuneStepIndex -1] * s * (s * s < 10 ? 1 : 3));  //appield weight (s is speed)
+  //frequency += (arTuneStep[tuneStepIndex -1] * s * (s * s < 10 ? 1 : 3));  //appield weight (s is speed)
+  frequency += (arTuneStep[tuneStepIndex -1] * s);  //appield weight (s is speed) //if want need more increase size, change step size
     
   if (prev_freq < 10000000l && frequency > 10000000l)
     isUSB = true;
@@ -757,16 +758,15 @@ void doRIT(){
 
   if (knob < 0)
     frequency -= (arTuneStep[tuneStepIndex -1]);  //
-    //frequency -= 100l;
   else if (knob > 0)
     frequency += (arTuneStep[tuneStepIndex -1]);  //
-    //frequency += 100;
  
   if (old_freq != frequency){
     setFrequency(frequency);
     updateDisplay();
   }
 }
+
 /*
  save Frequency and mode to eeprom for Auto Save with protected eeprom cycle, by kd8cec
  */
@@ -1060,7 +1060,6 @@ void initSettings(){
 }
 
 void initPorts(){
-
   analogReference(DEFAULT);
 
   //??
@@ -1110,7 +1109,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v1.03")); 
+  printLineF(1, F("CECBT v1.04")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build

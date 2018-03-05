@@ -56,7 +56,7 @@ void menuBand(int btn){
    return;
   }
 
-  printLineF2(F("Press to confirm"));
+  //printLineF2(F("Press to confirm"));
   //wait for the button menu select button to be lifted)
   while (btnDown()) {
      delay_background(50, 0);
@@ -72,9 +72,9 @@ void menuBand(int btn){
       }
       delay_background(1000, 0);
       printLine2ClearAndUpdate();
-      printLineF2(F("Press to confirm"));
     }
   }
+  printLineF2(F("Press to confirm"));
   
   char currentBandIndex = -1;
   //Save Band Information
@@ -92,7 +92,6 @@ void menuBand(int btn){
   ritDisable();
 
   while(!btnDown()){
-
     knob = enc_read();
     if (knob != 0){
       if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
@@ -127,17 +126,7 @@ void menuBand(int btn){
     delay_background(20, 0);
   }
 
-/*
-  while(btnDown()) {
-    delay(50);
-    Check_Cat(0);  //To prevent disconnections
-  }
-*/  
   FrequencyToVFO(1);
-
-  //printLine2ClearAndUpdate();
-  //delay_background(500, 0);
-  //menuOn = 0;
   menuClearExit(500);
 }
 
@@ -181,25 +170,6 @@ void byteToMode(byte modeValue, byte autoSetModebyFreq){
   }
 }
 
-/*
-//Convert Number to Mode by KD8CEC
-void byteWithFreqToMode(byte modeValue){
-  if (modeValue == 4)
-    cwMode = 1;
-  else if (modeValue == 5)
-    cwMode = 2;
-  else  {
-    cwMode = 0;
-    if (modeValue == 3)
-      isUSB = 1;
-    else if (modeValue == 0)  //Not Set
-      isUSB = (frequency > 10000000l) ? true : false;
-    else
-      isUSB = 0;
-  }
-}
-*/
-
 //IF Shift function, BFO Change like RIT, by KD8CEC
 void menuIFSSetup(int btn){
   int knob = 0;
@@ -212,11 +182,7 @@ void menuIFSSetup(int btn){
       printLineF2(F("IF Shift:Off, On?"));
   }
   else {
-      //if (isIFShift == 0){
-        //printLineF2(F("IF Shift is ON"));
-        //delay_background(500, 0);
       isIFShift = 1;
-      //}
 
       delay_background(500, 0);
       updateLine2Buffer(1);
@@ -255,7 +221,7 @@ void menuIFSSetup(int btn){
         isIFShift = 0;
         printLineF2(F("IF Shift is OFF"));
         setFrequency(frequency);
-        delay_background(500, 0);
+        delay_background(1500, 0);
       }
       
       //menuOn = 0;
@@ -343,17 +309,12 @@ void menuSelectMode(int btn){
     si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
     
     setFrequency(frequency);
-
-    //delay_background(500, 0);
-    //printLine2ClearAndUpdate();
-    //menuOn = 0;
     menuClearExit(500);
   }
 }
 
 
 //Memory to VFO, VFO to Memory by KD8CEC
-//select between MtoV and VtoM by isMemoryToVfo
 void menuCHMemory(int btn, byte isMemoryToVfo){
   int knob = 0;
   int selectChannel = 0;
@@ -407,10 +368,6 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
             strcat(c, b); //append channel Number;
             strcat(c, " :"); //append channel Number;
           }
-          /*
-          if (selectChannel < 10)
-            printLineFromEEPRom(0, 4, 0, userCallsignLength -1); //eeprom to lcd use offset (USER_CALLSIGN_DAT)        
-          */
   
           //display frequency
           tmpFreq = resultFreq;
@@ -624,25 +581,16 @@ void menuVfoToggle(int btn)
       FrequencyToVFO(1);
     
       if (vfoActive == VFO_B){
-        //vfoB = frequency;
-        //vfoB_mode = modeToByte();
-        //storeFrequencyAndMode(2); //vfoB -> eeprom
-        
         vfoActive = VFO_A;
         frequency = vfoA;
         saveCheckFreq = frequency;
         byteToMode(vfoA_mode, 0);
       }
       else {
-        //vfoA = frequency;
-        //vfoA_mode = modeToByte();
-        //storeFrequencyAndMode(1); //vfoA -> eeprom
-        
         vfoActive = VFO_B;
         frequency = vfoB;
         saveCheckFreq = frequency;
         byteToMode(vfoB_mode, 0);
-        //printLineF2(F("Selected VFO B"));
       }
 
       ritDisable();
@@ -661,12 +609,12 @@ void menuRitToggle(int btn){
   }
   else {
       if (ritOn == 0){
-        printLineF2(F("RIT is ON"));
+        //printLineF2(F("RIT is ON"));
         //enable RIT so the current frequency is used at transmit
         ritEnable(frequency);
       }
       else{
-        printLineF2(F("RIT is OFF"));
+        //printLineF2(F("RIT is OFF"));
         ritDisable();
       }
       
@@ -694,9 +642,6 @@ void menuSplitOnOff(int btn){
         printLineF2(F("Split On!"));
       }
       
-    //delay_background(500, 0);
-    //printLine2ClearAndUpdate();
-    //menuOn = 0;
     menuClearExit(500);
   }
 }
@@ -721,9 +666,6 @@ void menuTxOnOff(int btn, byte optionType){
         printLineF2(F("TX ON!"));
       }
       
-    //delay_background(500, 0);
-    //printLine2ClearAndUpdate();
-    //menuOn = 0;
     menuClearExit(500);
   }
 }
@@ -751,9 +693,6 @@ void menuSetup(int btn){
     }
     */
     
-   //delay_background(2000, 0);
-   //printLine2Clear();
-   //menuOn = 0;
    menuClearExit(1000);
   }
 }
@@ -803,23 +742,18 @@ void menuCWSpeed(int btn){
         printLine2(b);
       }
       //abort if this button is down
-      if (btnDown())
-        //re-enable the clock1 and clock 2
-        break;
+      //if (btnDown())
+      //re-enable the clock1 and clock 2
+      //  break;
 
       Check_Cat(0);  //To prevent disconnections
     }
     
-    //save the setting
-    //if (digitalRead(PTT) == LOW){
-      printLineF2(F("CW Speed set!"));
-      cwSpeed = 1200/wpm;
-      EEPROM.put(CW_SPEED, cwSpeed);
-    //}
-    //delay_background(2000, 0);
-    //printLine2ClearAndUpdate();
-    //menuOn = 0;
-   menuClearExit(1000);
+  //save the setting
+  //printLineF2(F("CW Speed set!"));
+  cwSpeed = 1200 / wpm;
+  EEPROM.put(CW_SPEED, cwSpeed);
+  menuClearExit(1000);
 }
 
 //Builtin CW Keyer Logic by KD8CEC
@@ -884,14 +818,9 @@ void menuSetupCwDelay(int btn){
     }
     
     //save the setting
-    //if (digitalRead(PTT) == LOW){
-      printLineF2(F("CW Delay set!"));
-      cwDelayTime = tmpCWDelay / 10;
-      EEPROM.put(CW_DELAY, cwDelayTime);
-      //delay_background(2000, 0);
-    //}
-    //printLine2ClearAndUpdate();
-    //menuOn = 0;
+    //printLineF2(F("CW Delay set!"));
+    cwDelayTime = tmpCWDelay / 10;
+    EEPROM.put(CW_DELAY, cwDelayTime);
    menuClearExit(1000);
 }
 
@@ -940,21 +869,17 @@ void menuSetupTXCWInterval(int btn){
         needDisplayInformation = 1;
       }
       //abort if this button is down
-      if (btnDown())
-        break;
+      //if (btnDown())
+      //  break;
 
       Check_Cat(0);  //To prevent disconnections
     }
     
     //save the setting
-    //if (digitalRead(PTT) == LOW){
-      printLineF2(F("CW Start set!"));
-      delayBeforeCWStartTime = tmpTXCWInterval / 2;
-      EEPROM.put(CW_START, delayBeforeCWStartTime);
-      //delay_background(2000, 0);
-    //}
-    //printLine2ClearAndUpdate();
-    //menuOn = 0;
+   //printLineF2(F("CW Start set!"));
+   delayBeforeCWStartTime = tmpTXCWInterval / 2;
+   EEPROM.put(CW_START, delayBeforeCWStartTime);
+   
    menuClearExit(1000);
 }
 
@@ -1215,8 +1140,6 @@ void menuSetupCWCarrier(int btn){
     si5351bx_setfreq(0, cwmCarrier);
     printCarrierFreq(cwmCarrier);
 
-    //Check_Cat(0);  //To prevent disconnections
-    //delay(100);
     delay_background(100, 0);
   }
 
@@ -1235,8 +1158,6 @@ void menuSetupCWCarrier(int btn){
     si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
   
   setFrequency(frequency);
-  //printLine2ClearAndUpdate();
-  //menuOn = 0; 
   menuClearExit(0);
 }
 
@@ -1284,8 +1205,6 @@ void menuSetupCwTone(int btn){
     else
       sideTone = prev_sideTone;
     
-    //printLine2ClearAndUpdate();
-    //menuOn = 0; 
   menuClearExit(0);
  }
 
@@ -1298,15 +1217,7 @@ void setDialLock(byte tmpLock, byte fromMode) {
     
   if (fromMode == 2 || fromMode == 3) return;
 
-  //for reduce using flash memory
-  /*
-  if (tmpLock == 1)
-    printLineF2(F("Dial Lock ON"));
-  else
-    printLineF2(F("Dial Lock OFF"));
-  */
-
-  delay_background(1000, 0);
+  //delay_background(1000, 0);
   printLine2ClearAndUpdate();
 }
 
@@ -1382,8 +1293,6 @@ void doMenu(){
       }
     } //end of while
 
-    //printLineF2(F("Changed Step!")); //remarked for reduce program memory by KD8CEC
-    //SAVE EEPROM
     EEPROM.put(TUNING_STEP, tuneStepIndex);
     delay_background(500, 0);
     printLine2ClearAndUpdate();
@@ -1433,6 +1342,8 @@ void doMenu(){
       menuSetup(btnState);
     else if (select < 120)
       menuExit(btnState);
+      
+    /*
     else if (select < 130 && modeCalibrate)
       menuSetupCalibration(btnState);   //crystal
     else if (select < 140 && modeCalibrate)
@@ -1453,14 +1364,40 @@ void doMenu(){
       menuTxOnOff(btnState, 0x01);      //TX OFF / ON
     else if (select < 220 && modeCalibrate)
       menuExit(btnState);
+    */
+
+    else if (modeCalibrate)
+    {
+      if (select < 130)
+        menuSetupCalibration(btnState);   //crystal
+      else if (select < 140)
+        menuSetupCarrier(btnState);       //lsb
+      else if (select < 150)
+        menuSetupCWCarrier(btnState);       //lsb
+      else if (select < 160)
+        menuSetupCwTone(btnState);
+      else if (select < 170)
+        menuSetupCwDelay(btnState);
+      else if (select < 180)
+        menuSetupTXCWInterval(btnState);
+      else if (select < 190)
+        menuSetupKeyType(btnState);
+      else if (select < 200)
+        menuADCMonitor(btnState);
+      else if (select < 210)
+        menuTxOnOff(btnState, 0x01);      //TX OFF / ON
+      else if (select < 220)
+        menuExit(btnState);
+    }
 
     Check_Cat(0);  //To prevent disconnections
   }
 
+/*
   //debounce the button
   while(btnDown()){
     delay_background(50, 0);  //To prevent disconnections
   }
-  //delay(50);
+*/  
 }
 
