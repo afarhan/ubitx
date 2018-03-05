@@ -327,22 +327,6 @@ void updateDisplay() {
     lcd.setCursor(5,diplayVFOLine);
     lcd.write(":");
   }
-
-/*
-  //now, the second line
-  memset(c, 0, sizeof(c));
-  memset(b, 0, sizeof(b));
-
-  if (inTx)
-    strcat(c, "TX ");
-  else if (ritOn)
-    strcpy(c, "RIT");
-
-  strcpy(c, "      \xff");
-  drawMeter(meter_reading);
-  strcat(c, meter);
-  strcat(c, "\xff");
-  printLine2(c);*/
 }
 
 int enc_prev_state = 3;
