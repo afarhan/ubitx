@@ -1149,9 +1149,9 @@ void menuSetupCarrier(int btn){
     knob = enc_read();
 
     if (knob > 0)
-      usbCarrier -= 50;
+      usbCarrier -= 5;
     else if (knob < 0)
-      usbCarrier += 50;
+      usbCarrier += 5;
     else
       continue; //don't update the frequency or the display
       

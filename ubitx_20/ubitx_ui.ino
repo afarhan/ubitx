@@ -281,6 +281,15 @@ void updateDisplay() {
       strcat(c, "B:");
   }
 
+  //Fixed by Mitani Massaru (JE4SMQ)
+  if (isShiftDisplayCWFreq == 1)
+  {
+    if (cwMode == 1)        //CWL
+        tmpFreq = tmpFreq - sideTone + shiftDisplayAdjustVal;
+    else if (cwMode == 2)   //CWU
+        tmpFreq = tmpFreq + sideTone + shiftDisplayAdjustVal;
+  }
+
   //display frequency
   for (int i = 15; i >= 6; i--) {
     if (tmpFreq > 0) {

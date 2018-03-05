@@ -176,6 +176,10 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_ADC_BOTH_FROM 356   //CW ADC Range BOTH from         (Lower 8 bit)
 #define CW_ADC_BOTH_TO   357   //CW ADC Range BOTH to           (Lower 8 bit)
 #define CW_KEY_TYPE      358
+#define CW_DISPLAY_SHIFT 359  //Transmits on CWL, CWU Mode, LCD Frequency shifts Sidetone Frequency. 
+                              //(7:Enable / Disable //0: enable, 1:disable, (default is applied shift)
+                              //6 : 0 : Adjust Pulus, 1 : Adjust Minus
+                              //0~5: Adjust Value : * 10 = Adjust Value (0~300)
 
 #define DISPLAY_OPTION1  361   //Display Option1
 #define DISPLAY_OPTION2  362   //Display Option2
@@ -284,6 +288,9 @@ byte cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
 bool Iambic_Key = true;
 #define IAMBICB 0x10 // 0 for Iambic A, 1 for Iambic B
 unsigned char keyerControl = IAMBICB;
+
+byte isShiftDisplayCWFreq = 1;  //Display Frequency 
+int shiftDisplayAdjustVal = 0;  //
 
 //Variables for auto cw mode
 byte isCWAutoMode = 0;          //0 : none, 1 : CW_AutoMode_Menu_Selection, 2 : CW_AutoMode Sending
@@ -963,6 +970,22 @@ void initSettings(){
   cwAdcBothFrom = EEPROM.read(CW_ADC_BOTH_FROM) | ((tmpMostBits & 0x30) << 4);
   cwAdcBothTo = EEPROM.read(CW_ADC_BOTH_TO)     | ((tmpMostBits & 0xC0) << 2);
 
+  //Display Type for CW mode
+  isShiftDisplayCWFreq = EEPROM.read(CW_DISPLAY_SHIFT);
+
+  //Adjust CW Mode Freq
+  shiftDisplayAdjustVal = (isShiftDisplayCWFreq & 0x3F) * 10;
+
+  //check Minus
+  if ((isShiftDisplayCWFreq & 0x40) == 0x40)
+    shiftDisplayAdjustVal = shiftDisplayAdjustVal * -1;
+
+ //Shift Display Check (Default : 0)
+  if ((isShiftDisplayCWFreq & 0x80) == 0)  //Enabled
+    isShiftDisplayCWFreq = 1;
+  else    //Disabled
+    isShiftDisplayCWFreq = 0;
+
   //default Value (for original hardware)
   if (cwAdcSTFrom >= cwAdcSTTo)
   {
@@ -1087,7 +1110,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v1.01")); 
+  printLineF(1, F("CECBT v1.03")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
