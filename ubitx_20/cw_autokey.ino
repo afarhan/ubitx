@@ -297,7 +297,7 @@ void controlAutoCW(){
               displayScrolStep = 0;
           }
           
-          printLineFromEEPRom(0, 2, cwStartIndex + displayScrolStep + CW_DATA_OFSTADJ, cwEndIndex + CW_DATA_OFSTADJ); 
+          printLineFromEEPRom(0, 2, cwStartIndex + displayScrolStep + CW_DATA_OFSTADJ, cwEndIndex + CW_DATA_OFSTADJ, 0); 
 
           byte diplayAutoCWLine = 0;
           if ((displayOption1 & 0x01) == 0x01)

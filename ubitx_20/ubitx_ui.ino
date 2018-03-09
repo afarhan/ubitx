@@ -9,7 +9,7 @@
 //#define printLineF2(x) (printLineF(0, x))
 
 //returns true if the button is pressed
-int btnDown(){
+int btnDown(void){
   if (digitalRead(FBUTTON) == HIGH)
     return 0;
   else
@@ -173,7 +173,7 @@ void printLineF(char linenmbr, const __FlashStringHelper *c)
 }
 
 #define LCD_MAX_COLUMN 16
-void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, byte eepromEndIndex) {
+void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, byte eepromEndIndex, char offsetTtype) {
   if ((displayOption1 & 0x01) == 0x01)
     linenmbr = (linenmbr == 0 ? 1 : 0); //Line Toggle
   
@@ -182,7 +182,7 @@ void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, b
   for (byte i = eepromStartIndex; i <= eepromEndIndex; i++)
   {
     if (++lcdColumn <= LCD_MAX_COLUMN)
-      lcd.write(EEPROM.read(USER_CALLSIGN_DAT + i));
+      lcd.write(EEPROM.read((offsetTtype == 0 ? USER_CALLSIGN_DAT : WSPR_MESSAGE1) + i));
     else
       break;
   }

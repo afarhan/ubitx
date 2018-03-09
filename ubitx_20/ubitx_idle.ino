@@ -32,14 +32,6 @@ void updateLine2Buffer(char isDirectCall)
     if (ritOn)
     {
       strcpy(line2Buffer, "RitTX:");
-      /*
-      line2Buffer[0] = 'R';
-      line2Buffer[1] = 'i';
-      line2Buffer[2] = 't';
-      line2Buffer[3] = 'T';
-      line2Buffer[4] = 'X';
-      line2Buffer[5] = ':';
-      */
   
       //display frequency
       tmpFreq = ritTxFrequency;
