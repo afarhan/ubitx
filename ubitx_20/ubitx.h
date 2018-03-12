@@ -72,6 +72,7 @@ extern void TXSubFreq(unsigned long P2);
 
 extern void startTx(byte txMode, byte isDisplayUpdate);
 extern void stopTx(void);
+extern void setTXFilters(unsigned long freq);
 
 extern void SendWSPRManage(void);
 extern byte WsprMSGCount;

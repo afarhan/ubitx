@@ -151,8 +151,11 @@ void SendWSPRManage()
       {
         //printLineF1(F("Transmitting"));
         //SEND WSPR
-        prevFreq = frequency;
-        frequency = WsprTXFreq;
+        //If you need to consider the Rit and Sprite modes, uncomment them below.
+        //remark = To reduce the size of the program
+        //prevFreq = frequency;
+        //frequency = WsprTXFreq;
+        setTXFilters(WsprTXFreq);
         startTx(TX_CW, 0);
         
         //Start WSPR
@@ -172,8 +175,8 @@ void SendWSPRManage()
         }
         
         digitalWrite(CW_KEY, 0);
-        stopTx();
-        frequency = prevFreq;
+        stopTx(); //call setFrequency -> recovery TX Filter
+        //frequency = prevFreq;
         
         selectedWsprBandIndex = -1;
       }     //end of PTT Check

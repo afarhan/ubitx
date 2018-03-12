@@ -1023,10 +1023,10 @@ void initSettings(){
 
   //original code with modified by kd8cec
   if (usbCarrier > 12010000l || usbCarrier < 11990000l)
-    usbCarrier = 11995000l;
+    usbCarrier = 11997000l;
 
   if (cwmCarrier > 12010000l || cwmCarrier < 11990000l)
-    cwmCarrier = 11995000l;
+    cwmCarrier = 11997000l;
     
   if (vfoA > 35000000l || 3500000l > vfoA) {
      vfoA = 7150000l;
@@ -1111,7 +1111,7 @@ void setup()
   //Serial.begin(9600);
   lcd.begin(16, 2);
   //printLineF(1, F("CECBT v1.05")); 
-  printLineF(1, F("CE v1.05_W")); 
+  printLineF(1, F("CE v1.051W")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
