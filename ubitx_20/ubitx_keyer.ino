@@ -168,6 +168,8 @@ void cwKeyer(void){
           break;
     
         case KEYED_PREP:
+          //modified KD8CEC
+          /*
           ktimer += millis(); // set ktimer to interval end time
           keyerControl &= ~(DIT_L + DAH_L); // clear both paddle latch bits
           keyerState = KEYED; // next state
@@ -179,6 +181,19 @@ void cwKeyer(void){
             cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
             startTx(TX_CW, 1);
           }
+          */
+          if (!inTx){
+            //DelayTime Option
+            delay_background(delayBeforeCWStartTime * 2, 2);
+            
+            keyDown = 0;
+            cwTimeout = millis() + cwDelayTime * 10;  //+ CW_TIMEOUT;
+            startTx(TX_CW, 1);
+          }
+          ktimer += millis(); // set ktimer to interval end time
+          keyerControl &= ~(DIT_L + DAH_L); // clear both paddle latch bits
+          keyerState = KEYED; // next state
+          
           cwKeydown();
           break;
     
