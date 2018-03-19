@@ -306,10 +306,13 @@ void menuSelectMode(int btn){
       FrequencyToVFO(1);
     }
 
+  /*
   if (cwMode == 0)
     si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
   else
     si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+  */
+    SetCarrierFreq();
     
     setFrequency(frequency);
     menuClearExit(500);

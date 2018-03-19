@@ -124,15 +124,24 @@ void si5351_set_calibration(int32_t cal){
     si5351bx_setfreq(0, usbCarrier);
 }
 
+void SetCarrierFreq()
+{
+  unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
+  si5351bx_setfreq(0, appliedCarrier);
+
+    /*
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));
+  else
+    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));
+    */
+}
+
 void initOscillators(){
   //initialize the SI5351
   si5351bx_init();
   si5351bx_vcoa = (SI5351BX_XTAL * SI5351BX_MSA) + calibration; // apply the calibration correction factor
-
-  if (cwMode == 0)
-    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));
- else
-    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));
+  SetCarrierFreq();
 }
 
 //============================================================

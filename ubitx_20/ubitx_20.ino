@@ -492,28 +492,29 @@ void setTXFilters(unsigned long freq){
  
 void setFrequency(unsigned long f){
   f = (f / arTuneStep[tuneStepIndex -1]) * arTuneStep[tuneStepIndex -1];
-  
   setTXFilters(f);
+
+  unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
 
   if (cwMode == 0)
   {
     if (isUSB){
-      si5351bx_setfreq(2, SECOND_OSC_USB - usbCarrier + f  + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_USB - appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
     else{
-      si5351bx_setfreq(2, SECOND_OSC_LSB + usbCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_LSB + appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_LSB);
     }
   }
   else
   {
     if (cwMode == 1){ //CWL
-      si5351bx_setfreq(2, SECOND_OSC_LSB + cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_LSB + appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_LSB);
     }
     else{             //CWU
-      si5351bx_setfreq(2, SECOND_OSC_USB - cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_USB - appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
   }
@@ -543,7 +544,9 @@ void startTx(byte txMode, byte isDisplayUpdate){
     ritRxFrequency = frequency;
     setFrequency(ritTxFrequency);
   }
-  else if (splitOn == 1) {
+  else 
+  {
+    if (splitOn == 1) {
       if (vfoActive == VFO_B) {
         vfoActive = VFO_A;
         frequency = vfoA;
@@ -554,10 +557,12 @@ void startTx(byte txMode, byte isDisplayUpdate){
         frequency = vfoB;
         byteToMode(vfoB_mode, 0);
       }
+    }
 
-      setFrequency(frequency);
+    setFrequency(frequency);
   } //end of else
-  
+
+  SetCarrierFreq();
 
   if (txMode == TX_CW){
     //turn off the second local oscillator and the bfo
@@ -595,14 +600,19 @@ void stopTx(void){
 
   digitalWrite(TX_RX, 0);           //turn off the tx
 
+/*
   if (cwMode == 0)
     si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
   else
     si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+*/
+  SetCarrierFreq();
 
   if (ritOn)
     setFrequency(ritRxFrequency);
-  else if (splitOn == 1) {
+  else
+  {
+    if (splitOn == 1) {
       //vfo Change
       if (vfoActive == VFO_B){
         vfoActive = VFO_A;
@@ -614,10 +624,10 @@ void stopTx(void){
         frequency = vfoB;
         byteToMode(vfoB_mode, 0);
       }
-      setFrequency(frequency);
-  } //end of else
-  else
+    }
+    
     setFrequency(frequency);
+  } //end of else
   
   updateDisplay();
 }
