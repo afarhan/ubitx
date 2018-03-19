@@ -707,8 +707,7 @@ void doTuningWithThresHold(){
     (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02)))
     return;
 
-  if (isCWAutoMode == 0 || cwAutoDialType == 1)
-    s = enc_read();
+  s = enc_read();
 
   //if time is exceeded, it is recognized as an error,
   //ignore exists values, because of errors
@@ -1179,12 +1178,13 @@ void loop(){
   
   //tune only when not tranmsitting 
   if (!inTx){
-    if (ritOn)
-      doRIT();
-    //else if (isIFShift)
-    //  doIFShift();
-    else 
-      doTuningWithThresHold();
+    if (isCWAutoMode == 0 || cwAutoDialType == 1)
+    {
+      if (ritOn)
+        doRIT();
+      else 
+        doTuningWithThresHold();
+    }
 
     if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 250) {
       idle_process();
