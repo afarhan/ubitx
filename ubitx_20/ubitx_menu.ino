@@ -209,7 +209,7 @@ void menuIFSSetup(int btn){
         knob = enc_read();
         if (knob != 0){
           if (knob < 0)
-            ifShiftValue -= 50l;
+            ifShiftValue -= 50;
           else if (knob > 0)
             ifShiftValue += 50;
 
@@ -222,6 +222,7 @@ void menuIFSSetup(int btn){
       if (btnDown() || ifShiftValue == 0)
       {
         isIFShift = 0;
+        ifShiftValue = 0;
         //printLineF2(F("IF Shift is OFF"));
         //printLineF2(F("OFF"));
         //clearLine2();
@@ -229,9 +230,10 @@ void menuIFSSetup(int btn){
         SetCarrierFreq();
         //delay_background(1500, 0);
       }
+
+      //Store IF Shiift
+      EEPROM.put(IF_SHIFTVALUE, ifShiftValue);
       
-      //menuOn = 0;
-      //printLine2ClearAndUpdate();
       menuClearExit(0);
   }
 }

@@ -181,6 +181,12 @@ int count = 0;          //to generally count ticks, loops, etc
                               //(7:Enable / Disable //0: enable, 1:disable, (default is applied shift)
                               //6 : 0 : Adjust Pulus, 1 : Adjust Minus
                               //0~5: Adjust Value : * 10 = Adjust Value (0~300)
+#define COMMON_OPTION0  360  //0: Confirm : CW Frequency Shift
+                              //1 : IF Shift Save
+                              //
+                              //
+                              //
+#define IF_SHIFTVALUE   363                                
 
 #define DISPLAY_OPTION1  361   //Display Option1
 #define DISPLAY_OPTION2  362   //Display Option2
@@ -273,6 +279,7 @@ byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
 long arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
 
+byte commonOption0 = 0;
 byte displayOption1 = 0;
 byte displayOption2 = 0;
 
@@ -331,7 +338,7 @@ byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle,
 char lcdMeter[17];
 
 byte isIFShift = 0;     //1 = ifShift, 2 extend
-long ifShiftValue = 0;  //
+int ifShiftValue = 0;  //
                               
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
@@ -896,6 +903,7 @@ void initSettings(){
   }
     
 
+  EEPROM.get(COMMON_OPTION0, commonOption0);
   EEPROM.get(DISPLAY_OPTION1, displayOption1);
   EEPROM.get(DISPLAY_OPTION2, displayOption2);
 
@@ -983,18 +991,29 @@ void initSettings(){
   //Display Type for CW mode
   isShiftDisplayCWFreq = EEPROM.read(CW_DISPLAY_SHIFT);
 
-  //Adjust CW Mode Freq
-  shiftDisplayAdjustVal = (isShiftDisplayCWFreq & 0x3F) * 10;
+  //Enable / Diable Check for CW Display Cofiguration Group 
+  if ((commonOption0 & 0x80) != 0x00)
+  {
+    //Adjust CW Mode Freq
+    shiftDisplayAdjustVal = (isShiftDisplayCWFreq & 0x3F) * 10;
+  
+    //check Minus
+    if ((isShiftDisplayCWFreq & 0x40) == 0x40)
+      shiftDisplayAdjustVal = shiftDisplayAdjustVal * -1;
+  
+   //Shift Display Check (Default : 0)
+    if ((isShiftDisplayCWFreq & 0x80) == 0)  //Enabled
+      isShiftDisplayCWFreq = 1;
+    else    //Disabled
+      isShiftDisplayCWFreq = 0;
+  }
 
-  //check Minus
-  if ((isShiftDisplayCWFreq & 0x40) == 0x40)
-    shiftDisplayAdjustVal = shiftDisplayAdjustVal * -1;
-
- //Shift Display Check (Default : 0)
-  if ((isShiftDisplayCWFreq & 0x80) == 0)  //Enabled
-    isShiftDisplayCWFreq = 1;
-  else    //Disabled
-    isShiftDisplayCWFreq = 0;
+   //Stored IF Shift Option
+  if ((commonOption0 & 0x40) != 0x00)
+  {
+    EEPROM.get(IF_SHIFTVALUE, ifShiftValue);
+    isIFShift = ifShiftValue != 0;
+  }
 
   //default Value (for original hardware)
   if (cwAdcSTFrom >= cwAdcSTTo)
@@ -1120,7 +1139,7 @@ void setup()
   //Serial.begin(9600);
   lcd.begin(16, 2);
   //printLineF(1, F("CECBT v1.05")); 
-  printLineF(1, F("CE v1.059W")); 
+  printLineF(1, F("CE v1.06")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
