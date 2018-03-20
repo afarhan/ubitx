@@ -195,11 +195,13 @@ void menuIFSSetup(int btn){
         {
           updateLine2Buffer(1);
           setFrequency(frequency);
-        
+        /*
           if (cwMode == 0)
             si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
           else
             si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+        */
+          SetCarrierFreq();
 
           needApplyChangeValue = 0;
         }
@@ -224,6 +226,7 @@ void menuIFSSetup(int btn){
         //printLineF2(F("OFF"));
         //clearLine2();
         setFrequency(frequency);
+        SetCarrierFreq();
         //delay_background(1500, 0);
       }
       
