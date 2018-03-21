@@ -10,8 +10,7 @@
  *  - If the menu item is clicked on, then it is selected,
  *  - If the menu item is NOT clicked on, then the menu's prompt is to be displayed
  */
-#define printLineF1(x) (printLineF(1, x))
-#define printLineF2(x) (printLineF(0, x))
+#include "ubitx.h"
 
 //Current Frequency and mode to active VFO by KD8CEC
 void FrequencyToVFO(byte isSaveFreq)
@@ -64,11 +63,13 @@ void menuBand(int btn){
       btnPressCount = 0;
       if (tuneTXType > 0) { //Just toggle 0 <-> 2, if tuneTXType is 100, 100 -> 0 -> 2
         tuneTXType = 0;
-        printLineF2(F("General mode"));
+        //printLineF2(F("General mode"));
+        printLineF2(F("General"));
       }
       else {
         tuneTXType = 2;
-        printLineF2(F("Ham band mode"));
+        //printLineF2(F("Ham band mode"));
+        printLineF2(F("Ham band"));
       }
       delay_background(1000, 0);
       printLine2ClearAndUpdate();
@@ -179,7 +180,7 @@ void menuIFSSetup(int btn){
     if (isIFShift == 1)
       printLineF2(F("IF Shift Change?"));
     else
-      printLineF2(F("IF Shift:Off, On?"));
+      printLineF2(F("IF Shift On?"));
   }
   else {
       isIFShift = 1;
@@ -194,11 +195,13 @@ void menuIFSSetup(int btn){
         {
           updateLine2Buffer(1);
           setFrequency(frequency);
-        
+        /*
           if (cwMode == 0)
             si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
           else
             si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+        */
+          SetCarrierFreq();
 
           needApplyChangeValue = 0;
         }
@@ -206,12 +209,13 @@ void menuIFSSetup(int btn){
         knob = enc_read();
         if (knob != 0){
           if (knob < 0)
-            ifShiftValue -= 50l;
+            ifShiftValue -= 50;
           else if (knob > 0)
             ifShiftValue += 50;
 
           needApplyChangeValue = 1;
         }
+        Check_Cat(0);  //To prevent disconnections
       }
 
       delay_background(500, 0); //for check Long Press function key
@@ -219,13 +223,18 @@ void menuIFSSetup(int btn){
       if (btnDown() || ifShiftValue == 0)
       {
         isIFShift = 0;
-        printLineF2(F("IF Shift is OFF"));
+        ifShiftValue = 0;
+        //printLineF2(F("IF Shift is OFF"));
+        //printLineF2(F("OFF"));
+        //clearLine2();
         setFrequency(frequency);
-        delay_background(1500, 0);
+        SetCarrierFreq();
+        //delay_background(1500, 0);
       }
+
+      //Store IF Shiift
+      EEPROM.put(IF_SHIFTVALUE, ifShiftValue);
       
-      //menuOn = 0;
-      //printLine2ClearAndUpdate();
       menuClearExit(0);
   }
 }
@@ -303,10 +312,13 @@ void menuSelectMode(int btn){
       FrequencyToVFO(1);
     }
 
+  /*
   if (cwMode == 0)
     si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
   else
     si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+  */
+    SetCarrierFreq();
     
     setFrequency(frequency);
     menuClearExit(500);
@@ -339,7 +351,8 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
 
         if (selectChannel >= 20 || selectChannel <=-1)
         {
-          strcpy(c, "Exit setup?");
+          //strcpy(c, "Exit setup?");
+          strcpy(c, "Exit?");
         }
         else
         {
@@ -603,9 +616,9 @@ void menuVfoToggle(int btn)
 void menuRitToggle(int btn){
   if (!btn){
     if (ritOn == 1)
-      printLineF2(F("RIT:On, Off?"));
+      printLineF2(F("RIT Off?"));
     else
-      printLineF2(F("RIT:Off, On?"));
+      printLineF2(F("RIT On?"));
   }
   else {
       if (ritOn == 0){
@@ -633,19 +646,20 @@ void menuSplitOnOff(int btn){
   else {
       if (splitOn == 1){
         splitOn = 0;
-        printLineF2(F("Split Off!"));
+        //printLineF2(F("Split Off!"));
+        printLineF2(F("[OFF]"));
       }
       else {
         splitOn = 1;
         if (ritOn == 1)
           ritOn = 0;
-        printLineF2(F("Split On!"));
+        //printLineF2(F("Split On!"));
+        printLineF2(F("[ON]"));
       }
       
     menuClearExit(500);
   }
 }
-
 
 //Function to disbled transmission
 //by KD8CEC
@@ -756,29 +770,56 @@ void menuCWSpeed(int btn){
   menuClearExit(1000);
 }
 
+void displayEmptyData(void){
+  printLineF2(F("Empty data"));
+  delay_background(2000, 0);
+}
+
+
 //Builtin CW Keyer Logic by KD8CEC
 void menuCWAutoKey(int btn){
     if (!btn){
-     printLineF2(F("CW AutoKey Mode?"));
-     return;
+      printLineF2(F("Memory Keyer"));
+      return;
     }
     
     //Check CW_AUTO_MAGIC_KEY and CW Text Count
     EEPROM.get(CW_AUTO_COUNT, cwAutoTextCount);
     if (EEPROM.read(CW_AUTO_MAGIC_KEY) != 0x73 || cwAutoTextCount < 1)
     {
-     printLineF2(F("Empty CW data"));
-     delay_background(2000, 0);
+      displayEmptyData();
      return;
     }
 
-    printLineF1(F("Press PTT to Send"));
+    //printLineF1(F("Press PTT to Send"));
+    printLineF1(F("PTT to Send"));
     delay_background(500, 0);
     updateDisplay();
     beforeCWTextIndex = 255;  //255 value is for start check
     isCWAutoMode = 1;
     menuOn = 0;
 }
+
+//Standalone WSPR Beacone
+void menuWSPRSend(int btn){
+  if (!btn){
+     printLineF2(F("WSPR Beacon"));
+     return;
+  }
+
+  WsprMSGCount = EEPROM.read(WSPR_COUNT);
+
+  if (WsprMSGCount < 1)
+  {
+    displayEmptyData();
+    return;
+  }
+
+  SendWSPRManage();
+  menuClearExit(1000);
+}
+
+
 
 //Modified by KD8CEC
 void menuSetupCwDelay(int btn){
@@ -836,12 +877,6 @@ void menuSetupTXCWInterval(int btn){
     }
 
     printLineF1(F("Press, set Delay"));
-    /*
-    strcpy(b, "Start Delay:");
-    itoa(tmpTXCWInterval,c, 10);
-    strcat(b, c);
-    printLine2(b);
-    */
     delay_background(300, 0);
 
     while(!btnDown()){
@@ -1261,8 +1296,6 @@ void doMenu(){
     
     while (!btnDown())
     {
-      //Check_Cat(0);  //To prevent disconnections
-      //delay(50);  //debounce    
       delay_background(50, 0);
 
       if (isNeedDisplay) {
@@ -1307,42 +1340,87 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 220)
+      if (modeCalibrate && select + i < 240)
         select += i;
-      if (!modeCalibrate && select + i < 120)
+      if (!modeCalibrate && select + i < 130)
         select += i;
     }
-    //if (i < 0 && select - i >= 0)
+
     if (i < 0 && select - i >= -10)
       select += i;      //caught ya, i is already -ve here, so you add it
 
-    if (select < -5)
-      menuExit(btnState);
-    else if (select < 10)
-      menuBand(btnState);
-    else if (select < 20)
-      menuVfoToggle(btnState);
-    else if (select < 30)
-      menuSelectMode(btnState);
-    else if (select < 40)
-      menuRitToggle(btnState);
-    else if (select < 50)
-      menuIFSSetup(btnState);
-    else if (select < 60)
-      menuCWSpeed(btnState);
-    else if (select < 70)
-      menuSplitOnOff(btnState);       //SplitOn / off
-    else if (select < 80)
-      menuCHMemory(btnState, 0);      //VFO to Memroy
-    else if (select < 90)
-      menuCHMemory(btnState, 1);      //Memory to VFO
-    else if (select < 100)
-      menuCWAutoKey(btnState);
-    else if (select < 110)
-      menuSetup(btnState);
-    else if (select < 120)
-      menuExit(btnState);
-      
+    //if -> switch reduce program memory 200byte
+    switch (select / 10)
+    {
+      case 0 : 
+        menuBand(btnState); 
+        break;
+      case 1 : 
+        menuVfoToggle(btnState); 
+        break;
+      case 2 : 
+        menuSelectMode(btnState); 
+        break;
+      case 3 : 
+        menuRitToggle(btnState); 
+        break;
+      case 4 : 
+        menuIFSSetup(btnState); 
+        break;
+      case 5 : 
+        menuCWSpeed(btnState); 
+        break;
+      case 6 : 
+        menuSplitOnOff(btnState);        //SplitOn / off
+        break;
+      case 7 : 
+        menuCHMemory(btnState, 0);       //VFO to Memroy
+        break;
+      case 8 : 
+        menuCHMemory(btnState, 1);       //Memory to VFO
+        break;
+      case 9 : 
+        menuCWAutoKey(btnState);  
+        break;
+      case 10 : 
+        menuWSPRSend(btnState);
+        break;
+      case 11 : 
+        menuSetup(btnState);
+        break;
+      case 12 : 
+        menuExit(btnState);
+        break;
+      case 13 : 
+        menuSetupCalibration(btnState);  //crystal
+        break;
+      case 14 : 
+        menuSetupCarrier(btnState);        //lsb
+        break;
+      case 15 : 
+        menuSetupCWCarrier(btnState);        //lsb
+        break;
+      case 16 : 
+        menuSetupCwTone(btnState);  
+        break;
+      case 17 : 
+        menuSetupCwDelay(btnState);  
+        break;
+      case 18 : 
+        menuSetupTXCWInterval(btnState);  
+        break;
+      case 19 :
+        menuSetupKeyType(btnState);  
+        break;
+      case 20 :
+        menuADCMonitor(btnState);  
+        break;
+      case 21 :
+        menuTxOnOff(btnState, 0x01);       //TX OFF / ON
+        break;
+      default :
+        menuExit(btnState);  break;
+    }
     /*
     else if (select < 130 && modeCalibrate)
       menuSetupCalibration(btnState);   //crystal
@@ -1365,30 +1443,6 @@ void doMenu(){
     else if (select < 220 && modeCalibrate)
       menuExit(btnState);
     */
-
-    else if (modeCalibrate)
-    {
-      if (select < 130)
-        menuSetupCalibration(btnState);   //crystal
-      else if (select < 140)
-        menuSetupCarrier(btnState);       //lsb
-      else if (select < 150)
-        menuSetupCWCarrier(btnState);       //lsb
-      else if (select < 160)
-        menuSetupCwTone(btnState);
-      else if (select < 170)
-        menuSetupCwDelay(btnState);
-      else if (select < 180)
-        menuSetupTXCWInterval(btnState);
-      else if (select < 190)
-        menuSetupKeyType(btnState);
-      else if (select < 200)
-        menuADCMonitor(btnState);
-      else if (select < 210)
-        menuTxOnOff(btnState, 0x01);      //TX OFF / ON
-      else if (select < 220)
-        menuExit(btnState);
-    }
 
     Check_Cat(0);  //To prevent disconnections
   }

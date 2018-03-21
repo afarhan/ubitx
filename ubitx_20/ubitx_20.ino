@@ -38,6 +38,7 @@
  */
 #include <Wire.h>
 #include <EEPROM.h>
+#include "ubitx.h"
 
 /**
     The main chip which generates upto three oscillators of various frequencies in the
@@ -180,6 +181,12 @@ int count = 0;          //to generally count ticks, loops, etc
                               //(7:Enable / Disable //0: enable, 1:disable, (default is applied shift)
                               //6 : 0 : Adjust Pulus, 1 : Adjust Minus
                               //0~5: Adjust Value : * 10 = Adjust Value (0~300)
+#define COMMON_OPTION0  360  //0: Confirm : CW Frequency Shift
+                              //1 : IF Shift Save
+                              //
+                              //
+                              //
+#define IF_SHIFTVALUE   363                                
 
 #define DISPLAY_OPTION1  361   //Display Option1
 #define DISPLAY_OPTION2  362   //Display Option2
@@ -272,6 +279,7 @@ byte isTxType = 0;    //000000[0 - isSplit] [0 - isTXStop]
 long arTuneStep[5];
 byte tuneStepIndex; //default Value 0, start Offset is 0 because of check new user
 
+byte commonOption0 = 0;
 byte displayOption1 = 0;
 byte displayOption2 = 0;
 
@@ -330,7 +338,7 @@ byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle,
 char lcdMeter[17];
 
 byte isIFShift = 0;     //1 = ifShift, 2 extend
-long ifShiftValue = 0;  //
+int ifShiftValue = 0;  //
                               
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
@@ -491,28 +499,29 @@ void setTXFilters(unsigned long freq){
  
 void setFrequency(unsigned long f){
   f = (f / arTuneStep[tuneStepIndex -1]) * arTuneStep[tuneStepIndex -1];
-  
   setTXFilters(f);
+
+  unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
 
   if (cwMode == 0)
   {
     if (isUSB){
-      si5351bx_setfreq(2, SECOND_OSC_USB - usbCarrier + f  + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_USB - appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
     else{
-      si5351bx_setfreq(2, SECOND_OSC_LSB + usbCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_LSB + appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_LSB);
     }
   }
   else
   {
     if (cwMode == 1){ //CWL
-      si5351bx_setfreq(2, SECOND_OSC_LSB + cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_LSB + appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_LSB);
     }
     else{             //CWU
-      si5351bx_setfreq(2, SECOND_OSC_USB - cwmCarrier + f + (isIFShift ? ifShiftValue : 0));
+      si5351bx_setfreq(2, SECOND_OSC_USB - appliedCarrier + f);
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
   }
@@ -542,7 +551,9 @@ void startTx(byte txMode, byte isDisplayUpdate){
     ritRxFrequency = frequency;
     setFrequency(ritTxFrequency);
   }
-  else if (splitOn == 1) {
+  else 
+  {
+    if (splitOn == 1) {
       if (vfoActive == VFO_B) {
         vfoActive = VFO_A;
         frequency = vfoA;
@@ -553,10 +564,12 @@ void startTx(byte txMode, byte isDisplayUpdate){
         frequency = vfoB;
         byteToMode(vfoB_mode, 0);
       }
+    }
 
-      setFrequency(frequency);
+    setFrequency(frequency);
   } //end of else
-  
+
+  SetCarrierFreq();
 
   if (txMode == TX_CW){
     //turn off the second local oscillator and the bfo
@@ -589,19 +602,24 @@ void startTx(byte txMode, byte isDisplayUpdate){
     updateDisplay();
 }
 
-void stopTx(){
+void stopTx(void){
   inTx = 0;
 
   digitalWrite(TX_RX, 0);           //turn off the tx
 
+/*
   if (cwMode == 0)
     si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
   else
     si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
+*/
+  SetCarrierFreq();
 
   if (ritOn)
     setFrequency(ritRxFrequency);
-  else if (splitOn == 1) {
+  else
+  {
+    if (splitOn == 1) {
       //vfo Change
       if (vfoActive == VFO_B){
         vfoActive = VFO_A;
@@ -613,10 +631,10 @@ void stopTx(){
         frequency = vfoB;
         byteToMode(vfoB_mode, 0);
       }
-      setFrequency(frequency);
-  } //end of else
-  else
+    }
+    
     setFrequency(frequency);
+  } //end of else
   
   updateDisplay();
 }
@@ -706,8 +724,7 @@ void doTuningWithThresHold(){
     (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02)))
     return;
 
-  if (isCWAutoMode == 0 || cwAutoDialType == 1)
-    s = enc_read();
+  s = enc_read();
 
   //if time is exceeded, it is recognized as an error,
   //ignore exists values, because of errors
@@ -886,6 +903,7 @@ void initSettings(){
   }
     
 
+  EEPROM.get(COMMON_OPTION0, commonOption0);
   EEPROM.get(DISPLAY_OPTION1, displayOption1);
   EEPROM.get(DISPLAY_OPTION2, displayOption2);
 
@@ -973,18 +991,29 @@ void initSettings(){
   //Display Type for CW mode
   isShiftDisplayCWFreq = EEPROM.read(CW_DISPLAY_SHIFT);
 
-  //Adjust CW Mode Freq
-  shiftDisplayAdjustVal = (isShiftDisplayCWFreq & 0x3F) * 10;
+  //Enable / Diable Check for CW Display Cofiguration Group 
+  if ((commonOption0 & 0x80) != 0x00)
+  {
+    //Adjust CW Mode Freq
+    shiftDisplayAdjustVal = (isShiftDisplayCWFreq & 0x3F) * 10;
+  
+    //check Minus
+    if ((isShiftDisplayCWFreq & 0x40) == 0x40)
+      shiftDisplayAdjustVal = shiftDisplayAdjustVal * -1;
+  
+   //Shift Display Check (Default : 0)
+    if ((isShiftDisplayCWFreq & 0x80) == 0)  //Enabled
+      isShiftDisplayCWFreq = 1;
+    else    //Disabled
+      isShiftDisplayCWFreq = 0;
+  }
 
-  //check Minus
-  if ((isShiftDisplayCWFreq & 0x40) == 0x40)
-    shiftDisplayAdjustVal = shiftDisplayAdjustVal * -1;
-
- //Shift Display Check (Default : 0)
-  if ((isShiftDisplayCWFreq & 0x80) == 0)  //Enabled
-    isShiftDisplayCWFreq = 1;
-  else    //Disabled
-    isShiftDisplayCWFreq = 0;
+   //Stored IF Shift Option
+  if ((commonOption0 & 0x40) != 0x00)
+  {
+    EEPROM.get(IF_SHIFTVALUE, ifShiftValue);
+    isIFShift = ifShiftValue != 0;
+  }
 
   //default Value (for original hardware)
   if (cwAdcSTFrom >= cwAdcSTTo)
@@ -1022,10 +1051,10 @@ void initSettings(){
 
   //original code with modified by kd8cec
   if (usbCarrier > 12010000l || usbCarrier < 11990000l)
-    usbCarrier = 11995000l;
+    usbCarrier = 11997000l;
 
   if (cwmCarrier > 12010000l || cwmCarrier < 11990000l)
-    cwmCarrier = 11995000l;
+    cwmCarrier = 11997000l;
     
   if (vfoA > 35000000l || 3500000l > vfoA) {
      vfoA = 7150000l;
@@ -1109,7 +1138,8 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CECBT v1.04")); 
+  //printLineF(1, F("CECBT v1.05")); 
+  printLineF(1, F("CE v1.06")); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
@@ -1117,7 +1147,7 @@ void setup()
 
   if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
     userCallsignLength = userCallsignLength & 0x7F;
-    printLineFromEEPRom(0, 0, 0, userCallsignLength -1); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+    printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
     delay(500);
   }
   else {
@@ -1177,12 +1207,13 @@ void loop(){
   
   //tune only when not tranmsitting 
   if (!inTx){
-    if (ritOn)
-      doRIT();
-    //else if (isIFShift)
-    //  doIFShift();
-    else 
-      doTuningWithThresHold();
+    if (isCWAutoMode == 0 || cwAutoDialType == 1)
+    {
+      if (ritOn)
+        doRIT();
+      else 
+        doTuningWithThresHold();
+    }
 
     if (isCWAutoMode == 0 && beforeIdle_ProcessTime < millis() - 250) {
       idle_process();
