@@ -215,6 +215,7 @@ void menuIFSSetup(int btn){
 
           needApplyChangeValue = 1;
         }
+        Check_Cat(0);  //To prevent disconnections
       }
 
       delay_background(500, 0); //for check Long Press function key
