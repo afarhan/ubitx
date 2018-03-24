@@ -1138,7 +1138,6 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  //printLineF(1, F("CECBT v1.05")); 
   printLineF(1, F("CE v1.06")); 
 
   Init_Cat(38400, SERIAL_8N1);
