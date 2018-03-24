@@ -155,8 +155,8 @@ void SendWSPRManage()
         //remark = To reduce the size of the program
         //prevFreq = frequency;
         //frequency = WsprTXFreq;
-        setTXFilters(WsprTXFreq);
         startTx(TX_CW, 0);
+        setTXFilters(WsprTXFreq);
         
         //Start WSPR
         Set_WSPR_Param();
