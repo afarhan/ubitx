@@ -1,7 +1,6 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- A bug was found in version 1.0, When CW Keytype is set to IAMBCA and IAMBCB, there was a problem that switching to RX is not performed well when CAT communication is performed. If CW key type is straight, it works normally. This bug has been fixed and changed to version 1.01.
-- Now Release Version 1.01 on my blog (http://www.hamskey.com)
+- Now Release Version 1.061 on my blog (http://www.hamskey.com)
 - You can download and compiled hex file and uBITX Manager application on my blog (http://www.hamskey.com)
 
 #NOTICE
@@ -13,9 +12,6 @@ The minimum basic specification for uBITX to operate as a radio, I think it is 
 So I will release the 0.27 version and if I do not see the bug anymore, I will try to change the version name to 1.0.
 Now uBITX is an HF radio and will be able to join you in your happy hams life.
 Based on this source, you can use it by adding functions.
-
-I am going to do a new project based on this source, linking with WSPR, WSJT-X and so on.
-Of course, this repository is still running. If you have any bugs or ideas, please feel free to email me.
 
 http://www.hamskey.com
 
@@ -30,14 +26,32 @@ The copyright information of the original is below.
 KD8CEC
 ----------------------------------------------------------------------------
 Prepared or finished tasks for the next version
-  - Include WSPR Beacone function - (implement other new repository)
-    complete experiment
-    need solve : Big code size (over 100%, then remove some functions for experment)
-                 need replace Si5351 Library (increase risk and need more beta tester)
-                 W3PM sent me his wonderful source - using BITX, GPS 
-                  
+  - Reduce Program size
+  - uBITX with RTL-SDR 
+  - Direct control for Student
+  
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+1.061
+ - Added WSPR
+   You only need uBITX to use WSPR. No external devices are required.
+   Added Si5351 module for WSPR
+ - Update uBITX Manager to Version 1.0
+ - Reduce program size
+   for WSPR
+   for other Module
+ - Fixed IF Shift Bug
+   Disable IF Shift on TX
+   IF shift available in USB mode
+   Fixed cat routine in IF Shift setup
+- Bugs fixed
+   cw start delay option
+   Auto key Bug
+   (found bug : LZ1LDO)
+   Message selection when Auto Key is used in RIT mode
+   (found bug : gerald)
+- Improve CW Keying (start TX)
+
 1.04
   - Optimized from Version1.03
   - Reduce program size (97% -> 95%)
