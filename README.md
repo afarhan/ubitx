@@ -32,6 +32,9 @@ Prepared or finished tasks for the next version
   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+1.07 (Working)
+ - BetaVersion for Reduce program size
+
 1.061
  - Added WSPR
    You only need uBITX to use WSPR. No external devices are required.
@@ -51,6 +54,10 @@ Prepared or finished tasks for the next version
    Message selection when Auto Key is used in RIT mode
    (found bug : gerald)
 - Improve CW Keying (start TX)
+
+1.05
+ - include 1.05W, 1.051, 1.051W
+ - for WSPR Beta Test Version
 
 1.04
   - Optimized from Version1.03
