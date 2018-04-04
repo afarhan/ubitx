@@ -1,8 +1,12 @@
+//Firmware Version
+#define FIRMWARE_VERSION_INFO F("CE v1.061")
+#define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
+
 /**
- Since KD8CEC Version 0.29, most of the original code is no longer available.
+ Cat Suppoort uBITX CEC Version
  Most features(TX, Frequency Range, Ham Band, TX Control, CW delay, start Delay... more) have been added by KD8CEC.
  However, the license rules are subject to the original source rules.
- DE Ian KD8CEC
+ Ian KD8CEC
 
  Original source comment            -------------------------------------------------------------
  * This source file is under General Public License version 3.
@@ -104,7 +108,6 @@
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(8,9,10,11,12,13);
 
-#define VERSION_NUM 0x01  //for KD8CEC'S firmware and for memory management software
 
 /**
  * The Arduino, unlike C/C++ on a regular computer with gigabytes of RAM, has very little memory.
@@ -606,13 +609,6 @@ void stopTx(void){
   inTx = 0;
 
   digitalWrite(TX_RX, 0);           //turn off the tx
-
-/*
-  if (cwMode == 0)
-    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-  else
-    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-*/
   SetCarrierFreq();
 
   if (ritOn)
@@ -669,7 +665,7 @@ void ritDisable(){
  * flip the T/R line to T and update the display to denote transmission
  */
 
-void checkPTT(){	
+void checkPTT(){  
   //we don't check for ptt when transmitting cw
   if (cwTimeout > 0)
     return;
@@ -678,7 +674,7 @@ void checkPTT(){
     startTx(TX_SSB, 1);
     delay(50); //debounce the PTT
   }
-	
+  
   if (digitalRead(PTT) == 1 && inTx == 1)
     stopTx();
 }
@@ -872,8 +868,8 @@ void initSettings(){
   }
   
   //Version Write for Memory Management Software
-  if (EEPROM.read(VERSION_ADDRESS) != VERSION_NUM)
-    EEPROM.write(VERSION_ADDRESS, VERSION_NUM);
+  if (EEPROM.read(VERSION_ADDRESS) != FIRMWARE_VERSION_NUM)
+    EEPROM.write(VERSION_ADDRESS, FIRMWARE_VERSION_NUM);
 
   EEPROM.get(CW_CAL, cwmCarrier);
 
@@ -1138,7 +1134,7 @@ void setup()
   
   //Serial.begin(9600);
   lcd.begin(16, 2);
-  printLineF(1, F("CE v1.061")); 
+  printLineF(1, FIRMWARE_VERSION_INFO); 
 
   Init_Cat(38400, SERIAL_8N1);
   initMeter(); //not used in this build
