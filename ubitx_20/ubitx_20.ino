@@ -1,5 +1,5 @@
 //Firmware Version
-#define FIRMWARE_VERSION_INFO F("CE v1.061")
+#define FIRMWARE_VERSION_INFO F("CE v1.070")
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 /**

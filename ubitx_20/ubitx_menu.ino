@@ -1,15 +1,11 @@
-/** Menus
- *  The Radio menus are accessed by tapping on the function button. 
- *  - The main loop() constantly looks for a button press and calls doMenu() when it detects
- *  a function button press. 
- *  - As the encoder is rotated, at every 10th pulse, the next or the previous menu
- *  item is displayed. Each menu item is controlled by it's own function.
- *  - Eache menu function may be called to display itself
- *  - Each of these menu routines is called with a button parameter. 
- *  - The btn flag denotes if the menu itme was clicked on or not.
- *  - If the menu item is clicked on, then it is selected,
- *  - If the menu item is NOT clicked on, then the menu's prompt is to be displayed
+/*
+This source code started with Farhan's original source. The license rules are followed as well.
+Calibration related functions kept the original source except for the minor ones. 
+The part is collected in the last minute of this source.
+
+Ian KD8CEC
  */
+ 
 #include "ubitx.h"
 
 //Current Frequency and mode to active VFO by KD8CEC
@@ -171,160 +167,6 @@ void byteToMode(byte modeValue, byte autoSetModebyFreq){
   }
 }
 
-//IF Shift function, BFO Change like RIT, by KD8CEC
-void menuIFSSetup(int btn){
-  int knob = 0;
-  char needApplyChangeValue = 1;
-  
-  if (!btn){
-    if (isIFShift == 1)
-      printLineF2(F("IF Shift Change?"));
-    else
-      printLineF2(F("IF Shift On?"));
-  }
-  else {
-      isIFShift = 1;
-
-      delay_background(500, 0);
-      updateLine2Buffer(1);
-      setFrequency(frequency);
-
-      //Off or Change Value
-      while(!btnDown() ){
-        if (needApplyChangeValue ==1)
-        {
-          updateLine2Buffer(1);
-          setFrequency(frequency);
-        /*
-          if (cwMode == 0)
-            si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-          else
-            si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-        */
-          SetCarrierFreq();
-
-          needApplyChangeValue = 0;
-        }
-        
-        knob = enc_read();
-        if (knob != 0){
-          if (knob < 0)
-            ifShiftValue -= 50;
-          else if (knob > 0)
-            ifShiftValue += 50;
-
-          needApplyChangeValue = 1;
-        }
-        Check_Cat(0);  //To prevent disconnections
-      }
-
-      delay_background(500, 0); //for check Long Press function key
-      
-      if (btnDown() || ifShiftValue == 0)
-      {
-        isIFShift = 0;
-        ifShiftValue = 0;
-        //printLineF2(F("IF Shift is OFF"));
-        //printLineF2(F("OFF"));
-        //clearLine2();
-        setFrequency(frequency);
-        SetCarrierFreq();
-        //delay_background(1500, 0);
-      }
-
-      //Store IF Shiift
-      EEPROM.put(IF_SHIFTVALUE, ifShiftValue);
-      
-      menuClearExit(0);
-  }
-}
-
-//Functions for CWL and CWU by KD8CEC
-void menuSelectMode(int btn){
-  int knob = 0;
-  int selectModeType = 0;
-  int beforeMode = 0;
-  int moveStep = 0;
-  
-  if (!btn){
-      printLineF2(F("Select Mode?"));
-  }
-  else {
-    delay_background(500, 0);
-
-    //LSB, USB, CWL, CWU
-    if (cwMode == 0 && isUSB == 0)
-      selectModeType = 0;
-    else if (cwMode == 0 && isUSB == 1)
-      selectModeType = 1;
-    else if (cwMode == 1)
-      selectModeType = 2;
-    else
-      selectModeType = 3;
-
-    beforeMode = selectModeType;
-
-    while(!btnDown()){
-      //Display Mode Name
-      memset(c, 0, sizeof(c));
-      strcpy(c, " LSB USB CWL CWU");
-      c[selectModeType * 4] = '>';
-      printLine1(c);
-      
-      knob = enc_read();
-
-      if (knob != 0)
-      {
-        moveStep += (knob > 0 ? 1 : -1);
-        if (moveStep < -3) {
-          if (selectModeType > 0)
-            selectModeType--;
-            
-          moveStep = 0;
-        }
-        else if (moveStep > 3) {
-          if (selectModeType < 3)
-            selectModeType++;
-            
-          moveStep = 0;
-        }
-      }
-
-      //Check_Cat(0);  //To prevent disconnections
-      delay_background(50, 0);
-    }
-
-    if (beforeMode != selectModeType) {
-      //printLineF1(F("Changed Mode"));
-      if (selectModeType == 0) {
-        cwMode = 0; isUSB = 0;
-      }
-      else if (selectModeType == 1) {
-        cwMode = 0; isUSB = 1;
-      }
-      else if (selectModeType == 2) {
-        cwMode = 1;
-      }
-      else if (selectModeType == 3) {
-        cwMode = 2;
-      }
-
-      FrequencyToVFO(1);
-    }
-
-  /*
-  if (cwMode == 0)
-    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-  else
-    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-  */
-    SetCarrierFreq();
-    
-    setFrequency(frequency);
-    menuClearExit(500);
-  }
-}
-
 
 //Memory to VFO, VFO to Memory by KD8CEC
 void menuCHMemory(int btn, byte isMemoryToVfo){
@@ -446,69 +288,6 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
   }
 }
 
-
-//Select CW Key Type by KD8CEC
-void menuSetupKeyType(int btn){
-  int knob = 0;
-  int selectedKeyType = 0;
-  int moveStep = 0;
-  if (!btn){
-        printLineF2(F("Change Key Type?"));
-  }
-  else {
-    //printLineF2(F("Press to set Key")); //for reduce usable flash memory
-    delay_background(500, 0);
-    selectedKeyType = cwKeyType;
-    
-    while(!btnDown()){
-
-      //Display Key Type
-      if (selectedKeyType == 0)
-        printLineF1(F("Straight"));
-      else if (selectedKeyType == 1)
-        printLineF1(F("IAMBICA"));
-      else if (selectedKeyType == 2)
-        printLineF1(F("IAMBICB"));
-
-      knob = enc_read();
-
-      if (knob != 0)
-      {
-        moveStep += (knob > 0 ? 1 : -1);
-        if (moveStep < -3) {
-          if (selectedKeyType > 0)
-            selectedKeyType--;
-          moveStep = 0;
-        }
-        else if (moveStep > 3) {
-          if (selectedKeyType < 2)
-            selectedKeyType++;
-          moveStep = 0;
-        }
-      }
-
-      Check_Cat(0);  //To prevent disconnections
-    }
-    
-    printLineF2(F("CW Key Type set!"));
-    cwKeyType = selectedKeyType;
-    EEPROM.put(CW_KEY_TYPE, cwKeyType);
-
-    if (cwKeyType == 0)
-      Iambic_Key = false;
-    else
-    {
-      Iambic_Key = true;
-      if (cwKeyType == 1)
-        keyerControl &= ~IAMBICB;
-      else
-        keyerControl |= IAMBICB;
-    }
-    
-    menuClearExit(1000);
-  }
-}
-
 //Analog pin monitoring with CW Key and function keys connected.
 //by KD8CEC
 void menuADCMonitor(int btn){
@@ -612,28 +391,6 @@ void menuVfoToggle(int btn)
   }
 }
 
-//modified for reduce used flash memory by KD8CEC
-void menuRitToggle(int btn){
-  if (!btn){
-    if (ritOn == 1)
-      printLineF2(F("RIT Off?"));
-    else
-      printLineF2(F("RIT On?"));
-  }
-  else {
-      if (ritOn == 0){
-        //printLineF2(F("RIT is ON"));
-        //enable RIT so the current frequency is used at transmit
-        ritEnable(frequency);
-      }
-      else{
-        //printLineF2(F("RIT is OFF"));
-        ritDisable();
-      }
-      
-      menuClearExit(500);
-  }
-}
 
 //Split communication using VFOA and VFOB by KD8CEC
 void menuSplitOnOff(int btn){
@@ -684,97 +441,10 @@ void menuTxOnOff(int btn, byte optionType){
   }
 }
 
-/**
- * The calibration routines are not normally shown in the menu as they are rarely used
- * They can be enabled by choosing this menu option
- */
-void menuSetup(int btn){
-  if (!btn){
-    if (!modeCalibrate)
-      printLineF2(F("Setup On?"));
-    else
-      printLineF2(F("Setup Off?"));
-  }else {
-    modeCalibrate = ! modeCalibrate;
-    /*
-    if (!modeCalibrate){
-      modeCalibrate = true;
-      //printLineF2(F("Setup:On"));
-    }
-    else {
-      modeCalibrate = false;
-      //printLineF2(F("Setup:Off"));
-    }
-    */
-    
-   menuClearExit(1000);
-  }
-}
-
-void menuExit(int btn){
-  if (!btn){
-      printLineF2(F("Exit Menu?"));
-  }
-  else
-   menuClearExit(0);
-}
-
-void menuCWSpeed(int btn){
-    int knob = 0;
-    int wpm;
-
-    wpm = 1200/cwSpeed;
-     
-    if (!btn){
-     strcpy(b, "CW:");
-     itoa(wpm,c, 10);
-     strcat(b, c);
-     strcat(b, "WPM Change?");
-     printLine2(b);
-     return;
-    }
-
-    printLineF1(F("Press to set WPM"));
-    strcpy(b, "WPM:");
-    itoa(wpm,c, 10);
-    strcat(b, c);
-    printLine2(b);
-    delay_background(300, 0);
-
-    while(!btnDown()){
-
-      knob = enc_read();
-      if (knob != 0){
-        if (wpm > 3 && knob < 0)
-          wpm--;
-        if (wpm < 50 && knob > 0)
-          wpm++;
-
-        strcpy(b, "WPM:");
-        itoa(wpm,c, 10);
-        strcat(b, c);
-        printLine2(b);
-      }
-      //abort if this button is down
-      //if (btnDown())
-      //re-enable the clock1 and clock 2
-      //  break;
-
-      Check_Cat(0);  //To prevent disconnections
-    }
-    
-  //save the setting
-  //printLineF2(F("CW Speed set!"));
-  cwSpeed = 1200 / wpm;
-  EEPROM.put(CW_SPEED, cwSpeed);
-  menuClearExit(1000);
-}
-
 void displayEmptyData(void){
   printLineF2(F("Empty data"));
   delay_background(2000, 0);
 }
-
 
 //Builtin CW Keyer Logic by KD8CEC
 void menuCWAutoKey(int btn){
@@ -791,7 +461,6 @@ void menuCWAutoKey(int btn){
      return;
     }
 
-    //printLineF1(F("Press PTT to Send"));
     printLineF1(F("PTT to Send"));
     delay_background(500, 0);
     updateDisplay();
@@ -819,6 +488,256 @@ void menuWSPRSend(int btn){
   menuClearExit(1000);
 }
 
+//Append by KD8CEC
+void menuSetupCWCarrier(int btn){
+  int knob = 0;
+  unsigned long prevCarrier;
+   
+  if (!btn){
+      printLineF2(F("Set CW RX BFO"));
+    return;
+  }
+
+  prevCarrier = cwmCarrier;
+  printLineF1(F("PTT to confirm. "));
+  delay_background(1000, 0);
+
+  si5351bx_setfreq(0, cwmCarrier);
+  printCarrierFreq(cwmCarrier);
+
+  //disable all clock 1 and clock 2 
+  while (digitalRead(PTT) == HIGH && !btnDown())
+  {
+    knob = enc_read();
+
+    if (knob > 0)
+      cwmCarrier -= 5;
+    else if (knob < 0)
+      cwmCarrier += 5;
+    else
+      continue; //don't update the frequency or the display
+      
+    si5351bx_setfreq(0, cwmCarrier);
+    printCarrierFreq(cwmCarrier);
+
+    delay_background(100, 0);
+  }
+
+  //save the setting
+  if (digitalRead(PTT) == LOW){
+    printLineF2(F("Carrier set!"));
+    EEPROM.put(CW_CAL, cwmCarrier);
+    delay_background(1000, 0);
+  }
+  else 
+    cwmCarrier = prevCarrier;
+
+  if (cwMode == 0)
+    si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+  else
+    si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
+  
+  setFrequency(frequency);
+  menuClearExit(0);
+}
+
+//=======================================================
+//BEGIN OF STANDARD TUNE SETUP for reduce Program Memory
+// by KD8CEC
+//=======================================================
+//valueType 0 : Normal
+//          1 : CW Change -> Generate Tone
+//          2 : IF Shift Setup -> SetFrequency, Set SideTone
+//          3 : Select Mode (different display type)
+//knobSensitivity : 1 ~ 
+int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnobValue, int incStep, char* displayTitle, int knobSensitivity)
+{
+    int knob;
+    int moveDetectStep = 0;
+    int negativeSensitivity;
+    char isInitDisplay = 1;
+    delay_background(300, 0); //Default Delay
+    
+    while(!btnDown())
+    {
+      knob = enc_read();
+      if (knob != 0 || isInitDisplay == 1)
+      {
+        isInitDisplay = 0;
+        
+        /*
+        //Program Size : 29424 (95%)
+        if (targetValue > minKnobValue && knob < 0)
+          targetValue -= incStep;
+        if (targetValue < maxKnobValue && knob > 0)
+          targetValue += incStep;
+        */
+
+        //Program Size : 29560 (increase 135 byte from avobe codes), but a lot of usable functions
+        moveDetectStep += (knob > 0 ? 1 : -1);
+        if (moveDetectStep < (knobSensitivity * -1)) {
+          if (targetValue > minKnobValue)
+            targetValue -= incStep;
+            
+          moveDetectStep = 0;
+        }
+        else if (moveDetectStep > knobSensitivity) {
+          if (targetValue < maxKnobValue)
+            targetValue += incStep;
+            
+          moveDetectStep = 0;
+        }
+
+        strcpy(b, displayTitle);
+
+        if (valueType == 3)   //Mode Select
+        {
+          b[targetValue * 4] = '>';
+        }
+        /*
+        else if (valueType == 4) //CW Key Type  Select
+        {
+          if (targetValue == 0)
+            strcat(b, "Straight");
+          else if (targetValue == 1)
+            strcat(b, "IAMBICA");
+          else if (targetValue == 2)
+            strcat(b, "IAMBICB");
+        }
+        */
+        else
+        {
+          itoa(targetValue,c, 10);
+          strcat(b, c);
+        }
+        
+        printLine2(b);
+
+        if (valueType == 1) //Generate Side Tone
+        {
+          tone(CW_TONE, targetValue);          
+        }
+        else if (valueType == 2)
+        {
+          ifShiftValue = targetValue;
+          setFrequency(frequency);
+          SetCarrierFreq();
+        }
+      }
+
+      Check_Cat(0);  //To prevent disconnections
+    }
+
+    return targetValue;
+}
+
+void menuCWSpeed(int btn){
+    int knob = 0;
+    int wpm;
+
+    wpm = 1200/cwSpeed;
+     
+    if (!btn){
+     strcpy(b, "CW:");
+     itoa(wpm,c, 10);
+     strcat(b, c);
+     strcat(b, "WPM Change?");
+     printLine2(b);
+     return;
+    }
+
+    printLineF1(F("Press to set WPM"));
+    //strcpy(b, "WPM:");
+    //itoa(wpm,c, 10);
+    //strcat(b, c);
+    //printLine2(b);
+    //delay_background(300, 0);
+    
+    wpm = getValueByKnob(0, wpm, 3, 50, 1, "WPM:", 3);
+    
+    /*
+    while(!btnDown()){
+
+      knob = enc_read();
+      if (knob != 0){
+        if (wpm > 3 && knob < 0)
+          wpm--;
+        if (wpm < 50 && knob > 0)
+          wpm++;
+
+        strcpy(b, "WPM:");
+        itoa(wpm,c, 10);
+        strcat(b, c);
+        printLine2(b);
+      }
+
+      Check_Cat(0);  //To prevent disconnections
+    }
+    */
+
+    
+  //save the setting
+  //printLineF2(F("CW Speed set!"));
+  cwSpeed = 1200 / wpm;
+  EEPROM.put(CW_SPEED, cwSpeed);
+  menuClearExit(1000);
+}
+
+//Modified by KD8CEC
+void menuSetupCwTone(int btn){
+    int knob = 0;
+    int prev_sideTone;
+     
+    if (!btn){
+      printLineF2(F("Change CW Tone"));
+      return;
+    }
+
+    prev_sideTone = sideTone;
+    printLineF1(F("Tune CW tone"));
+    //printLineF2(F("PTT to confirm."));
+    printLineF1(F("Press to set WPM"));
+    //delay_background(1000, 0);
+    tone(CW_TONE, sideTone);
+
+    sideTone = getValueByKnob(1, sideTone, 100, 2000, 10, "", 2); //1 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
+
+    /*
+    //disable all clock 1 and clock 2 
+    while (digitalRead(PTT) == HIGH && !btnDown())
+    {
+      knob = enc_read();
+
+      if (knob > 0 && sideTone < 2000)
+        sideTone += 10;
+      else if (knob < 0 && sideTone > 100 )
+        sideTone -= 10;
+      else
+        continue; //don't update the frequency or the display
+        
+      tone(CW_TONE, sideTone);
+      itoa(sideTone, b, 10);
+      printLine2(b);
+
+      delay_background(100, 0);
+    }
+    */
+
+    
+    noTone(CW_TONE);
+    
+    //save the setting
+    //if (digitalRead(PTT) == LOW){
+      printLineF2(F("Sidetone set!"));
+      EEPROM.put(CW_SIDETONE, sideTone);
+      delay_background(2000, 0);
+    //}
+    //else
+    //  sideTone = prev_sideTone;
+   
+  menuClearExit(0);
+ }
+
 
 
 //Modified by KD8CEC
@@ -832,12 +751,18 @@ void menuSetupCwDelay(int btn){
     }
 
     printLineF1(F("Press, set Delay"));
+
+    /*
     strcpy(b, "DELAY:");
     itoa(tmpCWDelay,c, 10);
     strcat(b, c);
     printLine2(b);
-    delay_background(300, 0);
+    */
+    //delay_background(300, 0);
 
+    tmpCWDelay = getValueByKnob(0, tmpCWDelay, 3, 2500, 10, "DELAY:", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
+
+/*
     while(!btnDown()){
       knob = enc_read();
       if (knob != 0){
@@ -857,6 +782,7 @@ void menuSetupCwDelay(int btn){
 
       Check_Cat(0);  //To prevent disconnections
     }
+*/
     
     //save the setting
     //printLineF2(F("CW Delay set!"));
@@ -877,8 +803,11 @@ void menuSetupTXCWInterval(int btn){
     }
 
     printLineF1(F("Press, set Delay"));
-    delay_background(300, 0);
+    //delay_background(300, 0);
 
+    tmpTXCWInterval = getValueByKnob(0, tmpTXCWInterval, 0, 500, 2, "Start Delay:", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
+
+/*
     while(!btnDown()){
 
       if (needDisplayInformation == 1) {
@@ -895,12 +824,7 @@ void menuSetupTXCWInterval(int btn){
           tmpTXCWInterval -= 2;
         if (tmpTXCWInterval < 500 && knob > 0)
           tmpTXCWInterval += 2;
-        /*
-        strcpy(b, "Start Delay:");
-        itoa(tmpTXCWInterval,c, 10);
-        strcat(b, c);
-        printLine2(b);
-        */
+          
         needDisplayInformation = 1;
       }
       //abort if this button is down
@@ -909,6 +833,8 @@ void menuSetupTXCWInterval(int btn){
 
       Check_Cat(0);  //To prevent disconnections
     }
+*/
+
     
     //save the setting
    //printLineF2(F("CW Start set!"));
@@ -917,6 +843,482 @@ void menuSetupTXCWInterval(int btn){
    
    menuClearExit(1000);
 }
+
+//IF Shift function, BFO Change like RIT, by KD8CEC
+void menuIFSSetup(int btn){
+  int knob = 0;
+  char needApplyChangeValue = 1;
+  
+  if (!btn){
+    if (isIFShift == 1)
+      printLineF2(F("IF Shift Change?"));
+    else
+      printLineF2(F("IF Shift On?"));
+  }
+  else 
+  {
+      isIFShift = 1;
+
+      //delay_background(500, 0);
+      //updateLine2Buffer(1);
+      //setFrequency(frequency);
+
+      ifShiftValue = getValueByKnob(2, ifShiftValue, -20000, 20000, 50, "IFS:", 2); //2 : IF Setup (updateLine2Buffer(1), SetFrequency), targetValue, minKnobValue, maxKnobValue, stepSize
+
+/*
+      //Off or Change Value
+      while(!btnDown() ){
+        if (needApplyChangeValue ==1)
+        {
+          updateLine2Buffer(1);
+          setFrequency(frequency);
+          SetCarrierFreq();
+          needApplyChangeValue = 0;
+        }
+        
+        knob = enc_read();
+        if (knob != 0){
+          if (knob < 0)
+            ifShiftValue -= 50;
+          else if (knob > 0)
+            ifShiftValue += 50;
+
+          needApplyChangeValue = 1;
+        }
+        Check_Cat(0);  //To prevent disconnections
+      }
+*/
+
+      delay_background(500, 0); //for check Long Press function key
+      
+      if (btnDown() || ifShiftValue == 0)
+      {
+        isIFShift = 0;
+        ifShiftValue = 0;
+        setFrequency(frequency);
+        SetCarrierFreq();
+      }
+
+      //Store IF Shiift
+      EEPROM.put(IF_SHIFTVALUE, ifShiftValue);
+      menuClearExit(0);
+  }
+}
+
+
+//Functions for CWL and CWU by KD8CEC
+void menuSelectMode(int btn){
+  int knob = 0;
+  int selectModeType = 0;
+  int beforeMode = 0;
+  int moveStep = 0;
+  
+  if (!btn){
+      printLineF2(F("Select Mode?"));
+  }
+  else 
+  {
+    //LSB, USB, CWL, CWU
+    if (cwMode == 0 && isUSB == 0)
+      selectModeType = 0;
+    else if (cwMode == 0 && isUSB == 1)
+      selectModeType = 1;
+    else if (cwMode == 1)
+      selectModeType = 2;
+    else
+      selectModeType = 3;
+
+    beforeMode = selectModeType;
+
+    //delay_background(500, 0);
+
+    selectModeType = getValueByKnob(3, selectModeType, 0, 3, 1, " LSB USB CWL CWU", 4); //3 : Select Mode, targetValue, minKnobValue, maxKnobValue, stepSize
+
+/*
+    while(!btnDown()){
+      //Display Mode Name
+      memset(c, 0, sizeof(c));
+      strcpy(c, " LSB USB CWL CWU");
+      c[selectModeType * 4] = '>';
+      printLine1(c);
+      
+      knob = enc_read();
+
+      if (knob != 0)
+      {
+        moveStep += (knob > 0 ? 1 : -1);
+        if (moveStep < -3) {
+          if (selectModeType > 0)
+            selectModeType--;
+            
+          moveStep = 0;
+        }
+        else if (moveStep > 3) {
+          if (selectModeType < 3)
+            selectModeType++;
+            
+          moveStep = 0;
+        }
+      }
+
+      //Check_Cat(0);  //To prevent disconnections
+      delay_background(50, 0);
+    }
+*/
+
+    if (beforeMode != selectModeType) {
+      //printLineF1(F("Changed Mode"));
+      if (selectModeType == 0) {
+        cwMode = 0; isUSB = 0;
+      }
+      else if (selectModeType == 1) {
+        cwMode = 0; isUSB = 1;
+      }
+      else if (selectModeType == 2) {
+        cwMode = 1;
+      }
+      else if (selectModeType == 3) {
+        cwMode = 2;
+      }
+
+      FrequencyToVFO(1);
+    }
+
+    SetCarrierFreq();
+    
+    setFrequency(frequency);
+    menuClearExit(500);
+  }
+}
+
+//Select CW Key Type by KD8CEC
+void menuSetupKeyType(int btn){
+  int knob = 0;
+  int selectedKeyType = 0;
+  int moveStep = 0;
+  if (!btn){
+        printLineF2(F("Change Key Type?"));
+  }
+  else {
+    //printLineF2(F("Press to set Key")); //for reduce usable flash memory
+    //delay_background(500, 0);
+    selectedKeyType = cwKeyType;
+
+    //selectedKeyType = getValueByKnob(4, selectedKeyType, 0, 2, 1, " KEY:", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
+    selectedKeyType = getValueByKnob(3, selectedKeyType, 0, 2, 1, " ST  IA  IB", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
+
+    /*
+    while(!btnDown()){
+
+      //Display Key Type
+      if (selectedKeyType == 0)
+        printLineF1(F("Straight"));
+      else if (selectedKeyType == 1)
+        printLineF1(F("IAMBICA"));
+      else if (selectedKeyType == 2)
+        printLineF1(F("IAMBICB"));
+
+      knob = enc_read();
+
+      if (knob != 0)
+      {
+        moveStep += (knob > 0 ? 1 : -1);
+        if (moveStep < -3) {
+          if (selectedKeyType > 0)
+            selectedKeyType--;
+          moveStep = 0;
+        }
+        else if (moveStep > 3) {
+          if (selectedKeyType < 2)
+            selectedKeyType++;
+          moveStep = 0;
+        }
+      }
+
+      Check_Cat(0);  //To prevent disconnections
+    }
+    */
+    
+    
+    printLineF2(F("CW Key Type set!"));
+    cwKeyType = selectedKeyType;
+    EEPROM.put(CW_KEY_TYPE, cwKeyType);
+
+    if (cwKeyType == 0)
+      Iambic_Key = false;
+    else
+    {
+      Iambic_Key = true;
+      if (cwKeyType == 1)
+        keyerControl &= ~IAMBICB;
+      else
+        keyerControl |= IAMBICB;
+    }
+    
+    menuClearExit(1000);
+  }
+}
+
+//=====================================================
+//END OF STANDARD Tune Setup for reduce Program Memory
+//=====================================================
+ 
+
+//Lock Dial move by KD8CEC
+void setDialLock(byte tmpLock, byte fromMode) {
+  if (tmpLock == 1)
+    isDialLock |= (vfoActive == VFO_A ? 0x01 : 0x02);
+  else
+    isDialLock &= ~(vfoActive == VFO_A ? 0x01 : 0x02);
+    
+  if (fromMode == 2 || fromMode == 3) return;
+
+  //delay_background(1000, 0);
+  printLine2ClearAndUpdate();
+}
+
+byte btnDownTimeCount;
+
+#define PRESS_ADJUST_TUNE 20 //1000msec 20 * 50 = 1000milisec
+#define PRESS_LOCK_CONTROL 40 //2000msec 40 * 50 = 2000milisec
+
+//Modified by KD8CEC
+void doMenu(){
+  int select=0, i,btnState;
+  char isNeedDisplay = 0;
+  
+  //for DialLock On/Off function
+  btnDownTimeCount = 0;
+  
+  //wait for the button to be raised up
+
+  //Appened Lines by KD8CEC for Adjust Tune step and Set Dial lock
+  while(btnDown()){
+    delay_background(50, 0);
+    
+    if (btnDownTimeCount++ == (PRESS_ADJUST_TUNE)) { //Set Tune Step 
+      printLineF2(F("Set Tune Step?"));
+    }
+    else if (btnDownTimeCount > (PRESS_LOCK_CONTROL)) {  //check long time Down Button -> 2.5 Second => Lock
+      if (vfoActive == VFO_A)
+        setDialLock((isDialLock & 0x01) == 0x01 ? 0 : 1, 0); //Reverse Dial lock
+      else
+        setDialLock((isDialLock & 0x02) == 0x02 ? 0 : 1, 0); //Reverse Dial lock
+      return;
+    }
+  }
+  delay(50);  //debounce
+
+  //ADJUST TUNE STEP 
+  if (btnDownTimeCount > PRESS_ADJUST_TUNE)
+  {
+    printLineF1(F("Press to set"));
+    isNeedDisplay = 1; //check to need display for display current value
+    
+    while (!btnDown())
+    {
+      delay_background(50, 0);
+
+      if (isNeedDisplay) {
+        strcpy(b, "Tune Step:");
+        itoa(arTuneStep[tuneStepIndex -1], c, 10);
+        strcat(b, c);
+        printLine2(b);
+        isNeedDisplay = 0;
+      }
+        
+      i = enc_read();
+
+      if (i != 0) {
+        select += (i > 0 ? 1 : -1);
+
+        if (select * select >= 25) {  //Threshold 5 * 5 = 25
+          if (select < 0) {
+            if (tuneStepIndex > 1)
+              tuneStepIndex--;
+          }
+          else {
+            if (tuneStepIndex < 5)
+              tuneStepIndex++;
+          }
+          select = 0;
+          isNeedDisplay = 1;
+        }
+      }
+    } //end of while
+
+    EEPROM.put(TUNING_STEP, tuneStepIndex);
+    delay_background(500, 0);
+    printLine2ClearAndUpdate();
+    return;
+  }   //set tune step
+
+  //Below codes are origial code with modified by KD8CEC
+  menuOn = 2;
+  
+  while (menuOn){
+    i = enc_read();
+    btnState = btnDown();
+
+    if (i > 0){
+      if (modeCalibrate && select + i < 240)
+        select += i;
+      if (!modeCalibrate && select + i < 130)
+        select += i;
+    }
+
+    if (i < 0 && select - i >= -10)
+      select += i;      //caught ya, i is already -ve here, so you add it
+
+    //if -> switch reduce program memory 200byte
+    switch (select / 10)
+    {
+      case 0 : 
+        menuBand(btnState); 
+        break;
+      case 1 : 
+        menuVfoToggle(btnState); 
+        break;
+      case 2 : 
+        menuSelectMode(btnState); 
+        break;
+      case 3 : 
+        menuRitToggle(btnState); 
+        break;
+      case 4 : 
+        menuIFSSetup(btnState); 
+        break;
+      case 5 : 
+        menuCWSpeed(btnState); 
+        break;
+      case 6 : 
+        menuSplitOnOff(btnState);        //SplitOn / off
+        break;
+      case 7 : 
+        menuCHMemory(btnState, 0);       //VFO to Memroy
+        break;
+      case 8 : 
+        menuCHMemory(btnState, 1);       //Memory to VFO
+        break;
+      case 9 : 
+        menuCWAutoKey(btnState);  
+        break;
+      case 10 : 
+        menuWSPRSend(btnState);
+        break;
+      case 11 : 
+        menuSetup(btnState);
+        break;
+      case 12 : 
+        menuExit(btnState);
+        break;
+      case 13 : 
+        menuSetupCalibration(btnState);  //crystal
+        break;
+      case 14 : 
+        menuSetupCarrier(btnState);        //lsb
+        break;
+      case 15 : 
+        menuSetupCWCarrier(btnState);        //lsb
+        break;
+      case 16 : 
+        menuSetupCwTone(btnState);  
+        break;
+      case 17 : 
+        menuSetupCwDelay(btnState);  
+        break;
+      case 18 : 
+        menuSetupTXCWInterval(btnState);  
+        break;
+      case 19 :
+        menuSetupKeyType(btnState);  
+        break;
+      case 20 :
+        menuADCMonitor(btnState);  
+        break;
+      case 21 :
+        menuTxOnOff(btnState, 0x01);       //TX OFF / ON
+        break;
+      default :
+        menuExit(btnState);  break;
+    }
+    
+    Check_Cat(0);  //To prevent disconnections
+  }
+}
+
+//*************************************************************************************
+//Original Source Part
+//The code below is the original source part that I kept unchanged for compatibility.
+//By KD8CEC
+//*************************************************************************************
+
+/** 
+ Original source comment 
+ *  Menus
+ *  The Radio menus are accessed by tapping on the function button. 
+ *  - The main loop() constantly looks for a button press and calls doMenu() when it detects
+ *  a function button press. 
+ *  - As the encoder is rotated, at every 10th pulse, the next or the previous menu
+ *  item is displayed. Each menu item is controlled by it's own function.
+ *  - Eache menu function may be called to display itself
+ *  - Each of these menu routines is called with a button parameter. 
+ *  - The btn flag denotes if the menu itme was clicked on or not.
+ *  - If the menu item is clicked on, then it is selected,
+ *  - If the menu item is NOT clicked on, then the menu's prompt is to be displayed
+ */
+
+/**
+ * The calibration routines are not normally shown in the menu as they are rarely used
+ * They can be enabled by choosing this menu option
+ */
+void menuSetup(int btn){
+  if (!btn)
+  {
+    if (!modeCalibrate)
+      printLineF2(F("Setup On?"));
+    else
+      printLineF2(F("Setup Off?"));
+  }
+  else 
+  {
+    modeCalibrate = ! modeCalibrate;
+    menuClearExit(1000);
+  }
+}
+
+void menuExit(int btn){
+  if (!btn){
+      printLineF2(F("Exit Menu?"));
+  }
+  else
+   menuClearExit(0);
+}
+
+//modified for reduce used flash memory by KD8CEC
+void menuRitToggle(int btn){
+  if (!btn){
+    if (ritOn == 1)
+      printLineF2(F("RIT Off?"));
+    else
+      printLineF2(F("RIT On?"));
+  }
+  else {
+      if (ritOn == 0){
+        //printLineF2(F("RIT is ON"));
+        //enable RIT so the current frequency is used at transmit
+        ritEnable(frequency);
+      }
+      else{
+        //printLineF2(F("RIT is OFF"));
+        ritDisable();
+      }
+      
+      menuClearExit(500);
+  }
+}
+
+
 
 
 /**
@@ -1141,317 +1543,5 @@ void menuSetupCarrier(int btn){
   //printLine2ClearAndUpdate();
   //menuOn = 0; 
   menuClearExit(0);
-}
-
-//Append by KD8CEC
-void menuSetupCWCarrier(int btn){
-  int knob = 0;
-  unsigned long prevCarrier;
-   
-  if (!btn){
-      printLineF2(F("Set CW RX BFO"));
-    return;
-  }
-
-  prevCarrier = cwmCarrier;
-  printLineF1(F("PTT to confirm. "));
-  delay_background(1000, 0);
-
-  si5351bx_setfreq(0, cwmCarrier);
-  printCarrierFreq(cwmCarrier);
-
-  //disable all clock 1 and clock 2 
-  while (digitalRead(PTT) == HIGH && !btnDown())
-  {
-    knob = enc_read();
-
-    if (knob > 0)
-      cwmCarrier -= 5;
-    else if (knob < 0)
-      cwmCarrier += 5;
-    else
-      continue; //don't update the frequency or the display
-      
-    si5351bx_setfreq(0, cwmCarrier);
-    printCarrierFreq(cwmCarrier);
-
-    delay_background(100, 0);
-  }
-
-  //save the setting
-  if (digitalRead(PTT) == LOW){
-    printLineF2(F("Carrier set!"));
-    EEPROM.put(CW_CAL, cwmCarrier);
-    delay_background(1000, 0);
-  }
-  else 
-    cwmCarrier = prevCarrier;
-
-  if (cwMode == 0)
-    si5351bx_setfreq(0, usbCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
-  else
-    si5351bx_setfreq(0, cwmCarrier);  //set back the carrier oscillator anyway, cw tx switches it off
-  
-  setFrequency(frequency);
-  menuClearExit(0);
-}
-
-//Modified by KD8CEC
-void menuSetupCwTone(int btn){
-    int knob = 0;
-    int prev_sideTone;
-     
-    if (!btn){
-      printLineF2(F("Change CW Tone"));
-      return;
-    }
-
-    prev_sideTone = sideTone;
-    printLineF1(F("Tune CW tone"));
-    printLineF2(F("PTT to confirm."));
-    delay_background(1000, 0);
-    tone(CW_TONE, sideTone);
-
-    //disable all clock 1 and clock 2 
-    while (digitalRead(PTT) == HIGH && !btnDown())
-    {
-      knob = enc_read();
-
-      if (knob > 0 && sideTone < 2000)
-        sideTone += 10;
-      else if (knob < 0 && sideTone > 100 )
-        sideTone -= 10;
-      else
-        continue; //don't update the frequency or the display
-        
-      tone(CW_TONE, sideTone);
-      itoa(sideTone, b, 10);
-      printLine2(b);
-
-      delay_background(100, 0);
-    }
-    noTone(CW_TONE);
-    //save the setting
-    if (digitalRead(PTT) == LOW){
-      printLineF2(F("Sidetone set!"));
-      EEPROM.put(CW_SIDETONE, sideTone);
-      delay_background(2000, 0);
-    }
-    else
-      sideTone = prev_sideTone;
-    
-  menuClearExit(0);
- }
-
-//Lock Dial move by KD8CEC
-void setDialLock(byte tmpLock, byte fromMode) {
-  if (tmpLock == 1)
-    isDialLock |= (vfoActive == VFO_A ? 0x01 : 0x02);
-  else
-    isDialLock &= ~(vfoActive == VFO_A ? 0x01 : 0x02);
-    
-  if (fromMode == 2 || fromMode == 3) return;
-
-  //delay_background(1000, 0);
-  printLine2ClearAndUpdate();
-}
-
-byte btnDownTimeCount;
-
-#define PRESS_ADJUST_TUNE 20 //1000msec 20 * 50 = 1000milisec
-#define PRESS_LOCK_CONTROL 40 //2000msec 40 * 50 = 2000milisec
-
-//Modified by KD8CEC
-void doMenu(){
-  int select=0, i,btnState;
-  char isNeedDisplay = 0;
-  
-  //for DialLock On/Off function
-  btnDownTimeCount = 0;
-  
-  //wait for the button to be raised up
-
-  //Appened Lines by KD8CEC for Adjust Tune step and Set Dial lock
-  while(btnDown()){
-    delay_background(50, 0);
-    
-    if (btnDownTimeCount++ == (PRESS_ADJUST_TUNE)) { //Set Tune Step 
-      printLineF2(F("Set Tune Step?"));
-    }
-    else if (btnDownTimeCount > (PRESS_LOCK_CONTROL)) {  //check long time Down Button -> 2.5 Second => Lock
-      if (vfoActive == VFO_A)
-        setDialLock((isDialLock & 0x01) == 0x01 ? 0 : 1, 0); //Reverse Dial lock
-      else
-        setDialLock((isDialLock & 0x02) == 0x02 ? 0 : 1, 0); //Reverse Dial lock
-      return;
-    }
-  }
-  delay(50);  //debounce
-
-  //ADJUST TUNE STEP 
-  if (btnDownTimeCount > PRESS_ADJUST_TUNE)
-  {
-    printLineF1(F("Press to set"));
-    isNeedDisplay = 1; //check to need display for display current value
-    
-    while (!btnDown())
-    {
-      delay_background(50, 0);
-
-      if (isNeedDisplay) {
-        strcpy(b, "Tune Step:");
-        itoa(arTuneStep[tuneStepIndex -1], c, 10);
-        strcat(b, c);
-        printLine2(b);
-        isNeedDisplay = 0;
-      }
-        
-      i = enc_read();
-
-      if (i != 0) {
-        select += (i > 0 ? 1 : -1);
-
-        if (select * select >= 25) {  //Threshold 5 * 5 = 25
-          if (select < 0) {
-            if (tuneStepIndex > 1)
-              tuneStepIndex--;
-          }
-          else {
-            if (tuneStepIndex < 5)
-              tuneStepIndex++;
-          }
-          select = 0;
-          isNeedDisplay = 1;
-        }
-      }
-    } //end of while
-
-    EEPROM.put(TUNING_STEP, tuneStepIndex);
-    delay_background(500, 0);
-    printLine2ClearAndUpdate();
-    return;
-  }   //set tune step
-
-  //Below codes are origial code with modified by KD8CEC
-  menuOn = 2;
-  
-  while (menuOn){
-    i = enc_read();
-    btnState = btnDown();
-
-    if (i > 0){
-      if (modeCalibrate && select + i < 240)
-        select += i;
-      if (!modeCalibrate && select + i < 130)
-        select += i;
-    }
-
-    if (i < 0 && select - i >= -10)
-      select += i;      //caught ya, i is already -ve here, so you add it
-
-    //if -> switch reduce program memory 200byte
-    switch (select / 10)
-    {
-      case 0 : 
-        menuBand(btnState); 
-        break;
-      case 1 : 
-        menuVfoToggle(btnState); 
-        break;
-      case 2 : 
-        menuSelectMode(btnState); 
-        break;
-      case 3 : 
-        menuRitToggle(btnState); 
-        break;
-      case 4 : 
-        menuIFSSetup(btnState); 
-        break;
-      case 5 : 
-        menuCWSpeed(btnState); 
-        break;
-      case 6 : 
-        menuSplitOnOff(btnState);        //SplitOn / off
-        break;
-      case 7 : 
-        menuCHMemory(btnState, 0);       //VFO to Memroy
-        break;
-      case 8 : 
-        menuCHMemory(btnState, 1);       //Memory to VFO
-        break;
-      case 9 : 
-        menuCWAutoKey(btnState);  
-        break;
-      case 10 : 
-        menuWSPRSend(btnState);
-        break;
-      case 11 : 
-        menuSetup(btnState);
-        break;
-      case 12 : 
-        menuExit(btnState);
-        break;
-      case 13 : 
-        menuSetupCalibration(btnState);  //crystal
-        break;
-      case 14 : 
-        menuSetupCarrier(btnState);        //lsb
-        break;
-      case 15 : 
-        menuSetupCWCarrier(btnState);        //lsb
-        break;
-      case 16 : 
-        menuSetupCwTone(btnState);  
-        break;
-      case 17 : 
-        menuSetupCwDelay(btnState);  
-        break;
-      case 18 : 
-        menuSetupTXCWInterval(btnState);  
-        break;
-      case 19 :
-        menuSetupKeyType(btnState);  
-        break;
-      case 20 :
-        menuADCMonitor(btnState);  
-        break;
-      case 21 :
-        menuTxOnOff(btnState, 0x01);       //TX OFF / ON
-        break;
-      default :
-        menuExit(btnState);  break;
-    }
-    /*
-    else if (select < 130 && modeCalibrate)
-      menuSetupCalibration(btnState);   //crystal
-    else if (select < 140 && modeCalibrate)
-      menuSetupCarrier(btnState);       //lsb
-    else if (select < 150 && modeCalibrate)
-      menuSetupCWCarrier(btnState);       //lsb
-    else if (select < 160 && modeCalibrate)
-      menuSetupCwTone(btnState);
-    else if (select < 170 && modeCalibrate)
-      menuSetupCwDelay(btnState);
-    else if (select < 180 && modeCalibrate)
-      menuSetupTXCWInterval(btnState);
-    else if (select < 190 && modeCalibrate)
-      menuSetupKeyType(btnState);
-    else if (select < 200 && modeCalibrate)
-      menuADCMonitor(btnState);
-    else if (select < 210 && modeCalibrate)
-      menuTxOnOff(btnState, 0x01);      //TX OFF / ON
-    else if (select < 220 && modeCalibrate)
-      menuExit(btnState);
-    */
-
-    Check_Cat(0);  //To prevent disconnections
-  }
-
-/*
-  //debounce the button
-  while(btnDown()){
-    delay_background(50, 0);  //To prevent disconnections
-  }
-*/  
 }
 
