@@ -24,50 +24,18 @@ char line2Buffer[16];
 int freqScrollPosition = 0;
 //Example Line2 Optinal Display
 //immediate execution, not call by scheulder
-void updateLine2Buffer(char isDirectCall)
+void updateLine2Buffer(char displayType)
 {
   unsigned long tmpFreq = 0;
-  if (isDirectCall == 0)
+  if (ritOn)
   {
-    if (ritOn)
-    {
-      strcpy(line2Buffer, "RitTX:");
-  
-      //display frequency
-      tmpFreq = ritTxFrequency;
-      for (int i = 15; i >= 6; i--) {
-        if (tmpFreq > 0) {
-          if (i == 12 || i == 8) line2Buffer[i] = '.';
-          else {
-            line2Buffer[i] = tmpFreq % 10 + 0x30;
-            tmpFreq /= 10;
-          }
-        }
-        else
-          line2Buffer[i] = ' ';
-      }
-  
-      return;
-    } //end of ritOn display
+    strcpy(line2Buffer, "RitTX:");
 
-    //======================================================
-    //other VFO display
-    //======================================================
-    if (vfoActive == VFO_B)
-    {
-      tmpFreq = vfoA;
-    }
-    else 
-    {
-      tmpFreq = vfoB;
-    }
-  
-    // EXAMPLE 1 & 2
-    //U14.150.100
     //display frequency
-    for (int i = 9; i >= 0; i--) {
+    tmpFreq = ritTxFrequency;
+    for (int i = 15; i >= 6; i--) {
       if (tmpFreq > 0) {
-        if (i == 2 || i == 6) line2Buffer[i] = '.';
+        if (i == 12 || i == 8) line2Buffer[i] = '.';
         else {
           line2Buffer[i] = tmpFreq % 10 + 0x30;
           tmpFreq /= 10;
@@ -76,85 +44,101 @@ void updateLine2Buffer(char isDirectCall)
       else
         line2Buffer[i] = ' ';
     }
-  
-    //EXAMPLE #1
-    if ((displayOption1 & 0x04) == 0x00)  //none scroll display
-      line2Buffer[6] = 'k';
+
+    return;
+  } //end of ritOn display
+
+  //======================================================
+  //other VFO display
+  //======================================================
+  if (vfoActive == VFO_B)
+  {
+    tmpFreq = vfoA;
+  }
+  else 
+  {
+    tmpFreq = vfoB;
+  }
+
+  // EXAMPLE 1 & 2
+  //U14.150.100
+  //display frequency
+  for (int i = 9; i >= 0; i--) {
+    if (tmpFreq > 0) {
+      if (i == 2 || i == 6) line2Buffer[i] = '.';
+      else {
+        line2Buffer[i] = tmpFreq % 10 + 0x30;
+        tmpFreq /= 10;
+      }
+    }
     else
+      line2Buffer[i] = ' ';
+  }
+
+  //EXAMPLE #1
+  if ((displayOption1 & 0x04) == 0x00)  //none scroll display
+    line2Buffer[6] = 'k';
+  else
+  {
+    //example #2
+    if (freqScrollPosition++ > 18)    //none scroll display time
     {
-      //example #2
-      if (freqScrollPosition++ > 18)    //none scroll display time
+      line2Buffer[6] = 'k';
+      if (freqScrollPosition > 25)
+        freqScrollPosition = -1;
+    }
+    else                              //scroll frequency 
+    {
+      line2Buffer[10] = 'H';
+      line2Buffer[11] = 'z';
+  
+      if (freqScrollPosition < 7)   
       {
-        line2Buffer[6] = 'k';
-        if (freqScrollPosition > 25)
-          freqScrollPosition = -1;
+        for (int i = 11; i >= 0; i--)
+          if (i - (7 - freqScrollPosition) >= 0)
+            line2Buffer[i] = line2Buffer[i - (7 - freqScrollPosition)];
+          else
+            line2Buffer[i] = ' ';
       }
-      else                              //scroll frequency 
+      else
       {
-        line2Buffer[10] = 'H';
-        line2Buffer[11] = 'z';
-    
-        if (freqScrollPosition < 7)   
-        {
-          for (int i = 11; i >= 0; i--)
-            if (i - (7 - freqScrollPosition) >= 0)
-              line2Buffer[i] = line2Buffer[i - (7 - freqScrollPosition)];
-            else
-              line2Buffer[i] = ' ';
-        }
-        else
-        {
-          for (int i = 0; i < 11; i++)
-            if (i + (freqScrollPosition - 7) <= 11)
-              line2Buffer[i] = line2Buffer[i + (freqScrollPosition - 7)];
-            else
-              line2Buffer[i] = ' ';
-        }
+        for (int i = 0; i < 11; i++)
+          if (i + (freqScrollPosition - 7) <= 11)
+            line2Buffer[i] = line2Buffer[i + (freqScrollPosition - 7)];
+          else
+            line2Buffer[i] = ' ';
       }
-    } //scroll
-    
-    line2Buffer[7] = ' ';
-  } //check direct call by encoder
+    }
+  } //scroll
+  
+  line2Buffer[7] = ' ';
   
   if (isIFShift)
   {
-    if (isDirectCall == 1)
-      for (int i = 0; i < 16; i++)
-        line2Buffer[i] = ' ';
+//    if (isDirectCall == 1)
+//      for (int i = 0; i < 16; i++)
+//        line2Buffer[i] = ' ';
       
       //IFShift Offset Value 
     line2Buffer[8] = 'I';
     line2Buffer[9] = 'F';
 
-    //if (ifShiftValue == 0)
-    //{
-      /*
-      line2Buffer[10] = 'S';
-      line2Buffer[11] = ':';
-      line2Buffer[12] = 'O';
-      line2Buffer[13] = 'F';
-      line2Buffer[14] = 'F';
-      */
-    //}
-    //else
-    //{
-      line2Buffer[10] = ifShiftValue >= 0 ? '+' : 0;
-      line2Buffer[11] = 0;
-      line2Buffer[12] = ' ';
+    line2Buffer[10] = ifShiftValue >= 0 ? '+' : 0;
+    line2Buffer[11] = 0;
+    line2Buffer[12] = ' ';
+  
+    //11, 12, 13, 14, 15
+    memset(b, 0, sizeof(b));
+    ltoa(ifShiftValue, b, DEC);
+    strncat(line2Buffer, b, 5);
     
-      //11, 12, 13, 14, 15
-      memset(b, 0, sizeof(b));
-      ltoa(ifShiftValue, b, DEC);
-      strncat(line2Buffer, b, 5);
-    //}
-    
-    if (isDirectCall == 1)  //if call by encoder (not scheduler), immediate print value
-        printLine2(line2Buffer);    
+    //if (isDirectCall == 1)  //if call by encoder (not scheduler), immediate print value
+    printLine2(line2Buffer);    
   }       // end of display IF
-  else    // step display
+  else    // step & Key Type display
   {
-    if (isDirectCall != 0)
-      return;
+    //if (isDirectCall != 0)
+    //  return;
 
     memset(&line2Buffer[8], ' ', 8);
     //Step
@@ -174,8 +158,6 @@ void updateLine2Buffer(char isDirectCall)
       else
         line2Buffer[i +isStepKhz] = ' ';
     }
-    //if (isStepKhz == 1)
-    //  line2Buffer[10] = 'k';
 
     if (isStepKhz == 0)
     {
@@ -184,7 +166,7 @@ void updateLine2Buffer(char isDirectCall)
     }
   
     line2Buffer[13] = ' ';
-    //if (
+    
     //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
     if (cwKeyType == 0)
     {
@@ -202,7 +184,6 @@ void updateLine2Buffer(char isDirectCall)
       line2Buffer[15] = 'B';
     }    
   }
-  
 }
 
 //meterType : 0 = S.Meter, 1 : P.Meter

@@ -557,6 +557,13 @@ int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnob
     int negativeSensitivity;
     char isInitDisplay = 1;
     delay_background(300, 0); //Default Delay
+
+    if (valueType < 3)
+    {
+      strcpy(b, "Press, set ");
+      strcat(b, displayTitle);
+      printLine1(b);
+    }
     
     while(!btnDown())
     {
@@ -607,6 +614,7 @@ int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnob
         */
         else
         {
+          strcat(b, ":");
           itoa(targetValue,c, 10);
           strcat(b, c);
         }
@@ -646,14 +654,14 @@ void menuCWSpeed(int btn){
      return;
     }
 
-    printLineF1(F("Press to set WPM"));
+    //printLineF1(F("Press to set WPM"));
     //strcpy(b, "WPM:");
     //itoa(wpm,c, 10);
     //strcat(b, c);
     //printLine2(b);
     //delay_background(300, 0);
     
-    wpm = getValueByKnob(0, wpm, 3, 50, 1, "WPM:", 3);
+    wpm = getValueByKnob(0, wpm, 3, 50, 1, "WPM", 3);
     
     /*
     while(!btnDown()){
@@ -694,13 +702,13 @@ void menuSetupCwTone(int btn){
     }
 
     prev_sideTone = sideTone;
-    printLineF1(F("Tune CW tone"));
+    //printLineF1(F("Tune CW tone"));
     //printLineF2(F("PTT to confirm."));
-    printLineF1(F("Press to set WPM"));
+    //printLineF1(F("Press to set WPM"));
     //delay_background(1000, 0);
-    tone(CW_TONE, sideTone);
+    //tone(CW_TONE, sideTone);
 
-    sideTone = getValueByKnob(1, sideTone, 100, 2000, 10, "", 2); //1 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
+    sideTone = getValueByKnob(1, sideTone, 100, 2000, 10, "Tone", 2); //1 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
 
     /*
     //disable all clock 1 and clock 2 
@@ -750,8 +758,7 @@ void menuSetupCwDelay(int btn){
      return;
     }
 
-    printLineF1(F("Press, set Delay"));
-
+    //printLineF1(F("Press, set Delay"));
     /*
     strcpy(b, "DELAY:");
     itoa(tmpCWDelay,c, 10);
@@ -760,7 +767,7 @@ void menuSetupCwDelay(int btn){
     */
     //delay_background(300, 0);
 
-    tmpCWDelay = getValueByKnob(0, tmpCWDelay, 3, 2500, 10, "DELAY:", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
+    tmpCWDelay = getValueByKnob(0, tmpCWDelay, 3, 2500, 10, "Delay", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
 
 /*
     while(!btnDown()){
@@ -802,10 +809,10 @@ void menuSetupTXCWInterval(int btn){
      return;
     }
 
-    printLineF1(F("Press, set Delay"));
+    //printLineF1(F("Press, set Delay"));
     //delay_background(300, 0);
 
-    tmpTXCWInterval = getValueByKnob(0, tmpTXCWInterval, 0, 500, 2, "Start Delay:", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
+    tmpTXCWInterval = getValueByKnob(0, tmpTXCWInterval, 0, 500, 2, "Delay", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
 
 /*
     while(!btnDown()){
@@ -863,7 +870,7 @@ void menuIFSSetup(int btn){
       //updateLine2Buffer(1);
       //setFrequency(frequency);
 
-      ifShiftValue = getValueByKnob(2, ifShiftValue, -20000, 20000, 50, "IFS:", 2); //2 : IF Setup (updateLine2Buffer(1), SetFrequency), targetValue, minKnobValue, maxKnobValue, stepSize
+      ifShiftValue = getValueByKnob(2, ifShiftValue, -20000, 20000, 50, "IFS", 2); //2 : IF Setup (updateLine2Buffer(1), SetFrequency), targetValue, minKnobValue, maxKnobValue, stepSize
 
 /*
       //Off or Change Value
