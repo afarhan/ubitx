@@ -25,48 +25,23 @@
 #ifdef UBITX_DISPLAY_LCD1602I
 
 
-
-/** 
- * The Raduino board is the size of a standard 16x2 LCD panel. It has three connectors:
- * 
- * First, is an 8 pin connector that provides +5v, GND and six analog input pins that can also be 
- * configured to be used as digital input or output pins. These are referred to as A0,A1,A2,
- * A3,A6 and A7 pins. The A4 and A5 pins are missing from this connector as they are used to 
- * talk to the Si5351 over I2C protocol. 
- * 
- * Second is a 16 pin LCD connector. This connector is meant specifically for the standard 16x2
- * LCD display in 4 bit mode. The 4 bit mode requires 4 data lines and two control lines to work:
- * Lines used are : RESET, ENABLE, D4, D5, D6, D7 
- * We include the library and declare the configuration of the LCD panel too
- */
-
+//========================================================================
+//Begin of LCD Hardware define
+//========================================================================
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(8,9,10,11,12,13);
 
+
+//========================================================================
+//End of LCD Hardware define
+//========================================================================
+
+//========================================================================
+//Begin of Display Base Routines (Init, printLine..)
+//========================================================================
 char c[30], b[30];
 char printBuff[2][17];  //mirrors what is showing on the two lines of the display
 
-void LCD_Init(void)
-{
-  lcd.begin(16, 2);
-  initMeter(); //for Meter Display
-}
-
-void Display_AutoKeyTextIndex(char textIndex)
-{
-  byte diplayAutoCWLine = 0;
-  
-  if ((displayOption1 & 0x01) == 0x01)
-    diplayAutoCWLine = 1;
-  lcd.setCursor(0, diplayAutoCWLine);
-  lcd.write(byteToChar(selectedCWTextIndex));
-  lcd.write(':');
-}
-
-
-//========================================================================
-//Display Routine
-//========================================================================
 const PROGMEM uint8_t meters_bitmap[] = {
   B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
   B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000 ,   //custom 2
@@ -125,6 +100,12 @@ void initMeter(){
   lcd.createChar(6, tmpbytes);
 }
 
+void LCD_Init(void)
+{
+  lcd.begin(16, 2);
+  initMeter(); //for Meter Display
+}
+
 //by KD8CEC
 //0 ~ 25 : 30 over : + 10
 void drawMeter(int needle) {
@@ -161,7 +142,7 @@ void printLine(unsigned char linenmbr, const char *c) {
     strcpy(printBuff[linenmbr], c);
 
     for (byte i = strlen(c); i < 16; i++) { // add white spaces until the end of the 16 characters line is reached
-      lcd.print(' ');
+      lcd.write(' ');
     }
   }
 }
@@ -230,14 +211,13 @@ void printLine2ClearAndUpdate(){
   line2DisplayStatus = 0;  
   updateDisplay();
 }
+//===================================================================================
+//End of Display Base Routines
+//===================================================================================
 
-//012...89ABC...Z
-char byteToChar(byte srcByte){
-  if (srcByte < 10)
-    return 0x30 + srcByte;
- else
-    return 'A' + srcByte - 10;
-}
+//===================================================================================
+//Begin of User Interface Routines
+//===================================================================================
 
 // this builds up the top line of the display with frequency and mode
 void updateDisplay() {
@@ -335,7 +315,7 @@ void updateDisplay() {
   else
   {
     lcd.setCursor(5,diplayVFOLine);
-    lcd.write(":");
+    lcd.write(':');
   }
 }
 
@@ -555,6 +535,17 @@ void idle_process()
       */
     }
   }
+}
+
+void Display_AutoKeyTextIndex(char textIndex)
+{
+  byte diplayAutoCWLine = 0;
+  
+  if ((displayOption1 & 0x01) == 0x01)
+    diplayAutoCWLine = 1;
+  lcd.setCursor(0, diplayAutoCWLine);
+  lcd.write(byteToChar(selectedCWTextIndex));
+  lcd.write(':');
 }
 
 

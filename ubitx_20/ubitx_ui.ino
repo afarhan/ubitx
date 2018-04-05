@@ -6,6 +6,13 @@
  * quickly cleared up.
  */
 
+ char byteToChar(byte srcByte){
+  if (srcByte < 10)
+    return 0x30 + srcByte;
+ else
+    return 'A' + srcByte - 10;
+}
+
 //returns true if the button is pressed
 int btnDown(void){
   if (digitalRead(FBUTTON) == HIGH)
