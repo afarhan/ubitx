@@ -1,7 +1,12 @@
 /*************************************************************************
-  KD8CEC's uBITX Idle time Processing
-  Functions that run at times that do not affect TX, CW, and CAT
-  It is called in 1/10 time unit.
+  KD8CEC, _______
+  uBITX Display Routine for LCD1602 I2C
+
+  1.Code for 16 x 2 LCD for I2C.
+  2.Display related functions of uBITX.  Some functions moved from uBITX_Ui.
+  3.uBITX Idle time Processing
+    Functions that run at times that do not affect TX, CW, and CAT
+    It is called in 1/10 time unit.
 -----------------------------------------------------------------------------
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,6 +22,47 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
+#ifdef UBITX_DISPLAY_LCD1602I
+
+
+
+/** 
+ * The Raduino board is the size of a standard 16x2 LCD panel. It has three connectors:
+ * 
+ * First, is an 8 pin connector that provides +5v, GND and six analog input pins that can also be 
+ * configured to be used as digital input or output pins. These are referred to as A0,A1,A2,
+ * A3,A6 and A7 pins. The A4 and A5 pins are missing from this connector as they are used to 
+ * talk to the Si5351 over I2C protocol. 
+ * 
+ * Second is a 16 pin LCD connector. This connector is meant specifically for the standard 16x2
+ * LCD display in 4 bit mode. The 4 bit mode requires 4 data lines and two control lines to work:
+ * Lines used are : RESET, ENABLE, D4, D5, D6, D7 
+ * We include the library and declare the configuration of the LCD panel too
+ */
+
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(8,9,10,11,12,13);
+
+char c[30], b[30];
+char printBuff[2][17];  //mirrors what is showing on the two lines of the display
+
+void LCD_Init(void)
+{
+  lcd.begin(16, 2);
+  initMeter(); //for Meter Display
+}
+
+void Display_AutoKeyTextIndex(char textIndex)
+{
+  byte diplayAutoCWLine = 0;
+  
+  if ((displayOption1 & 0x01) == 0x01)
+    diplayAutoCWLine = 1;
+  lcd.setCursor(0, diplayAutoCWLine);
+  lcd.write(byteToChar(selectedCWTextIndex));
+  lcd.write(':');
+}
+
 
 //========================================================================
 //Display Routine
@@ -511,3 +557,5 @@ void idle_process()
   }
 }
 
+
+#endif

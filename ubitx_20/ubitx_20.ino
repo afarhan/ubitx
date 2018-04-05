@@ -2,6 +2,16 @@
 #define FIRMWARE_VERSION_INFO F("CE v1.070")
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
+//Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
+//You must select only one.
+
+//#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
+#define UBITX_DISPLAY_LCD1602I    //I2C type 16 x 02 LCD
+//#define UBITX_DISPLAY_LCD2404P    //24 x 04 LCD
+//#define UBITX_DISPLAY_LCD2404I    //I2C type 24 x 04 LCD
+
+
+
 /**
  Cat Suppoort uBITX CEC Version
  Most features(TX, Frequency Range, Ham Band, TX Control, CW delay, start Delay... more) have been added by KD8CEC.
@@ -91,24 +101,6 @@
 #define ANALOG_SPARE (A7)
 #define ANALOG_SMETER (A7)  //by KD8CEC
 
-/** 
- * The Raduino board is the size of a standard 16x2 LCD panel. It has three connectors:
- * 
- * First, is an 8 pin connector that provides +5v, GND and six analog input pins that can also be 
- * configured to be used as digital input or output pins. These are referred to as A0,A1,A2,
- * A3,A6 and A7 pins. The A4 and A5 pins are missing from this connector as they are used to 
- * talk to the Si5351 over I2C protocol. 
- * 
- * Second is a 16 pin LCD connector. This connector is meant specifically for the standard 16x2
- * LCD display in 4 bit mode. The 4 bit mode requires 4 data lines and two control lines to work:
- * Lines used are : RESET, ENABLE, D4, D5, D6, D7 
- * We include the library and declare the configuration of the LCD panel too
- */
-
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(8,9,10,11,12,13);
-
-
 /**
  * The Arduino, unlike C/C++ on a regular computer with gigabytes of RAM, has very little memory.
  * We have to be very careful with variables that are declared inside the functions as they are 
@@ -120,8 +112,6 @@ LiquidCrystal lcd(8,9,10,11,12,13);
  * the input and output from the USB port. We must keep a count of the bytes used while reading
  * the serial port as we can easily run out of buffer space. This is done in the serial_in_count variable.
  */
-char c[30], b[30];      
-char printBuff[2][17];  //mirrors what is showing on the two lines of the display
 int count = 0;          //to generally count ticks, loops, etc
 
 /** 
@@ -1133,11 +1123,10 @@ void setup()
   */
   
   //Serial.begin(9600);
-  lcd.begin(16, 2);
+  LCD_Init();
   printLineF(1, FIRMWARE_VERSION_INFO); 
 
   Init_Cat(38400, SERIAL_8N1);
-  initMeter(); //not used in this build
   initSettings();
 
   if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {

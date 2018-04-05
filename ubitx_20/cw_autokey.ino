@@ -299,13 +299,14 @@ void controlAutoCW(){
           
           printLineFromEEPRom(0, 2, cwStartIndex + displayScrolStep + CW_DATA_OFSTADJ, cwEndIndex + CW_DATA_OFSTADJ, 0); 
 
-          byte diplayAutoCWLine = 0;
-          if ((displayOption1 & 0x01) == 0x01)
-            diplayAutoCWLine = 1;
-          
-          lcd.setCursor(0, diplayAutoCWLine);
-          lcd.write(byteToChar(selectedCWTextIndex));
-          lcd.write(':');
+          //byte diplayAutoCWLine = 0;
+          //if ((displayOption1 & 0x01) == 0x01)
+          //  diplayAutoCWLine = 1;
+
+          Display_AutoKeyTextIndex(selectedCWTextIndex);
+          //lcd.setCursor(0, diplayAutoCWLine);
+          //lcd.write(byteToChar(selectedCWTextIndex));
+          //lcd.write(':');
           isNeedScroll = (cwEndIndex - cwStartIndex) > 14 ? 1 : 0;
           scrollDispayTime = millis() + scrollSpeed;
           beforeCWTextIndex = selectedCWTextIndex;
