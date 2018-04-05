@@ -32,7 +32,8 @@ Prepared or finished tasks for the next version
   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
-1.07 (Working)
+1.07 (Working...)
+ - Please do not download it yet. The code will continue to change for the time being.
  - BetaVersion for Reduce program size
 
 1.061
