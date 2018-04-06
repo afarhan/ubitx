@@ -5,11 +5,12 @@
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
 
-//#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
-#define UBITX_DISPLAY_LCD1602I    //I2C type 16 x 02 LCD
+#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
+//#define UBITX_DISPLAY_LCD1602I    //I2C type 16 x 02 LCD
 //#define UBITX_DISPLAY_LCD2404P    //24 x 04 LCD
 //#define UBITX_DISPLAY_LCD2404I    //I2C type 24 x 04 LCD
 
+//#define ENABLE_FACTORYALIGN
 
 
 /**
@@ -326,6 +327,11 @@ unsigned char txFilter = 0;   //which of the four transmit filters are in use
 boolean modeCalibrate = false;//this mode of menus shows extended menus to calibrate the oscillators and choose the proper
                               //beat frequency
 
+byte attLevel = 0;            //ATT : RF Gain Control (Receive) <-- IF1 Shift, 0 : Off, ShiftValue is attLevel * 100; attLevel 150 = 15K
+char if1TuneValue = 0;        //0 : OFF, IF1 + if1TuneValue * 100; // + - 12500;
+byte sdrModeOn = 0;           //SDR MODE ON / OFF
+unsigned long SDR_Center_Freq = 32000000;
+
 unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
 char lcdMeter[17];
@@ -495,7 +501,32 @@ void setFrequency(unsigned long f){
   setTXFilters(f);
 
   unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
+  long if1AdjustValue = ((inTx == 0) ? (attLevel * 200) : 0) + (if1TuneValue * 50); //if1Tune RX, TX Enabled, ATT : only RX Mode
 
+  if (sdrModeOn && (inTx == 0))  //IF SDR
+  {
+    si5351bx_setfreq(2, 44999500 + if1AdjustValue + f);
+    si5351bx_setfreq(1, 44999500 + if1AdjustValue + SDR_Center_Freq + 2390);
+  }
+  else
+  {
+    if (cwMode == 1 || (cwMode == 0 && (!isUSB)))
+    {
+      //CWL(cwMode == 1) or LSB (cwMode == 0 && (!isUSB))
+      si5351bx_setfreq(2, SECOND_OSC_LSB + if1AdjustValue + appliedCarrier + f);
+      //si5351bx_setfreq(1, SECOND_OSC_LSB + if1AdjustValue - (sdrModeOn ? (SDR_Center_Freq- usbCarrier) : 0));
+      si5351bx_setfreq(1, SECOND_OSC_LSB + if1AdjustValue);
+    }
+    else
+    {
+      //CWU (cwMode == 2) or LSB (cwMode == 0 and isUSB)
+      si5351bx_setfreq(2, SECOND_OSC_USB + if1AdjustValue - appliedCarrier + f);
+      //si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue + (sdrModeOn ? (SDR_Center_Freq- usbCarrier) : 0));  //Increase LO Frequency => 1198500 -> 32Mhz
+      si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue);  //Increase LO Frequency => 1198500 -> 32Mhz
+    }
+  }
+  
+  /*
   if (cwMode == 0)
   {
     if (isUSB){
@@ -518,6 +549,7 @@ void setFrequency(unsigned long f){
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
   }
+  */
   
   frequency = f;
 }
@@ -1150,8 +1182,10 @@ void setup()
   setFrequency(vfoA);
   updateDisplay();
 
+#ifdef ENABLE_FACTORYALIGN
   if (btnDown())
     factory_alignment();
+#endif
 }
 
 //Auto save Frequency and Mode with Protected eeprom life by KD8CEC

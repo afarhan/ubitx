@@ -441,6 +441,37 @@ void menuTxOnOff(int btn, byte optionType){
   }
 }
 
+//Toggle SDR MODE
+void menuSDROnOff(int btn)
+{
+  if (!btn){
+    if (sdrModeOn == 0)
+      printLineF2(F("SDR Mode On?"));
+    else
+      printLineF2(F("SDR Mode Off?"));
+  }
+  else {
+      if (sdrModeOn == 1){
+        sdrModeOn = 0;
+        printLineF2(F("[OFF]"));
+      }
+      else {
+        sdrModeOn = 1;
+        
+        if (ritOn == 1)
+          ritOn = 0;
+
+        if (splitOn == 1)
+          splitOn = 0;
+          
+        printLineF2(F("[ON]"));
+      }
+
+    setFrequency(frequency);
+    menuClearExit(500);
+  }
+}
+
 void displayEmptyData(void){
   printLineF2(F("Empty data"));
   delay_background(2000, 0);
@@ -548,9 +579,10 @@ void menuSetupCWCarrier(int btn){
 //valueType 0 : Normal
 //          1 : CW Change -> Generate Tone
 //          2 : IF Shift Setup -> SetFrequency, Set SideTone
-//          3 : Select Mode (different display type)
+//          5 : ATT
+//          11 : Select Mode (different display type)
 //knobSensitivity : 1 ~ 
-int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnobValue, int incStep, char* displayTitle, int knobSensitivity)
+int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnobValue, int incStep, const char* displayTitle, int knobSensitivity)
 {
     int knob;
     int moveDetectStep = 0;
@@ -558,7 +590,7 @@ int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnob
     char isInitDisplay = 1;
     delay_background(300, 0); //Default Delay
 
-    if (valueType < 3)
+    if (valueType < 10)
     {
       strcpy(b, "Press, set ");
       strcat(b, displayTitle);
@@ -597,7 +629,7 @@ int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnob
 
         strcpy(b, displayTitle);
 
-        if (valueType == 3)   //Mode Select
+        if (valueType == 11)   //Mode Select
         {
           b[targetValue * 4] = '>';
         }
@@ -625,9 +657,13 @@ int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnob
         {
           tone(CW_TONE, targetValue);          
         }
-        else if (valueType == 2)
+        else if (valueType == 2 || valueType == 5 ) // 2:IFS, 5:ATT
         {
-          ifShiftValue = targetValue;
+          if (valueType == 2)
+            ifShiftValue = targetValue;
+          else 
+            attLevel = targetValue;
+            
           setFrequency(frequency);
           SetCarrierFreq();
         }
@@ -912,6 +948,31 @@ void menuIFSSetup(int btn){
   }
 }
 
+//ATT SETUP (IF1(45MHZ) SHIFT), by KD8CEC
+void menuATTSetup(int btn){
+  int knob = 0;
+  char needApplyChangeValue = 1;
+  
+  if (!btn){
+    if (isIFShift == 1)
+      printLineF2(F("ATT Change?"));
+    else
+      printLineF2(F("ATT On?"));
+  }
+  else 
+  {
+      attLevel = getValueByKnob(5, attLevel, 0, 200, 5, "ATT", 2); //2 : (SetFrequency), targetValue, minKnobValue, maxKnobValue, stepSize
+      delay_background(500, 0); //for check Long Press function key
+      
+      if (btnDown() || attLevel == 0)
+      {
+        attLevel = 0;
+        setFrequency(frequency);
+        //SetCarrierFreq();
+      }
+      menuClearExit(0);
+  }
+}
 
 //Functions for CWL and CWU by KD8CEC
 void menuSelectMode(int btn){
@@ -939,7 +1000,7 @@ void menuSelectMode(int btn){
 
     //delay_background(500, 0);
 
-    selectModeType = getValueByKnob(3, selectModeType, 0, 3, 1, " LSB USB CWL CWU", 4); //3 : Select Mode, targetValue, minKnobValue, maxKnobValue, stepSize
+    selectModeType = getValueByKnob(11, selectModeType, 0, 3, 1, " LSB USB CWL CWU", 4); //3 : Select Mode, targetValue, minKnobValue, maxKnobValue, stepSize
 
 /*
     while(!btnDown()){
@@ -1011,8 +1072,8 @@ void menuSetupKeyType(int btn){
     //delay_background(500, 0);
     selectedKeyType = cwKeyType;
 
-    //selectedKeyType = getValueByKnob(4, selectedKeyType, 0, 2, 1, " KEY:", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
-    selectedKeyType = getValueByKnob(3, selectedKeyType, 0, 2, 1, " ST  IA  IB", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
+    //selectedKeyType = getValueByKnob(12, selectedKeyType, 0, 2, 1, " KEY:", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
+    selectedKeyType = getValueByKnob(11, selectedKeyType, 0, 2, 1, " ST  IA  IB", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
 
     /*
     while(!btnDown()){
@@ -1170,14 +1231,13 @@ void doMenu(){
     if (i > 0){
       if (modeCalibrate && select + i < 240)
         select += i;
-      if (!modeCalibrate && select + i < 130)
+      else if (!modeCalibrate && select + i < 150)
         select += i;
     }
+    else if (i < 0 && select - i >= -10)
+      select += i;
 
-    if (i < 0 && select - i >= -10)
-      select += i;      //caught ya, i is already -ve here, so you add it
-
-    //if -> switch reduce program memory 200byte
+    //if -> switch : reduce program memory 200byte
     switch (select / 10)
     {
       case 0 : 
@@ -1196,60 +1256,65 @@ void doMenu(){
         menuIFSSetup(btnState); 
         break;
       case 5 : 
-        menuCWSpeed(btnState); 
+        menuATTSetup(btnState); 
         break;
       case 6 : 
-        menuSplitOnOff(btnState);        //SplitOn / off
+        menuCWSpeed(btnState); 
         break;
       case 7 : 
-        menuCHMemory(btnState, 0);       //VFO to Memroy
+        menuSplitOnOff(btnState);        //SplitOn / off
         break;
       case 8 : 
-        menuCHMemory(btnState, 1);       //Memory to VFO
+        menuCHMemory(btnState, 0);       //VFO to Memroy
         break;
       case 9 : 
-        menuCWAutoKey(btnState);  
+        menuCHMemory(btnState, 1);       //Memory to VFO
         break;
       case 10 : 
-        menuWSPRSend(btnState);
+        menuCWAutoKey(btnState);  
         break;
       case 11 : 
-        menuSetup(btnState);
+        menuWSPRSend(btnState);
         break;
       case 12 : 
-        menuExit(btnState);
+        menuSDROnOff(btnState);
         break;
       case 13 : 
-        menuSetupCalibration(btnState);  //crystal
+        menuSetup(btnState);
         break;
       case 14 : 
-        menuSetupCarrier(btnState);        //lsb
+        menuExit(btnState);
         break;
       case 15 : 
-        menuSetupCWCarrier(btnState);        //lsb
+        menuSetupCalibration(btnState);  //crystal
         break;
       case 16 : 
-        menuSetupCwTone(btnState);  
+        menuSetupCarrier(btnState);      //ssb
         break;
       case 17 : 
-        menuSetupCwDelay(btnState);  
+        menuSetupCWCarrier(btnState);    //cw
         break;
       case 18 : 
+        menuSetupCwTone(btnState);  
+        break;
+      case 19 : 
+        menuSetupCwDelay(btnState);  
+        break;
+      case 20 : 
         menuSetupTXCWInterval(btnState);  
         break;
-      case 19 :
+      case 21 :
         menuSetupKeyType(btnState);  
         break;
-      case 20 :
+      case 22 :
         menuADCMonitor(btnState);  
         break;
-      case 21 :
+      case 23 :
         menuTxOnOff(btnState, 0x01);       //TX OFF / ON
         break;
       default :
         menuExit(btnState);  break;
-    }
-    
+    }    
     Check_Cat(0);  //To prevent disconnections
   }
 }
