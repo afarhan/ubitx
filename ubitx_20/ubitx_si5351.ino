@@ -127,7 +127,7 @@ void si5351_set_calibration(int32_t cal){
 void SetCarrierFreq()
 {
   unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
-  si5351bx_setfreq(0, appliedCarrier);
+  si5351bx_setfreq(0, (sdrModeOn ? 0 : appliedCarrier));
 
     /*
   if (cwMode == 0)

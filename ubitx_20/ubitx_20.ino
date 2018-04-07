@@ -1,8 +1,25 @@
+//Firmware Version
+#define FIRMWARE_VERSION_INFO F("CE v1.070")
+#define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
+
+//Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
+//You must select only one.
+
+#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
+//#define UBITX_DISPLAY_LCD1602I    //I2C type 16 x 02 LCD
+//#define UBITX_DISPLAY_LCD2404P    //24 x 04 LCD
+//#define UBITX_DISPLAY_LCD2404I    //I2C type 24 x 04 LCD
+
+//Compile Option
+#define ENABLE_FACTORYALIGN
+#define ENABLE_ADCMONITOR //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
+
+
 /**
- Since KD8CEC Version 0.29, most of the original code is no longer available.
+ Cat Suppoort uBITX CEC Version
  Most features(TX, Frequency Range, Ham Band, TX Control, CW delay, start Delay... more) have been added by KD8CEC.
  However, the license rules are subject to the original source rules.
- DE Ian KD8CEC
+ Ian KD8CEC
 
  Original source comment            -------------------------------------------------------------
  * This source file is under General Public License version 3.
@@ -87,25 +104,6 @@
 #define ANALOG_SPARE (A7)
 #define ANALOG_SMETER (A7)  //by KD8CEC
 
-/** 
- * The Raduino board is the size of a standard 16x2 LCD panel. It has three connectors:
- * 
- * First, is an 8 pin connector that provides +5v, GND and six analog input pins that can also be 
- * configured to be used as digital input or output pins. These are referred to as A0,A1,A2,
- * A3,A6 and A7 pins. The A4 and A5 pins are missing from this connector as they are used to 
- * talk to the Si5351 over I2C protocol. 
- * 
- * Second is a 16 pin LCD connector. This connector is meant specifically for the standard 16x2
- * LCD display in 4 bit mode. The 4 bit mode requires 4 data lines and two control lines to work:
- * Lines used are : RESET, ENABLE, D4, D5, D6, D7 
- * We include the library and declare the configuration of the LCD panel too
- */
-
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(8,9,10,11,12,13);
-
-#define VERSION_NUM 0x01  //for KD8CEC'S firmware and for memory management software
-
 /**
  * The Arduino, unlike C/C++ on a regular computer with gigabytes of RAM, has very little memory.
  * We have to be very careful with variables that are declared inside the functions as they are 
@@ -117,8 +115,6 @@ LiquidCrystal lcd(8,9,10,11,12,13);
  * the input and output from the USB port. We must keep a count of the bytes used while reading
  * the serial port as we can easily run out of buffer space. This is done in the serial_in_count variable.
  */
-char c[30], b[30];      
-char printBuff[2][17];  //mirrors what is showing on the two lines of the display
 int count = 0;          //to generally count ticks, loops, etc
 
 /** 
@@ -151,7 +147,12 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_SIDETONE 24
 #define CW_SPEED 28
 
-//AT328 has 1KBytes EEPROM
+//KD8CEC EEPROM MAP
+#define ADVANCED_FREQ_OPTION1 240 //Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency
+#define IF1_CAL               241
+#define ENABLE_SDR            242
+#define SDR_FREQUNCY          243
+
 #define CW_CAL 252
 #define VFO_A_MODE 256
 #define VFO_B_MODE 257
@@ -332,6 +333,12 @@ unsigned long dbgCount = 0;   //not used now
 unsigned char txFilter = 0;   //which of the four transmit filters are in use
 boolean modeCalibrate = false;//this mode of menus shows extended menus to calibrate the oscillators and choose the proper
                               //beat frequency
+                              
+byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency
+byte attLevel = 0;            //ATT : RF Gain Control (Receive) <-- IF1 Shift, 0 : Off, ShiftValue is attLevel * 100; attLevel 150 = 15K
+char if1TuneValue = 0;        //0 : OFF, IF1 + if1TuneValue * 100; // + - 12500;
+byte sdrModeOn = 0;           //SDR MODE ON / OFF
+unsigned long SDR_Center_Freq; //DEFAULT Frequency : 32000000
 
 unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
@@ -502,7 +509,50 @@ void setFrequency(unsigned long f){
   setTXFilters(f);
 
   unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
+  long if1AdjustValue = ((inTx == 0) ? (attLevel * 100) : 0) + (if1TuneValue * 100); //if1Tune RX, TX Enabled, ATT : only RX Mode
 
+  if (sdrModeOn && (inTx == 0))  //IF SDR
+  {
+    //Fixed Frequency SDR (Default Frequency : 32Mhz, available change sdr Frequency by uBITX Manager)
+    //Dynamic Frequency is for SWL without cat
+    //Offset Frequency + Mhz, 
+    //Example : Offset Frequency : 30Mhz and current Frequncy is 7.080 => 37.080Mhz
+    //          Offset Frequency : 30Mhz and current Frequncy is 14.074 => 34.074Mhz
+
+    //Dynamic Frequency
+    //if (advancedFreqOption1 & 0x04 != 0x00)
+    //  if1AdjustValue += (f % 10000000);
+
+    si5351bx_setfreq(2, 44991500 + if1AdjustValue + f);
+    si5351bx_setfreq(1, 44991500 
+      + if1AdjustValue 
+      + SDR_Center_Freq 
+      + ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
+      + 2390);
+    /*
+    si5351bx_setfreq(2, 44999500 + f);
+    si5351bx_setfreq(1, 44999500 + SDR_Center_Freq + 2390);
+    */
+  }
+  else
+  {
+    if (cwMode == 1 || (cwMode == 0 && (!isUSB)))
+    {
+      //CWL(cwMode == 1) or LSB (cwMode == 0 && (!isUSB))
+      si5351bx_setfreq(2, SECOND_OSC_LSB + if1AdjustValue + appliedCarrier + f);
+      //si5351bx_setfreq(1, SECOND_OSC_LSB + if1AdjustValue - (sdrModeOn ? (SDR_Center_Freq- usbCarrier) : 0));
+      si5351bx_setfreq(1, SECOND_OSC_LSB + if1AdjustValue);
+    }
+    else
+    {
+      //CWU (cwMode == 2) or LSB (cwMode == 0 and isUSB)
+      si5351bx_setfreq(2, SECOND_OSC_USB + if1AdjustValue - appliedCarrier + f);
+      //si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue + (sdrModeOn ? (SDR_Center_Freq- usbCarrier) : 0));  //Increase LO Frequency => 1198500 -> 32Mhz
+      si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue);  //Increase LO Frequency => 1198500 -> 32Mhz
+    }
+  }
+  
+  /*
   if (cwMode == 0)
   {
     if (isUSB){
@@ -525,6 +575,7 @@ void setFrequency(unsigned long f){
       si5351bx_setfreq(1, SECOND_OSC_USB);
     }
   }
+  */
   
   frequency = f;
 }
@@ -606,13 +657,6 @@ void stopTx(void){
   inTx = 0;
 
   digitalWrite(TX_RX, 0);           //turn off the tx
-
-/*
-  if (cwMode == 0)
-    si5351bx_setfreq(0, usbCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-  else
-    si5351bx_setfreq(0, cwmCarrier + (isIFShift ? ifShiftValue : 0));  //set back the carrier oscillator anyway, cw tx switches it off
-*/
   SetCarrierFreq();
 
   if (ritOn)
@@ -669,7 +713,7 @@ void ritDisable(){
  * flip the T/R line to T and update the display to denote transmission
  */
 
-void checkPTT(){	
+void checkPTT(){  
   //we don't check for ptt when transmitting cw
   if (cwTimeout > 0)
     return;
@@ -678,7 +722,7 @@ void checkPTT(){
     startTx(TX_SSB, 1);
     delay(50); //debounce the PTT
   }
-	
+  
   if (digitalRead(PTT) == 1 && inTx == 1)
     stopTx();
 }
@@ -862,7 +906,7 @@ void initSettings(){
       
     printLineF(1, F("Init EEProm...")); 
       //initial all eeprom 
-    for (unsigned int i = 32; i < 1024; i++) //protect Master_cal, usb_cal
+    for (unsigned int i = 64; i < 1024; i++) //protect Master_cal, usb_cal
       EEPROM.write(i, 0);
 
     //Write Firmware ID
@@ -872,8 +916,8 @@ void initSettings(){
   }
   
   //Version Write for Memory Management Software
-  if (EEPROM.read(VERSION_ADDRESS) != VERSION_NUM)
-    EEPROM.write(VERSION_ADDRESS, VERSION_NUM);
+  if (EEPROM.read(VERSION_ADDRESS) != FIRMWARE_VERSION_NUM)
+    EEPROM.write(VERSION_ADDRESS, FIRMWARE_VERSION_NUM);
 
   EEPROM.get(CW_CAL, cwmCarrier);
 
@@ -1015,6 +1059,25 @@ void initSettings(){
     isIFShift = ifShiftValue != 0;
   }
 
+  //Advanced Freq control
+  EEPROM.get(ADVANCED_FREQ_OPTION1, advancedFreqOption1);
+
+  //use Advanced Frequency Control
+  if (advancedFreqOption1 & 0x01 != 0x00)
+  {
+    EEPROM.get(IF1_CAL, if1TuneValue);
+
+    //Stored Enabled SDR Mode
+    if (advancedFreqOption1 & 0x02 != 0x00)
+    {
+      EEPROM.get(ENABLE_SDR, sdrModeOn);
+    }
+  }
+  
+  EEPROM.get(SDR_FREQUNCY, SDR_Center_Freq);
+  if (SDR_Center_Freq == 0)
+    SDR_Center_Freq = 32000000;
+
   //default Value (for original hardware)
   if (cwAdcSTFrom >= cwAdcSTTo)
   {
@@ -1137,11 +1200,10 @@ void setup()
   */
   
   //Serial.begin(9600);
-  lcd.begin(16, 2);
-  printLineF(1, F("CE v1.061")); 
+  LCD_Init();
+  printLineF(1, FIRMWARE_VERSION_INFO); 
 
   Init_Cat(38400, SERIAL_8N1);
-  initMeter(); //not used in this build
   initSettings();
 
   if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
@@ -1165,8 +1227,10 @@ void setup()
   setFrequency(vfoA);
   updateDisplay();
 
+#ifdef ENABLE_FACTORYALIGN
   if (btnDown())
     factory_alignment();
+#endif
 }
 
 //Auto save Frequency and Mode with Protected eeprom life by KD8CEC

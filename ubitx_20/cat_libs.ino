@@ -611,6 +611,34 @@ void WriteEEPRom_FT817(byte fromType)
   Serial.write(ACK);
 }
 
+const byte anlogPinIndex[6] = {A0, A1, A2, A3, A6, A7};
+
+//Read ADC Value by uBITX Manager Software
+void ReadADCValue(void)
+{
+  //ADC MAP for uBITX
+  int readedADCValue;
+  //5BYTES
+  //CAT_BUFF[0] [1] [2] [3] [4] //4 COMMAND
+  //0 READ ADDRESS
+  readedADCValue = analogRead(anlogPinIndex[CAT_BUFF[0]]);
+  CAT_BUFF[0] = readedADCValue >> 8;
+  CAT_BUFF[1] = readedADCValue;
+  SendCatData(2);
+  Serial.write(ACK);
+}
+
+void SetIFSValue(void)
+{
+  //Set IFShift Value
+  isIFShift = CAT_BUFF[0];
+  ifShiftValue = CAT_BUFF[1] + CAT_BUFF[2] * 256;
+  setFrequency(frequency);
+  SetCarrierFreq();
+  updateLine2Buffer(1); //option, perhap not need
+  Serial.write(ACK);
+}
+
 //void CatRxStatus(byte fromType) 
 void CatRxStatus(void)  //for remove warning
 {
@@ -766,6 +794,14 @@ void Check_Cat(byte fromType)
       break;
     case 0xBC:  //Write FT-817 EEPROM Data  (for comfirtable)
       WriteEEPRom_FT817(fromType);
+      break;
+
+    case 0xDD:          //Read uBITX ADC Data
+      ReadADCValue();   //Call by uBITX Manager Program
+      break;
+
+    case 0xDE:          //IF-Shift Control by CAT
+      SetIFSValue();   //
       break;
 
     case 0xE7 :       //Read RX Status

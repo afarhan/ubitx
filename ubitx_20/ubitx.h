@@ -34,6 +34,7 @@ extern byte delay_background(unsigned delayTime, byte fromType);
 extern int btnDown(void);
 extern char c[30];
 extern char b[30];
+extern int enc_read(void);
 
 extern unsigned long frequency;
 
