@@ -290,6 +290,7 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
 
 //Analog pin monitoring with CW Key and function keys connected.
 //by KD8CEC
+#ifdef ENABLE_ADCMONITOR        
 void menuADCMonitor(int btn){
   int adcPinA0 = 0;  //A0(BLACK, EncoderA)
   int adcPinA1 = 0;  //A1(BROWN, EncoderB)
@@ -359,6 +360,7 @@ void menuADCMonitor(int btn){
       
   menuClearExit(0);
 }
+#endif
 
 //VFO Toggle and save VFO Information, modified by KD8CEC
 void menuVfoToggle(int btn)
@@ -467,6 +469,7 @@ void menuSDROnOff(int btn)
         printLineF2(F("[ON]"));
       }
 
+    EEPROM.put(ENABLE_SDR, sdrModeOn);
     setFrequency(frequency);
     menuClearExit(500);
   }
@@ -954,14 +957,14 @@ void menuATTSetup(int btn){
   char needApplyChangeValue = 1;
   
   if (!btn){
-    if (isIFShift == 1)
+    if (attLevel != 0)
       printLineF2(F("ATT Change?"));
     else
       printLineF2(F("ATT On?"));
   }
   else 
   {
-      attLevel = getValueByKnob(5, attLevel, 0, 200, 5, "ATT", 2); //2 : (SetFrequency), targetValue, minKnobValue, maxKnobValue, stepSize
+      attLevel = getValueByKnob(5, attLevel, 0, 250, 5, "ATT", 2); //2 : (SetFrequency), targetValue, minKnobValue, maxKnobValue, stepSize
       delay_background(500, 0); //for check Long Press function key
       
       if (btnDown() || attLevel == 0)
@@ -1229,7 +1232,7 @@ void doMenu(){
     btnState = btnDown();
 
     if (i > 0){
-      if (modeCalibrate && select + i < 240)
+      if (modeCalibrate && select + i < 250)
         select += i;
       else if (!modeCalibrate && select + i < 150)
         select += i;
@@ -1306,10 +1309,14 @@ void doMenu(){
       case 21 :
         menuSetupKeyType(btnState);  
         break;
+#ifdef ENABLE_ADCMONITOR        
       case 22 :
         menuADCMonitor(btnState);  
         break;
       case 23 :
+#else      
+      case 22 :
+#endif      
         menuTxOnOff(btnState, 0x01);       //TX OFF / ON
         break;
       default :

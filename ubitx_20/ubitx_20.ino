@@ -10,7 +10,9 @@
 //#define UBITX_DISPLAY_LCD2404P    //24 x 04 LCD
 //#define UBITX_DISPLAY_LCD2404I    //I2C type 24 x 04 LCD
 
-//#define ENABLE_FACTORYALIGN
+//Compile Option
+#define ENABLE_FACTORYALIGN
+#define ENABLE_ADCMONITOR //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
 
 
 /**
@@ -145,7 +147,12 @@ int count = 0;          //to generally count ticks, loops, etc
 #define CW_SIDETONE 24
 #define CW_SPEED 28
 
-//AT328 has 1KBytes EEPROM
+//KD8CEC EEPROM MAP
+#define ADVANCED_FREQ_OPTION1 240 //Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency
+#define IF1_CAL               241
+#define ENABLE_SDR            242
+#define SDR_FREQUNCY          243
+
 #define CW_CAL 252
 #define VFO_A_MODE 256
 #define VFO_B_MODE 257
@@ -326,11 +333,12 @@ unsigned long dbgCount = 0;   //not used now
 unsigned char txFilter = 0;   //which of the four transmit filters are in use
 boolean modeCalibrate = false;//this mode of menus shows extended menus to calibrate the oscillators and choose the proper
                               //beat frequency
-
+                              
+byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency
 byte attLevel = 0;            //ATT : RF Gain Control (Receive) <-- IF1 Shift, 0 : Off, ShiftValue is attLevel * 100; attLevel 150 = 15K
 char if1TuneValue = 0;        //0 : OFF, IF1 + if1TuneValue * 100; // + - 12500;
 byte sdrModeOn = 0;           //SDR MODE ON / OFF
-unsigned long SDR_Center_Freq = 32000000;
+unsigned long SDR_Center_Freq; //DEFAULT Frequency : 32000000
 
 unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
@@ -501,12 +509,30 @@ void setFrequency(unsigned long f){
   setTXFilters(f);
 
   unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
-  long if1AdjustValue = ((inTx == 0) ? (attLevel * 200) : 0) + (if1TuneValue * 50); //if1Tune RX, TX Enabled, ATT : only RX Mode
+  long if1AdjustValue = ((inTx == 0) ? (attLevel * 100) : 0) + (if1TuneValue * 100); //if1Tune RX, TX Enabled, ATT : only RX Mode
 
   if (sdrModeOn && (inTx == 0))  //IF SDR
   {
-    si5351bx_setfreq(2, 44999500 + if1AdjustValue + f);
-    si5351bx_setfreq(1, 44999500 + if1AdjustValue + SDR_Center_Freq + 2390);
+    //Fixed Frequency SDR (Default Frequency : 32Mhz, available change sdr Frequency by uBITX Manager)
+    //Dynamic Frequency is for SWL without cat
+    //Offset Frequency + Mhz, 
+    //Example : Offset Frequency : 30Mhz and current Frequncy is 7.080 => 37.080Mhz
+    //          Offset Frequency : 30Mhz and current Frequncy is 14.074 => 34.074Mhz
+
+    //Dynamic Frequency
+    //if (advancedFreqOption1 & 0x04 != 0x00)
+    //  if1AdjustValue += (f % 10000000);
+
+    si5351bx_setfreq(2, 44991500 + if1AdjustValue + f);
+    si5351bx_setfreq(1, 44991500 
+      + if1AdjustValue 
+      + SDR_Center_Freq 
+      + ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
+      + 2390);
+    /*
+    si5351bx_setfreq(2, 44999500 + f);
+    si5351bx_setfreq(1, 44999500 + SDR_Center_Freq + 2390);
+    */
   }
   else
   {
@@ -880,7 +906,7 @@ void initSettings(){
       
     printLineF(1, F("Init EEProm...")); 
       //initial all eeprom 
-    for (unsigned int i = 32; i < 1024; i++) //protect Master_cal, usb_cal
+    for (unsigned int i = 64; i < 1024; i++) //protect Master_cal, usb_cal
       EEPROM.write(i, 0);
 
     //Write Firmware ID
@@ -1032,6 +1058,25 @@ void initSettings(){
     EEPROM.get(IF_SHIFTVALUE, ifShiftValue);
     isIFShift = ifShiftValue != 0;
   }
+
+  //Advanced Freq control
+  EEPROM.get(ADVANCED_FREQ_OPTION1, advancedFreqOption1);
+
+  //use Advanced Frequency Control
+  if (advancedFreqOption1 & 0x01 != 0x00)
+  {
+    EEPROM.get(IF1_CAL, if1TuneValue);
+
+    //Stored Enabled SDR Mode
+    if (advancedFreqOption1 & 0x02 != 0x00)
+    {
+      EEPROM.get(ENABLE_SDR, sdrModeOn);
+    }
+  }
+  
+  EEPROM.get(SDR_FREQUNCY, SDR_Center_Freq);
+  if (SDR_Center_Freq == 0)
+    SDR_Center_Freq = 32000000;
 
   //default Value (for original hardware)
   if (cwAdcSTFrom >= cwAdcSTTo)
