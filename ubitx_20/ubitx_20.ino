@@ -1,5 +1,5 @@
 //Firmware Version
-#define FIRMWARE_VERSION_INFO F("CE v1.070")
+#define FIRMWARE_VERSION_INFO F("CE v1.071")
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
@@ -334,9 +334,9 @@ unsigned char txFilter = 0;   //which of the four transmit filters are in use
 boolean modeCalibrate = false;//this mode of menus shows extended menus to calibrate the oscillators and choose the proper
                               //beat frequency
                               
-byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency
+byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2~Bit3 : dynamic sdr frequency,  bit 7: IFTune_Value Reverse for DIY uBITX
 byte attLevel = 0;            //ATT : RF Gain Control (Receive) <-- IF1 Shift, 0 : Off, ShiftValue is attLevel * 100; attLevel 150 = 15K
-char if1TuneValue = 0;        //0 : OFF, IF1 + if1TuneValue * 100; // + - 12500;
+byte if1TuneValue = 0;        //0 : OFF, IF1 + if1TuneValue * 100; // + - 12500;
 byte sdrModeOn = 0;           //SDR MODE ON / OFF
 unsigned long SDR_Center_Freq; //DEFAULT Frequency : 32000000
 
@@ -509,46 +509,85 @@ void setFrequency(unsigned long f){
   setTXFilters(f);
 
   unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
-  long if1AdjustValue = ((inTx == 0) ? (attLevel * 100) : 0) + (if1TuneValue * 100); //if1Tune RX, TX Enabled, ATT : only RX Mode
+  int appliedTuneValue = 0;
 
-  if (sdrModeOn && (inTx == 0))  //IF SDR
+  //applied if tune 
+  //byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency0, Bit3 : dynamic sdr frequency1, bit 7: IFTune_Value Reverse for DIY uBITX
+  if ((advancedFreqOption1 & 0x01) != 0x00)
+  {
+    appliedTuneValue = if1TuneValue;
+
+    //In the LSB state, the optimum reception value was found. To apply to USB, 3Khz decrease is required.
+    if (sdrModeOn && (inTx == 0))
+      appliedTuneValue -= 15; //decrease 1.55Khz
+      
+    //if (isUSB)
+    if (cwMode == 2 || (cwMode == 0 && (isUSB)))    
+      appliedTuneValue -= 30; //decrease 3Khz
+  }
+
+   //if1Tune RX, TX Enabled, ATT : only RX Mode
+  //The IF Tune shall be measured at the LSB. Then, move the 3Khz down for USB.
+  long if1AdjustValue = ((inTx == 0) ? (attLevel * 100) : 0) + (appliedTuneValue * 100); //if1Tune RX, TX Enabled, ATT : only RX Mode  //5600
+
+  //for DIY uBITX (custom filter)
+  if ((advancedFreqOption1 & 0x80) != 0x00)  //Reverse IF Tune (- Value for DIY uBITX)
+    if1AdjustValue *= -1;
+    
+  if (sdrModeOn && (inTx == 0))  //IF SDR MODE
   {
     //Fixed Frequency SDR (Default Frequency : 32Mhz, available change sdr Frequency by uBITX Manager)
     //Dynamic Frequency is for SWL without cat
-    //Offset Frequency + Mhz, 
-    //Example : Offset Frequency : 30Mhz and current Frequncy is 7.080 => 37.080Mhz
-    //          Offset Frequency : 30Mhz and current Frequncy is 14.074 => 34.074Mhz
 
-    //Dynamic Frequency
-    //if (advancedFreqOption1 & 0x04 != 0x00)
-    //  if1AdjustValue += (f % 10000000);
+    //byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency0, Bit3 : dynamic sdr frequency1, bit 7: IFTune_Value Reverse for DIY uBITX
+    long moveFrequency = 0;
+    //7 6 5 4 3 2 1 0
+    //        _ _     <-- SDR Freuqncy Option
+    byte sdrOption = (advancedFreqOption1 >> 2) & 0x03;
+
+    if (sdrOption == 1) // SDR Frequency + frequenc
+    {
+      //example : offset Freq : 20 Mhz and frequency = 7.080 => 27.080 Mhz
+      //example : offset Freq : 0 Mhz and frequency = 7.080 => 7.080 Mhz
+      //for available HF, SDR
+      moveFrequency = f;
+    }
+    else if (sdrOption == 2)  //Mhz move
+    {
+      //Offset Frequency + Mhz, 
+      //Example : Offset Frequency : 30Mhz and current Frequncy is 7.080 => 37.080Mhz
+      //          Offset Frequency : 30Mhz and current Frequncy is 14.074 => 34.074Mhz
+      moveFrequency = (f % 10000000);
+    }
+    else if (sdrOption == 3)  //Khzz move
+    {
+      //Offset Frequency + Khz, 
+      //Example : Offset Frequency : 30Mhz and current Frequncy is 7.080 => 30.080Mhz
+      //          Offset Frequency : 30Mhz and current Frequncy is 14.074 => 30.074Mhz
+      moveFrequency = (f % 1000000);
+    }
 
     si5351bx_setfreq(2, 44991500 + if1AdjustValue + f);
     si5351bx_setfreq(1, 44991500 
       + if1AdjustValue 
       + SDR_Center_Freq 
-      + ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
+      //+ ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
+      + moveFrequency
       + 2390);
-    /*
-    si5351bx_setfreq(2, 44999500 + f);
-    si5351bx_setfreq(1, 44999500 + SDR_Center_Freq + 2390);
-    */
   }
   else
   {
-    if (cwMode == 1 || (cwMode == 0 && (!isUSB)))
+    if (cwMode == 1 || (cwMode == 0 && (!isUSB))) //cwl or lsb
     {
       //CWL(cwMode == 1) or LSB (cwMode == 0 && (!isUSB))
       si5351bx_setfreq(2, SECOND_OSC_LSB + if1AdjustValue + appliedCarrier + f);
-      //si5351bx_setfreq(1, SECOND_OSC_LSB + if1AdjustValue - (sdrModeOn ? (SDR_Center_Freq- usbCarrier) : 0));
       si5351bx_setfreq(1, SECOND_OSC_LSB + if1AdjustValue);
     }
-    else
+    else  //cwu or usb
     {
-      //CWU (cwMode == 2) or LSB (cwMode == 0 and isUSB)
+      //CWU (cwMode == 2) or USB (cwMode == 0 and isUSB)
       si5351bx_setfreq(2, SECOND_OSC_USB + if1AdjustValue - appliedCarrier + f);
-      //si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue + (sdrModeOn ? (SDR_Center_Freq- usbCarrier) : 0));  //Increase LO Frequency => 1198500 -> 32Mhz
-      si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue);  //Increase LO Frequency => 1198500 -> 32Mhz
+      si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue);
     }
   }
   
@@ -1062,13 +1101,13 @@ void initSettings(){
   //Advanced Freq control
   EEPROM.get(ADVANCED_FREQ_OPTION1, advancedFreqOption1);
 
-  //use Advanced Frequency Control
-  if (advancedFreqOption1 & 0x01 != 0x00)
+  //byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency0, Bit3 : dynamic sdr frequency1, bit 7: IFTune_Value Reverse for DIY uBITX
+  if ((advancedFreqOption1 & 0x01) != 0x00)
   {
     EEPROM.get(IF1_CAL, if1TuneValue);
 
     //Stored Enabled SDR Mode
-    if (advancedFreqOption1 & 0x02 != 0x00)
+    if ((advancedFreqOption1 & 0x02) != 0x00)
     {
       EEPROM.get(ENABLE_SDR, sdrModeOn);
     }
