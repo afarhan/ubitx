@@ -148,7 +148,7 @@ void LCD1602_Init()
 
 void LCD_Print(const char *c) 
 {
-  for (int i = 0; i < strlen(c); i++)
+  for (uint8_t i = 0; i < strlen(c); i++)
   {
     if (*(c + i) == 0x00) return;
     LCD_Write(*(c + i));
@@ -469,8 +469,10 @@ char line2Buffer[16];
 //L14.150 200Hz ST
 //U14.150 +150khz
 int freqScrollPosition = 0;
+
 //Example Line2 Optinal Display
 //immediate execution, not call by scheulder
+//warning : unused parameter 'displayType' <-- ignore, this is reserve
 void updateLine2Buffer(char displayType)
 {
   unsigned long tmpFreq = 0;
@@ -480,6 +482,16 @@ void updateLine2Buffer(char displayType)
 
     //display frequency
     tmpFreq = ritTxFrequency;
+
+    //Fixed by Mitani Massaru (JE4SMQ)
+    if (isShiftDisplayCWFreq == 1)
+    {
+      if (cwMode == 1)        //CWL
+          tmpFreq = tmpFreq - sideTone + shiftDisplayAdjustVal;
+      else if (cwMode == 2)   //CWU
+          tmpFreq = tmpFreq + sideTone + shiftDisplayAdjustVal;
+    }
+    
     for (int i = 15; i >= 6; i--) {
       if (tmpFreq > 0) {
         if (i == 12 || i == 8) line2Buffer[i] = '.';
@@ -679,16 +691,26 @@ void idle_process()
 }
 
 //AutoKey LCD Display Routine
-void Display_AutoKeyTextIndex(char textIndex)
+void Display_AutoKeyTextIndex(byte textIndex)
 {
   byte diplayAutoCWLine = 0;
   
   if ((displayOption1 & 0x01) == 0x01)
     diplayAutoCWLine = 1;
   LCD_SetCursor(0, diplayAutoCWLine);
-  LCD_Write(byteToChar(selectedCWTextIndex));
+  LCD_Write(byteToChar(textIndex));
   LCD_Write(':');
 }
 
+void DisplayCallsign(byte callSignLength)
+{
+  printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+  //delay(500);
+}
+
+void DisplayVersionInfo(const __FlashStringHelper * fwVersionInfo)
+{
+  printLineF(1, fwVersionInfo);
+}
 
 #endif

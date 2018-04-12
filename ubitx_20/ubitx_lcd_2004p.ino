@@ -1,8 +1,6 @@
 /*************************************************************************
-  KD8CEC, _______
-  uBITX Display Routine for LCD1602 I2C
-
-  1.Code for 16 x 2 LCD for I2C.
+  KD8CEC's uBITX Display Routine for LCD2004 Parrel
+  1.This is the display code for the default LCD mounted in uBITX.
   2.Display related functions of uBITX.  Some functions moved from uBITX_Ui.
   3.uBITX Idle time Processing
     Functions that run at times that do not affect TX, CW, and CAT
@@ -22,43 +20,169 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
-#ifdef UBITX_DISPLAY_LCD1602I
+#ifdef UBITX_DISPLAY_LCD2004P
 
 
 //========================================================================
-//Begin of LCD Hardware define
-//The I2C LCD I ordered did not arrive yet.
-//I referenced the I2C LCD control in the thread at the link below.
-////https://groups.io/g/BITX20/topic/variation_on_ian_s_kd8cec/16657839?p=,,,20,0,0,0::recentpostdate%2Fsticky,,,20,2,0,16657839
-//In particular, I referenced the sample code of John (VK2ETA) and K9HZ. Jack, W8TEE, Nick
+//Begin of TinyLCD Library by KD8CEC
 //========================================================================
-//#include <LiquidCrystal.h>
-//LiquidCrystal lcd(8,9,10,11,12,13);
+/*************************************************************************
+  LCD2004TINY Library for 20 x 4 LCD
+  Referecnce Source : LiquidCrystal.cpp 
+  KD8CEC
 
-//K9HZ's Code
-//#include <LiquidCrystal_I2C.h>
-//LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  //
+  This source code is modified version for small program memory 
+  from Arduino LiquidCrystal Library
 
-//Jack(W8TEE) Code
-//LiquidCrystal_I2C lcd(0x3F);  // I2C address
+  I wrote this code myself, so there is no license restriction. 
+  So this code allows anyone to write with confidence.
+  But keep it as long as the original author of the code.
+  DE Ian KD8CEC
+**************************************************************************/
+#define LCD_Command(x)  (LCD_Send(x, LOW))
+#define LCD_Write(x)    (LCD_Send(x, HIGH))
 
-//John(VK2ETA) Code
-#include <LiquidCrystal_I2C.h>
-#define I2C_DISPLAY_ADDRESS   0x27
-LiquidCrystal_I2C lcd(I2C_DISPLAY_ADDRESS,16,2);  // set the LCD as a 16 chars and 2 line display
+//Define  connected PIN
+#define LCD_PIN_RS 8
+#define LCD_PIN_EN 9
+uint8_t LCD_PIN_DAT[4] = {10, 11, 12, 13};
 
-//LiquidCrystal_I2C lcd(0x27,16,2)
+// commands
+#define LCD_CLEARDISPLAY 0x01
+#define LCD_RETURNHOME 0x02
+#define LCD_ENTRYMODESET 0x04
+#define LCD_DISPLAYCONTROL 0x08
+#define LCD_CURSORSHIFT 0x10
+#define LCD_FUNCTIONSET 0x20
+#define LCD_SETCGRAMADDR 0x40
+#define LCD_SETDDRAMADDR 0x80
 
+// flags for display entry mode
+#define LCD_ENTRYRIGHT 0x00
+#define LCD_ENTRYLEFT 0x02
+#define LCD_ENTRYSHIFTINCREMENT 0x01
+#define LCD_ENTRYSHIFTDECREMENT 0x00
 
+// flags for display on/off control
+#define LCD_DISPLAYON 0x04
+#define LCD_DISPLAYOFF 0x00
+#define LCD_CURSORON 0x02
+#define LCD_CURSOROFF 0x00
+#define LCD_BLINKON 0x01
+#define LCD_BLINKOFF 0x00
+
+// flags for display/cursor shift
+#define LCD_DISPLAYMOVE 0x08
+#define LCD_CURSORMOVE 0x00
+#define LCD_MOVERIGHT 0x04
+#define LCD_MOVELEFT 0x00
+
+// flags for function set
+#define LCD_8BITMODE 0x10
+#define LCD_4BITMODE 0x00
+#define LCD_2LINE 0x08
+#define LCD_1LINE 0x00
+#define LCD_5x10DOTS 0x04
+#define LCD_5x8DOTS 0x00
+
+void write4bits(uint8_t value) 
+{
+  for (int i = 0; i < 4; i++) 
+    digitalWrite(LCD_PIN_DAT[i], (value >> i) & 0x01);
+
+  digitalWrite(LCD_PIN_EN, LOW);
+  delayMicroseconds(1);    
+  digitalWrite(LCD_PIN_EN, HIGH);
+  delayMicroseconds(1);    // enable pulse must be >450ns
+  digitalWrite(LCD_PIN_EN, LOW);
+  delayMicroseconds(100);   // commands need > 37us to settle
+}
+
+void LCD_Send(uint8_t value, uint8_t mode)
+{
+    digitalWrite(LCD_PIN_RS, mode);
+    write4bits(value>>4);
+    write4bits(value);
+}
+
+void LCD2004_Init()
+{
+  pinMode(LCD_PIN_RS, OUTPUT);
+  pinMode(LCD_PIN_EN, OUTPUT);
+  for (int i = 0; i < 4; i++)
+    pinMode(LCD_PIN_DAT[i], OUTPUT);
+
+  delayMicroseconds(50); 
+ 
+  // Now we pull both RS and R/W low to begin commands
+  digitalWrite(LCD_PIN_RS, LOW);
+  digitalWrite(LCD_PIN_EN, LOW);
+
+  // we start in 8bit mode, try to set 4 bit mode
+  write4bits(0x03);
+  delayMicroseconds(4500); // wait min 4.1ms
+  
+  // second try
+  write4bits(0x03);
+  delayMicroseconds(4500); // wait min 4.1ms
+  
+  // third go!
+  write4bits(0x03); 
+  delayMicroseconds(150);
+  
+  // finally, set to 4-bit interface
+  write4bits(0x02);
+
+  // finally, set # lines, font size, etc.
+  LCD_Command(LCD_FUNCTIONSET | LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS | LCD_2LINE);  
+
+  // turn the display on with no cursor or blinking default
+  LCD_Command(LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
+
+  // clear it off
+  LCD_Command(LCD_CLEARDISPLAY);  // clear display, set cursor position to zero
+  delayMicroseconds(2000);  // this command takes a long time!
+
+  LCD_Command(LCD_ENTRYMODESET | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
+}
+
+void LCD_Print(const char *c) 
+{
+  for (uint8_t i = 0; i < strlen(c); i++)
+  {
+    if (*(c + i) == 0x00) return;
+    LCD_Write(*(c + i));
+  }
+}
+
+const int row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
+void LCD_SetCursor(uint8_t col, uint8_t row)
+{
+  LCD_Command(LCD_SETDDRAMADDR | (col + row_offsets[row]));  //0 : 0x00, 1 : 0x40, only for 20 x 4 lcd
+}
+
+void LCD_CreateChar(uint8_t location, uint8_t charmap[]) 
+{
+  location &= 0x7; // we only have 8 locations 0-7
+  LCD_Command(LCD_SETCGRAMADDR | (location << 3));
+  for (int i=0; i<8; i++)
+    LCD_Write(charmap[i]);
+}
 //========================================================================
-//End of LCD Hardware define
+//End of TinyLCD Library by KD8CEC
 //========================================================================
+
+/*
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(8,9,10,11,12,13);
+*/
+
 
 //========================================================================
 //Begin of Display Base Routines (Init, printLine..)
 //========================================================================
 char c[30], b[30];
-char printBuff[2][17];  //mirrors what is showing on the two lines of the display
+char printBuff[4][20];  //mirrors what is showing on the two lines of the display
 
 const PROGMEM uint8_t meters_bitmap[] = {
   B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
@@ -91,36 +215,36 @@ void initMeter(){
 
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(plock_bitmap + i);
-  lcd.createChar(0, tmpbytes);
+  LCD_CreateChar(0, tmpbytes);
   
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i);
-  lcd.createChar(1, tmpbytes);
+  LCD_CreateChar(1, tmpbytes);
 
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 8);
-  lcd.createChar(2, tmpbytes);
+  LCD_CreateChar(2, tmpbytes);
   
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 16);
-  lcd.createChar(3, tmpbytes);
+  LCD_CreateChar(3, tmpbytes);
   
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 24);
-  lcd.createChar(4, tmpbytes);
+  LCD_CreateChar(4, tmpbytes);
   
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 32);
-  lcd.createChar(5, tmpbytes);
+  LCD_CreateChar(5, tmpbytes);
   
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 40);
-  lcd.createChar(6, tmpbytes);
+  LCD_CreateChar(6, tmpbytes);
 }
 
 void LCD_Init(void)
 {
-  lcd.begin(16, 2);
+  LCD2004_Init();  
   initMeter(); //for Meter Display
 }
 
@@ -147,20 +271,17 @@ void drawMeter(int needle) {
     lcdMeter[5] = 0x20;
 }
 
-
-
 // The generic routine to display one line on the LCD 
 void printLine(unsigned char linenmbr, const char *c) {
   if ((displayOption1 & 0x01) == 0x01)
     linenmbr = (linenmbr == 0 ? 1 : 0); //Line Toggle
-    
   if (strcmp(c, printBuff[linenmbr])) {     // only refresh the display when there was a change
-    lcd.setCursor(0, linenmbr);             // place the cursor at the beginning of the selected line
-    lcd.print(c);
+    LCD_SetCursor(0, linenmbr);             // place the cursor at the beginning of the selected line
+    LCD_Print(c);
     strcpy(printBuff[linenmbr], c);
 
-    for (byte i = strlen(c); i < 16; i++) { // add white spaces until the end of the 16 characters line is reached
-      lcd.write(' ');
+    for (byte i = strlen(c); i < 20; i++) { // add white spaces until the end of the 20 characters line is reached
+      LCD_Write(' ');
     }
   }
 }
@@ -168,7 +289,7 @@ void printLine(unsigned char linenmbr, const char *c) {
 void printLineF(char linenmbr, const __FlashStringHelper *c)
 {
   int i;
-  char tmpBuff[17];
+  char tmpBuff[20];
   PGM_P p = reinterpret_cast<PGM_P>(c);  
 
   for (i = 0; i < 17; i++){
@@ -181,31 +302,33 @@ void printLineF(char linenmbr, const __FlashStringHelper *c)
   printLine(linenmbr, tmpBuff);
 }
 
-#define LCD_MAX_COLUMN 16
+#define LCD_MAX_COLUMN 20
 void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, byte eepromEndIndex, char offsetTtype) {
   if ((displayOption1 & 0x01) == 0x01)
     linenmbr = (linenmbr == 0 ? 1 : 0); //Line Toggle
   
-  lcd.setCursor(lcdColumn, linenmbr);
+  LCD_SetCursor(lcdColumn, linenmbr);
 
   for (byte i = eepromStartIndex; i <= eepromEndIndex; i++)
   {
     if (++lcdColumn <= LCD_MAX_COLUMN)
-      lcd.write(EEPROM.read((offsetTtype == 0 ? USER_CALLSIGN_DAT : WSPR_MESSAGE1) + i));
+      LCD_Write(EEPROM.read((offsetTtype == 0 ? USER_CALLSIGN_DAT : WSPR_MESSAGE1) + i));
     else
       break;
   }
   
-  for (byte i = lcdColumn; i < 16; i++) //Right Padding by Space
-      lcd.write(' ');
+  for (byte i = lcdColumn; i < 20; i++) //Right Padding by Space
+      LCD_Write(' ');
 }
 
 //  short cut to print to the first line
-void printLine1(const char *c){
-  printLine(1,c);
+void printLine1(const char *c)
+{
+  printLine(2,c);
 }
 //  short cut to print to the first line
-void printLine2(const char *c){
+void printLine2(const char *c)
+{
   printLine(0,c);
 }
 
@@ -217,7 +340,7 @@ void clearLine2()
 
 //  short cut to print to the first line
 void printLine1Clear(){
-  printLine(1,"");
+  printLine(2,"");
 }
 //  short cut to print to the first line
 void printLine2Clear(){
@@ -229,14 +352,17 @@ void printLine2ClearAndUpdate(){
   line2DisplayStatus = 0;  
   updateDisplay();
 }
-//===================================================================================
+
+//==================================================================================
 //End of Display Base Routines
-//===================================================================================
+//==================================================================================
 
-//===================================================================================
+
+//==================================================================================
 //Begin of User Interface Routines
-//===================================================================================
+//==================================================================================
 
+//Main Display
 // this builds up the top line of the display with frequency and mode
 void updateDisplay() {
   // tks Jack Purdum W8TEE
@@ -312,43 +438,52 @@ void updateDisplay() {
   }
 
   //remarked by KD8CEC
-  //already RX/TX status display, and over index (16 x 2 LCD)
+  //already RX/TX status display, and over index (20 x 4 LCD)
   //if (inTx)
   //  strcat(c, " TX");
-  printLine(1, c);
 
-  byte diplayVFOLine = 1;
+  c[16] = ' ';
+  c[17] = 'H';
+  c[18] = 'z';
+  
+  printLine(2, c);
+
+  byte diplayVFOLine = 2;
   if ((displayOption1 & 0x01) == 0x01)
     diplayVFOLine = 0;
 
   if ((vfoActive == VFO_A && ((isDialLock & 0x01) == 0x01)) ||
     (vfoActive == VFO_B && ((isDialLock & 0x02) == 0x02))) {
-    lcd.setCursor(5,diplayVFOLine);
-    lcd.write((uint8_t)0);
+    LCD_SetCursor(5,diplayVFOLine);
+    LCD_Write((uint8_t)0);
   }
   else if (isCWAutoMode == 2){
-    lcd.setCursor(5,diplayVFOLine);
-    lcd.write(0x7E);
+    LCD_SetCursor(5,diplayVFOLine);
+    LCD_Write(0x7E);
   }
   else
   {
-    lcd.setCursor(5,diplayVFOLine);
-    lcd.write(':');
+    LCD_SetCursor(5,diplayVFOLine);
+    LCD_Write(':');
   }
 }
 
 
 
-char line2Buffer[16];
+char line2Buffer[20];
 //KD8CEC 200Hz ST
 //L14.150 200Hz ST
 //U14.150 +150khz
 int freqScrollPosition = 0;
+
 //Example Line2 Optinal Display
 //immediate execution, not call by scheulder
+//warning : unused parameter 'displayType' <-- ignore, this is reserve
 void updateLine2Buffer(char displayType)
 {
+  //Second Frequency Display
   unsigned long tmpFreq = 0;
+
   if (ritOn)
   {
     strcpy(line2Buffer, "RitTX:");
@@ -377,97 +512,72 @@ void updateLine2Buffer(char displayType)
         line2Buffer[i] = ' ';
     }
 
-    return;
+    //return;
   } //end of ritOn display
-
-  //======================================================
-  //other VFO display
-  //======================================================
-  if (vfoActive == VFO_B)
-  {
-    tmpFreq = vfoA;
-  }
-  else 
-  {
-    tmpFreq = vfoB;
-  }
-
-  // EXAMPLE 1 & 2
-  //U14.150.100
-  //display frequency
-  for (int i = 9; i >= 0; i--) {
-    if (tmpFreq > 0) {
-      if (i == 2 || i == 6) line2Buffer[i] = '.';
-      else {
-        line2Buffer[i] = tmpFreq % 10 + 0x30;
-        tmpFreq /= 10;
-      }
-    }
-    else
-      line2Buffer[i] = ' ';
-  }
-
-  //EXAMPLE #1
-  if ((displayOption1 & 0x04) == 0x00)  //none scroll display
-    line2Buffer[6] = 'k';
   else
   {
-    //example #2
-    if (freqScrollPosition++ > 18)    //none scroll display time
-    {
-      line2Buffer[6] = 'k';
-      if (freqScrollPosition > 25)
-        freqScrollPosition = -1;
-    }
-    else                              //scroll frequency 
-    {
-      line2Buffer[10] = 'H';
-      line2Buffer[11] = 'z';
   
-      if (freqScrollPosition < 7)   
-      {
-        for (int i = 11; i >= 0; i--)
-          if (i - (7 - freqScrollPosition) >= 0)
-            line2Buffer[i] = line2Buffer[i - (7 - freqScrollPosition)];
-          else
-            line2Buffer[i] = ' ';
+    //other VFO display
+    if (vfoActive == VFO_B)
+    {
+      tmpFreq = vfoA;
+    }
+    else 
+    {
+      tmpFreq = vfoB;
+    }
+  
+    // EXAMPLE 1 & 2
+    //U14.150.100
+    //display frequency
+    for (int i = 9; i >= 0; i--) {
+      if (tmpFreq > 0) {
+        if (i == 2 || i == 6) line2Buffer[i] = '.';
+        else {
+          line2Buffer[i] = tmpFreq % 10 + 0x30;
+          tmpFreq /= 10;
+        }
       }
       else
-      {
-        for (int i = 0; i < 11; i++)
-          if (i + (freqScrollPosition - 7) <= 11)
-            line2Buffer[i] = line2Buffer[i + (freqScrollPosition - 7)];
-          else
-            line2Buffer[i] = ' ';
-      }
+        line2Buffer[i] = ' ';
     }
-  } //scroll
-  
-  line2Buffer[7] = ' ';
-  
-  if (isIFShift)
-  {
-//    if (isDirectCall == 1)
-//      for (int i = 0; i < 16; i++)
-//        line2Buffer[i] = ' ';
-      
-      //IFShift Offset Value 
-    line2Buffer[8] = 'I';
-    line2Buffer[9] = 'F';
 
-    line2Buffer[10] = ifShiftValue >= 0 ? '+' : 0;
-    line2Buffer[11] = 0;
-    line2Buffer[12] = ' ';
-  
-    //11, 12, 13, 14, 15
+    
+    line2Buffer[6] = 'k';
+    line2Buffer[7] = ' ';
+    line2Buffer[8] = 'S';
+    //strcat(line2Buffer, "k SDR:");
+
+    if (sdrModeOn == 0)
+    {
+      line2Buffer[9] = 'P';
+      line2Buffer[10] = 'K';
+    }
+    else
+    {
+      line2Buffer[9] = 'D';
+      line2Buffer[10] = 'R';
+    }
+
+    line2Buffer[11] = ' ';
+
+    //IFShift Offset Value 
+    line2Buffer[12] = 'I';
+    line2Buffer[13] = 'F';
+
+    line2Buffer[14] = ifShiftValue >= 0 ? '+' : 0;
+    line2Buffer[15] = 0;
+    line2Buffer[16] = ' ';
+
+    //15, 16, 17, 18, 19
     memset(b, 0, sizeof(b));
     ltoa(ifShiftValue, b, DEC);
     strncat(line2Buffer, b, 5);
-    
-    //if (isDirectCall == 1)  //if call by encoder (not scheduler), immediate print value
-    printLine2(line2Buffer);    
-  }       // end of display IF
-  else    // step & Key Type display
+  } //end of else
+
+  printLine(1, line2Buffer);
+  
+  memset(line2Buffer, ' ', 20);
   {
     //if (isDirectCall != 0)
     //  return;
@@ -528,10 +638,10 @@ void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
     if ((displayOption1 & 0x01) == 0x01)
       lineNumber = 1;
     
-    lcd.setCursor(drawPosition, lineNumber);
+    LCD_SetCursor(drawPosition, lineNumber);
   
     for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
-      lcd.write(lcdMeter[i]);
+      LCD_Write(lcdMeter[i]);
   }
 }
 
@@ -565,26 +675,27 @@ void idle_process()
   }
 }
 
+//AutoKey LCD Display Routine
 void Display_AutoKeyTextIndex(byte textIndex)
 {
   byte diplayAutoCWLine = 0;
   
   if ((displayOption1 & 0x01) == 0x01)
     diplayAutoCWLine = 1;
-  lcd.setCursor(0, diplayAutoCWLine);
-  lcd.write(byteToChar(textIndex));
-  lcd.write(':');
+  LCD_SetCursor(0, diplayAutoCWLine);
+  LCD_Write(byteToChar(textIndex));
+  LCD_Write(':');
 }
 
 void DisplayCallsign(byte callSignLength)
 {
-  printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+  printLineFromEEPRom(3, 12, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
   //delay(500);
 }
 
 void DisplayVersionInfo(const __FlashStringHelper * fwVersionInfo)
 {
-  printLineF(1, fwVersionInfo);
+  printLineF(3, fwVersionInfo);
 }
 
 

@@ -1,19 +1,6 @@
 //Firmware Version
-#define FIRMWARE_VERSION_INFO F("CE v1.071")
+#define FIRMWARE_VERSION_INFO F("CEC v1.071")
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
-
-//Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
-//You must select only one.
-
-#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
-//#define UBITX_DISPLAY_LCD1602I    //I2C type 16 x 02 LCD
-//#define UBITX_DISPLAY_LCD2404P    //24 x 04 LCD
-//#define UBITX_DISPLAY_LCD2404I    //I2C type 24 x 04 LCD
-
-//Compile Option
-#define ENABLE_FACTORYALIGN
-#define ENABLE_ADCMONITOR //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
-
 
 /**
  Cat Suppoort uBITX CEC Version
@@ -56,161 +43,8 @@
 #include <Wire.h>
 #include <EEPROM.h>
 #include "ubitx.h"
+#include "ubitx_eemap.h"
 
-/**
-    The main chip which generates upto three oscillators of various frequencies in the
-    Raduino is the Si5351a. To learn more about Si5351a you can download the datasheet
-    from www.silabs.com although, strictly speaking it is not a requirment to understand this code.
-
-    We no longer use the standard SI5351 library because of its huge overhead due to many unused
-    features consuming a lot of program space. Instead of depending on an external library we now use
-    Jerry Gaffke's, KE7ER, lightweight standalone mimimalist "si5351bx" routines (see further down the
-    code). Here are some defines and declarations used by Jerry's routines:
-*/
-
-
-/**
- * We need to carefully pick assignment of pin for various purposes.
- * There are two sets of completely programmable pins on the Raduino.
- * First, on the top of the board, in line with the LCD connector is an 8-pin connector
- * that is largely meant for analog inputs and front-panel control. It has a regulated 5v output,
- * ground and six pins. Each of these six pins can be individually programmed 
- * either as an analog input, a digital input or a digital output. 
- * The pins are assigned as follows (left to right, display facing you): 
- *      Pin 1 (Violet), A7, SPARE
- *      Pin 2 (Blue),   A6, KEYER (DATA)
- *      Pin 3 (Green), +5v 
- *      Pin 4 (Yellow), Gnd
- *      Pin 5 (Orange), A3, PTT
- *      Pin 6 (Red),    A2, F BUTTON
- *      Pin 7 (Brown),  A1, ENC B
- *      Pin 8 (Black),  A0, ENC A
- *Note: A5, A4 are wired to the Si5351 as I2C interface 
- *       *     
- * Though, this can be assigned anyway, for this application of the Arduino, we will make the following
- * assignment
- * A2 will connect to the PTT line, which is the usually a part of the mic connector
- * A3 is connected to a push button that can momentarily ground this line. This will be used for RIT/Bandswitching, etc.
- * A6 is to implement a keyer, it is reserved and not yet implemented
- * A7 is connected to a center pin of good quality 100K or 10K linear potentiometer with the two other ends connected to
- * ground and +5v lines available on the connector. This implments the tuning mechanism
- */
-
-#define ENC_A (A0)
-#define ENC_B (A1)
-#define FBUTTON (A2)
-#define PTT   (A3)
-#define ANALOG_KEYER (A6)
-#define ANALOG_SPARE (A7)
-#define ANALOG_SMETER (A7)  //by KD8CEC
-
-/**
- * The Arduino, unlike C/C++ on a regular computer with gigabytes of RAM, has very little memory.
- * We have to be very careful with variables that are declared inside the functions as they are 
- * created in a memory region called the stack. The stack has just a few bytes of space on the Arduino
- * if you declare large strings inside functions, they can easily exceed the capacity of the stack
- * and mess up your programs. 
- * We circumvent this by declaring a few global buffers as  kitchen counters where we can 
- * slice and dice our strings. These strings are mostly used to control the display or handle
- * the input and output from the USB port. We must keep a count of the bytes used while reading
- * the serial port as we can easily run out of buffer space. This is done in the serial_in_count variable.
- */
-int count = 0;          //to generally count ticks, loops, etc
-
-/** 
- *  The second set of 16 pins on the Raduino's bottom connector are have the three clock outputs and the digital lines to control the rig.
- *  This assignment is as follows :
- *    Pin   1   2    3    4    5    6    7    8    9    10   11   12   13   14   15   16
- *         GND +5V CLK0  GND  GND  CLK1 GND  GND  CLK2  GND  D2   D3   D4   D5   D6   D7  
- *  These too are flexible with what you may do with them, for the Raduino, we use them to :
- *  - TX_RX line : Switches between Transmit and Receive after sensing the PTT or the morse keyer
- *  - CW_KEY line : turns on the carrier for CW
- */
-
-#define TX_RX (7)
-#define CW_TONE (6)
-#define TX_LPF_A (5)
-#define TX_LPF_B (4)
-#define TX_LPF_C (3)
-#define CW_KEY (2)
-
-/**
- * These are the indices where these user changable settinngs are stored  in the EEPROM
- */
-#define MASTER_CAL 0
-#define LSB_CAL 4
-#define USB_CAL 8
-#define SIDE_TONE 12
-//these are ids of the vfos as well as their offset into the eeprom storage, don't change these 'magic' values
-#define VFO_A 16
-#define VFO_B 20
-#define CW_SIDETONE 24
-#define CW_SPEED 28
-
-//KD8CEC EEPROM MAP
-#define ADVANCED_FREQ_OPTION1 240 //Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency
-#define IF1_CAL               241
-#define ENABLE_SDR            242
-#define SDR_FREQUNCY          243
-
-#define CW_CAL 252
-#define VFO_A_MODE 256
-#define VFO_B_MODE 257
-#define CW_DELAY 258
-#define CW_START 259
-#define HAM_BAND_COUNT 260    //
-#define TX_TUNE_TYPE 261      //
-#define HAM_BAND_RANGE 262    //FROM (2BYTE) TO (2BYTE) * 10 = 40byte
-#define HAM_BAND_FREQS 302    //40, 1 BAND = 4Byte most bit is mode
-#define TUNING_STEP    342   //TUNING STEP * 6 (index 1 + STEPS 5)  //1STEP : 
-  
-
-//for reduce cw key error, eeprom address
-#define CW_ADC_MOST_BIT1 348   //most 2bits of  DOT_TO , DOT_FROM, ST_TO, ST_FROM
-#define CW_ADC_ST_FROM   349   //CW ADC Range STRAIGHT KEY from (Lower 8 bit)
-#define CW_ADC_ST_TO     350   //CW ADC Range STRAIGHT KEY to   (Lower 8 bit)
-#define CW_ADC_DOT_FROM  351   //CW ADC Range DOT  from         (Lower 8 bit)
-#define CW_ADC_DOT_TO    352   //CW ADC Range DOT  to           (Lower 8 bit)
-
-#define CW_ADC_MOST_BIT2 353   //most 2bits of BOTH_TO, BOTH_FROM, DASH_TO, DASH_FROM
-#define CW_ADC_DASH_FROM 354   //CW ADC Range DASH from         (Lower 8 bit)
-#define CW_ADC_DASH_TO   355   //CW ADC Range DASH to           (Lower 8 bit)
-#define CW_ADC_BOTH_FROM 356   //CW ADC Range BOTH from         (Lower 8 bit)
-#define CW_ADC_BOTH_TO   357   //CW ADC Range BOTH to           (Lower 8 bit)
-#define CW_KEY_TYPE      358
-#define CW_DISPLAY_SHIFT 359  //Transmits on CWL, CWU Mode, LCD Frequency shifts Sidetone Frequency. 
-                              //(7:Enable / Disable //0: enable, 1:disable, (default is applied shift)
-                              //6 : 0 : Adjust Pulus, 1 : Adjust Minus
-                              //0~5: Adjust Value : * 10 = Adjust Value (0~300)
-#define COMMON_OPTION0  360  //0: Confirm : CW Frequency Shift
-                              //1 : IF Shift Save
-                              //
-                              //
-                              //
-#define IF_SHIFTVALUE   363                                
-
-#define DISPLAY_OPTION1  361   //Display Option1
-#define DISPLAY_OPTION2  362   //Display Option2
-
-#define CHANNEL_FREQ    630   //Channel 1 ~ 20, 1 Channel = 4 bytes
-#define CHANNEL_DESC    710   //Channel 1 ~ 20, 1 Channel = 4 bytes
-#define RESERVE3        770   //Reserve3 between Channel and Firmware id check
-
-//Check Firmware type and version
-#define FIRMWAR_ID_ADDR 776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.
-#define VERSION_ADDRESS 779   //check Firmware version
-//USER INFORMATION
-#define USER_CALLSIGN_KEY 780   //0x59
-#define USER_CALLSIGN_LEN 781   //1BYTE (OPTION + LENGTH) + CALLSIGN (MAXIMUM 18)
-#define USER_CALLSIGN_DAT 782   //CALL SIGN DATA  //direct EEPROM to LCD basic offset
-
-//AUTO KEY STRUCTURE
-//AUTO KEY USE 800 ~ 1023
-#define CW_AUTO_MAGIC_KEY 800   //0x73
-#define CW_AUTO_COUNT     801   //0 ~ 255
-#define CW_AUTO_DATA      803   //[INDEX, INDEX, INDEX,DATA,DATA, DATA (Positon offset is CW_AUTO_DATA
-#define CW_DATA_OFSTADJ   CW_AUTO_DATA - USER_CALLSIGN_DAT   //offset adjust for ditect eeprom to lcd (basic offset is USER_CALLSIGN_DAT
-#define CW_STATION_LEN    1023  //value range : 4 ~ 30
 /**
  * The uBITX is an upconnversion transceiver. The first IF is at 45 MHz.
  * The first IF frequency is not exactly at 45 Mhz but about 5 khz lower,
@@ -241,11 +75,6 @@ int count = 0;          //to generally count ticks, loops, etc
 //When the frequency is moved by the dial, the maximum value by KD8CEC
 #define LOWEST_FREQ_DIAL  (3000l)
 #define HIGHEST_FREQ_DIAL (60000000l)
-
-//we directly generate the CW by programmin the Si5351 to the cw tx frequency, hence, both are different modes
-//these are the parameter passed to startTx
-#define TX_SSB 0
-#define TX_CW 1
 
 char ritOn = 0;
 char vfoActive = VFO_A;
@@ -338,7 +167,7 @@ byte advancedFreqOption1;     //255 : Bit0: use IFTune_Value, Bit1 : use Stored 
 byte attLevel = 0;            //ATT : RF Gain Control (Receive) <-- IF1 Shift, 0 : Off, ShiftValue is attLevel * 100; attLevel 150 = 15K
 byte if1TuneValue = 0;        //0 : OFF, IF1 + if1TuneValue * 100; // + - 12500;
 byte sdrModeOn = 0;           //SDR MODE ON / OFF
-unsigned long SDR_Center_Freq; //DEFAULT Frequency : 32000000
+unsigned long SDR_Center_Freq; //
 
 unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
@@ -1114,8 +943,8 @@ void initSettings(){
   }
   
   EEPROM.get(SDR_FREQUNCY, SDR_Center_Freq);
-  if (SDR_Center_Freq == 0)
-    SDR_Center_Freq = 32000000;
+  //if (SDR_Center_Freq == 0)
+  //  SDR_Center_Freq = 32000000;
 
   //default Value (for original hardware)
   if (cwAdcSTFrom >= cwAdcSTTo)
@@ -1240,15 +1069,17 @@ void setup()
   
   //Serial.begin(9600);
   LCD_Init();
-  printLineF(1, FIRMWARE_VERSION_INFO); 
+  //printLineF(1, FIRMWARE_VERSION_INFO);
+  DisplayVersionInfo(FIRMWARE_VERSION_INFO);
 
   Init_Cat(38400, SERIAL_8N1);
   initSettings();
 
   if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
     userCallsignLength = userCallsignLength & 0x7F;
-    printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
-    delay(500);
+    //printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+    //delay(500);
+    DisplayCallsign(userCallsignLength);
   }
   else {
     printLineF(0, F("uBITX v0.20")); 
