@@ -50,6 +50,9 @@
 // 256 ~ 1023 (EEProm Section #1)
 // 255 ~ 101  (EEProm Section #2)
 //==============================================================================
+#define S_METER_LEVELS        230 //LEVEL0 ~ LEVEL7
+
+
 #define ADVANCED_FREQ_OPTION1 240 //Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency
 #define IF1_CAL               241
 #define ENABLE_SDR            242

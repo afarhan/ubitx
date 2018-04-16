@@ -175,7 +175,8 @@ void LCD_CreateChar(uint8_t location, uint8_t charmap[])
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(8,9,10,11,12,13);
 */
-
+//SWR GRAPH,  DrawMeter and drawingMeter Logic function by VK2ETA 
+#define OPTION_SKINNYBARS
 
 //========================================================================
 //Begin of Display Base Routines (Init, printLine..)
@@ -183,91 +184,10 @@ LiquidCrystal lcd(8,9,10,11,12,13);
 char c[30], b[30];
 char printBuff[2][17];  //mirrors what is showing on the two lines of the display
 
-const PROGMEM uint8_t meters_bitmap[] = {
-  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
-  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000 ,   //custom 2
-  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100 ,   //custom 3
-  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110 ,   //custom 4
-  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111 ,   //custom 5
-  B01000,  B11100,  B01000,  B00000,  B10111,  B10101,  B10101,  B10111     //custom 6
-};
-
-PGM_P p_metes_bitmap = reinterpret_cast<PGM_P>(meters_bitmap);
-
-const PROGMEM uint8_t lock_bitmap[8] = {
-  0b01110,
-  0b10001,
-  0b10001,
-  0b11111,
-  0b11011,
-  0b11011,
-  0b11111,
-  0b00000};
-PGM_P plock_bitmap = reinterpret_cast<PGM_P>(lock_bitmap);
-
-
-// initializes the custom characters
-// we start from char 1 as char 0 terminates the string!
-void initMeter(){
-  uint8_t tmpbytes[8];
-  byte i;
-
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(plock_bitmap + i);
-  LCD_CreateChar(0, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i);
-  LCD_CreateChar(1, tmpbytes);
-
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 8);
-  LCD_CreateChar(2, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 16);
-  LCD_CreateChar(3, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 24);
-  LCD_CreateChar(4, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 32);
-  LCD_CreateChar(5, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 40);
-  LCD_CreateChar(6, tmpbytes);
-}
-
 void LCD_Init(void)
 {
   LCD1602_Init();  
   initMeter(); //for Meter Display
-}
-
-//by KD8CEC
-//0 ~ 25 : 30 over : + 10
-void drawMeter(int needle) {
-  //5Char + O over
-  int i;
-
-  for (i = 0; i < 5; i++) {
-    if (needle >= 5)
-      lcdMeter[i] = 5; //full
-    else if (needle > 0)
-      lcdMeter[i] = needle; //full
-    else  //0
-      lcdMeter[i] = 0x20;
-    
-    needle -= 5;
-  }
-
-  if (needle > 0)
-    lcdMeter[5] = 6;
-  else
-    lcdMeter[5] = 0x20;
 }
 
 // The generic routine to display one line on the LCD 
@@ -534,13 +454,13 @@ void updateLine2Buffer(char displayType)
 
   //EXAMPLE #1
   if ((displayOption1 & 0x04) == 0x00)  //none scroll display
-    line2Buffer[6] = 'k';
+    line2Buffer[6] = 'M';
   else
   {
     //example #2
     if (freqScrollPosition++ > 18)    //none scroll display time
     {
-      line2Buffer[6] = 'k';
+      line2Buffer[6] = 'M';
       if (freqScrollPosition > 25)
         freqScrollPosition = -1;
     }
@@ -625,7 +545,13 @@ void updateLine2Buffer(char displayType)
     line2Buffer[13] = ' ';
     
     //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
-    if (cwKeyType == 0)
+    if (sdrModeOn == 1)
+    {
+      line2Buffer[13] = 'S';
+      line2Buffer[14] = 'D';
+      line2Buffer[15] = 'R';
+    }
+    else if (cwKeyType == 0)
     {
       line2Buffer[14] = 'S';
       line2Buffer[15] = 'T';
@@ -648,20 +574,26 @@ void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
 {
   if (meterType == 0 || meterType == 1 || meterType == 2)
   {
-    drawMeter(meterValue);  //call original source code
+    drawMeter(meterValue);
     int lineNumber = 0;
     if ((displayOption1 & 0x01) == 0x01)
       lineNumber = 1;
     
     LCD_SetCursor(drawPosition, lineNumber);
   
-    for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
-      LCD_Write(lcdMeter[i]);
+    //for (int i = 0; i <26; i++) //meter 5 + +db 1 = 6
+    LCD_Write(lcdMeter[0]);
+    LCD_Write(lcdMeter[1]);
   }
 }
 
 byte testValue = 0;
 char checkCount = 0;
+
+int currentSMeter = 0;
+//byte sMeterLevels[] = {0, 1, 4, 10, 18, 35, 63, 91, 117}; //John's default Value (divide / 4)
+byte scaledSMeter = 0;
+
 void idle_process()
 {
   //space for user graphic display
@@ -679,6 +611,7 @@ void idle_process()
         line2DisplayStatus = 2;
         checkCount = 0;
       }
+    }
 
       //EX for Meters
       /*
@@ -686,7 +619,29 @@ void idle_process()
       if (testValue > 30)
         testValue = 0;
       */
-    }
+
+    //S-Meter Display
+    if ((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0))
+    {
+      int newSMeter;
+  
+      //VK2ETA S-Meter from MAX9814 TC pin / divide 4 by KD8CEC for reduce EEPromSize
+      newSMeter = analogRead(ANALOG_SMETER);
+  
+      //Faster attack, Slower release
+      currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10) / 4;
+  
+      scaledSMeter = 0;
+      for (byte s = 8; s >= 1; s--) {
+        if (currentSMeter > sMeterLevels[s]) {
+          scaledSMeter = s;
+          break;
+        }
+      }
+  
+      DisplayMeter(0, scaledSMeter, 14);
+    }   //end of S-Meter
+    
   }
 }
 

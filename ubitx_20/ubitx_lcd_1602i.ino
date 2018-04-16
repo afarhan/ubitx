@@ -409,13 +409,13 @@ void updateLine2Buffer(char displayType)
 
   //EXAMPLE #1
   if ((displayOption1 & 0x04) == 0x00)  //none scroll display
-    line2Buffer[6] = 'k';
+    line2Buffer[6] = 'M';
   else
   {
     //example #2
     if (freqScrollPosition++ > 18)    //none scroll display time
     {
-      line2Buffer[6] = 'k';
+      line2Buffer[6] = 'M';
       if (freqScrollPosition > 25)
         freqScrollPosition = -1;
     }

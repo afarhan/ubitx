@@ -1,11 +1,19 @@
 //Firmware Version
-#define FIRMWARE_VERSION_INFO F("CEC v1.071")
+//+ : This symbol identifies the firmware. 
+//    It was originally called 'CEC V1.072' but it is too long to waste the LCD window.
+//    I do not want to make this Firmware users's uBITX messy with my callsign.
+//    Putting one alphabet in front of 'v' has a different meaning.
+//    So I put + in the sense that it was improved one by one based on Original Firmware.
+//    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
+
+#define FIRMWARE_VERSION_INFO F("+v1.072")  
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 /**
  Cat Suppoort uBITX CEC Version
+ This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
  Most features(TX, Frequency Range, Ham Band, TX Control, CW delay, start Delay... more) have been added by KD8CEC.
- However, the license rules are subject to the original source rules.
+ My wish is to keep the original author's Comment as long as the meaning does not change much, even if the code looks a bit long.
  Ian KD8CEC
 
  Original source comment            -------------------------------------------------------------
@@ -172,6 +180,7 @@ unsigned long SDR_Center_Freq; //
 unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
 char lcdMeter[17];
+byte sMeterLevels[9];
 
 byte isIFShift = 0;     //1 = ifShift, 2 extend
 int ifShiftValue = 0;  //
@@ -183,8 +192,8 @@ int ifShiftValue = 0;  //
 
 //Ham Band
 #define MAX_LIMIT_RANGE 10  //because limited eeprom size
-byte useHamBandCount = 0;  //0 use full range frequency
-byte tuneTXType = 0;      //0 : use full range, 1 : just Change Dial speed, 2 : just ham band change, but can general band by tune, 3 : only ham band (just support 0, 2 (0.26 version))
+byte useHamBandCount = 0;   //0 use full range frequency
+byte tuneTXType = 0;        //0 : use full range, 1 : just Change Dial speed, 2 : just ham band change, but can general band by tune, 3 : only ham band (just support 0, 2 (0.26 version))
                           //100 : use full range but not TX on general band, 101 : just change dial speed but.. 2 : jut... but.. 3 : only ham band  (just support 100, 102 (0.26 version))
 unsigned int hamBandRange[MAX_LIMIT_RANGE][2];  // =  //Khz because reduce use memory
 
@@ -818,6 +827,10 @@ void initSettings(){
   EEPROM.get(COMMON_OPTION0, commonOption0);
   EEPROM.get(DISPLAY_OPTION1, displayOption1);
   EEPROM.get(DISPLAY_OPTION2, displayOption2);
+
+  for (byte i = 0; i < 8; i++) {
+    sMeterLevels[i + 1] = EEPROM.read(S_METER_LEVELS + i);
+  }
 
   //User callsign information
   if (EEPROM.read(USER_CALLSIGN_KEY) == 0x59)

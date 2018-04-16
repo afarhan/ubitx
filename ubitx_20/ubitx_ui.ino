@@ -6,6 +6,153 @@
  * quickly cleared up.
  */
 
+
+/*
+const PROGMEM uint8_t meters_bitmap[] = {
+  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
+  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000 ,   //custom 2
+  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100 ,   //custom 3
+  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110 ,   //custom 4
+  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111 ,   //custom 5
+  B01000,  B11100,  B01000,  B00000,  B10111,  B10101,  B10101,  B10111     //custom 6
+};
+*/
+
+//SWR GRAPH,  DrawMeter and drawingMeter Logic function by VK2ETA 
+
+#ifdef OPTION_SKINNYBARS //We want skninny bars with more text
+//VK2ETA modded "Skinny" bitmaps
+const PROGMEM uint8_t meters_bitmap[] = {
+  //  B01110, B10001, B10001, B11111, B11011, B11011, B11111, B00000, //Padlock Symbol, for merging. Not working, see below
+  B00000, B00000, B00000, B00000, B00000, B00000, B00000, B10000, //shortest bar
+  B00000, B00000, B00000, B00000, B00000, B00000, B00100, B10100,
+  B00000, B00000, B00000, B00000, B00000, B00001, B00101, B10101,
+  B00000, B00000, B00000, B00000, B10000, B10000, B10000, B10000,
+  B00000, B00000, B00000, B00100, B10100, B10100, B10100, B10100,
+  B00000, B00000, B00001, B00101, B10101, B10101, B10101, B10101, //tallest bar
+  B00000, B00010, B00111, B00010, B01000, B11100, B01000, B00000, // ++ sign
+};
+#else
+//VK2ETA "Fat" bars, easy to read, with less text
+const PROGMEM uint8_t meters_bitmap[] = {
+  //  B01110, B10001, B10001, B11111, B11011, B11011, B11111, B00000, //Padlock Symbol, for merging. Not working, see below
+  B00000, B00000, B00000, B00000, B00000, B00000, B00000, B11111, //shortest bar
+  B00000, B00000, B00000, B00000, B00000, B00000, B11111, B11111,
+  B00000, B00000, B00000, B00000, B00000, B11111, B11111, B11111,
+  B00000, B00000, B00000, B00000, B11111, B11111, B11111, B11111,
+  B00000, B00000, B00000, B11111, B11111, B11111, B11111, B11111,
+  B00000, B00000, B11111, B11111, B11111, B11111, B11111, B11111, //tallest bar
+  B00000, B00010, B00111, B00010, B01000, B11100, B01000, B00000, // ++ sign
+};
+#endif //OPTION_SKINNYBARS
+PGM_P p_metes_bitmap = reinterpret_cast<PGM_P>(meters_bitmap);
+
+const PROGMEM uint8_t lock_bitmap[8] = {
+  0b01110,
+  0b10001,
+  0b10001,
+  0b11111,
+  0b11011,
+  0b11011,
+  0b11111,
+  0b00000};
+PGM_P plock_bitmap = reinterpret_cast<PGM_P>(lock_bitmap);
+
+
+// initializes the custom characters
+// we start from char 1 as char 0 terminates the string!
+void initMeter(){
+  uint8_t tmpbytes[8];
+  byte i;
+
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(plock_bitmap + i);
+  LCD_CreateChar(0, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i);
+  LCD_CreateChar(1, tmpbytes);
+
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 8);
+  LCD_CreateChar(2, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 16);
+  LCD_CreateChar(3, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 24);
+  LCD_CreateChar(4, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 32);
+  LCD_CreateChar(5, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 40);
+  LCD_CreateChar(6, tmpbytes);
+
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 48);
+  LCD_CreateChar(6, tmpbytes);
+}
+
+
+//by KD8CEC
+//0 ~ 25 : 30 over : + 10
+/*
+void drawMeter(int needle) {
+  //5Char + O over
+  int i;
+
+  for (i = 0; i < 5; i++) {
+    if (needle >= 5)
+      lcdMeter[i] = 5; //full
+    else if (needle > 0)
+      lcdMeter[i] = needle; //full
+    else  //0
+      lcdMeter[i] = 0x20;
+    
+    needle -= 5;
+  }
+
+  if (needle > 0)
+    lcdMeter[5] = 6;
+  else
+    lcdMeter[5] = 0x20;
+}
+*/
+//VK2ETA meter for S.Meter, power and SWR
+void drawMeter(int needle) 
+{
+#ifdef OPTION_SKINNYBARS
+  //Fill buffer with growing set of bars, up to needle value
+  for (int i = 0; i < 6; i++) {
+    if (needle > i)
+      lcdMeter[i / 3] = byte(i + 1); //Custom characters above
+    else if (i == 1 || i == 4) {
+      lcdMeter[i / 3] = 0x20; //blank
+    }
+  }
+#else //Must be "fat" bars
+  //Fill buffer with growing set of bars, up to needle value
+  for (int i = 0; i < 6; i++) {
+    if (needle > i)
+      lcdMeter[i] = byte(i + 1); //Custom characters above
+    else
+      lcdMeter[i] = 0x20; //blank
+  }
+  if (needle > 7) {
+    lcdMeter[6] = byte(7); //Custom character "++"
+  } else if (needle > 6) {
+    lcdMeter[6] = 0x2B; //"+"
+  } else lcdMeter[6] = 0x20;
+#endif //OPTION_FATBARS
+}
+
+
+
  char byteToChar(byte srcByte){
   if (srcByte < 10)
     return 0x30 + srcByte;

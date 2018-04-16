@@ -59,12 +59,10 @@ void menuBand(int btn){
       btnPressCount = 0;
       if (tuneTXType > 0) { //Just toggle 0 <-> 2, if tuneTXType is 100, 100 -> 0 -> 2
         tuneTXType = 0;
-        //printLineF2(F("General mode"));
         printLineF2(F("General"));
       }
       else {
         tuneTXType = 2;
-        //printLineF2(F("Ham band mode"));
         printLineF2(F("Ham band"));
       }
       delay_background(1000, 0);

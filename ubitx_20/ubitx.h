@@ -24,10 +24,10 @@
 
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
-//#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
+#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
 //#define UBITX_DISPLAY_LCD1602I      //I2C type 16 x 02 LCD
 //#define UBITX_DISPLAY_LCD1602I_CUST   //I2C type 16 x 02 Custom Tiny Library
-#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD
+//#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD
 //#define UBITX_DISPLAY_LCD2004I      //I2C type 24 x 04 LCD
 
 //==============================================================================
@@ -95,6 +95,7 @@
 
 extern unsigned long frequency;
 extern byte WsprMSGCount;
+extern byte sMeterLevels[9];
 
 extern void printLine1(const char *c);
 extern void printLine2(const char *c);
