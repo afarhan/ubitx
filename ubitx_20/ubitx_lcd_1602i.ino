@@ -44,7 +44,7 @@
 
 //John(VK2ETA) Code
 #include <LiquidCrystal_I2C.h>
-#define I2C_DISPLAY_ADDRESS   0x27
+#define I2C_DISPLAY_ADDRESS   0x3F  //0x27
 LiquidCrystal_I2C lcd(I2C_DISPLAY_ADDRESS,16,2);  // set the LCD as a 16 chars and 2 line display
 
 //LiquidCrystal_I2C lcd(0x27,16,2)
@@ -60,94 +60,12 @@ LiquidCrystal_I2C lcd(I2C_DISPLAY_ADDRESS,16,2);  // set the LCD as a 16 chars a
 char c[30], b[30];
 char printBuff[2][17];  //mirrors what is showing on the two lines of the display
 
-const PROGMEM uint8_t meters_bitmap[] = {
-  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
-  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000 ,   //custom 2
-  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100 ,   //custom 3
-  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110 ,   //custom 4
-  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111 ,   //custom 5
-  B01000,  B11100,  B01000,  B00000,  B10111,  B10101,  B10101,  B10111     //custom 6
-};
-
-PGM_P p_metes_bitmap = reinterpret_cast<PGM_P>(meters_bitmap);
-
-const PROGMEM uint8_t lock_bitmap[8] = {
-  0b01110,
-  0b10001,
-  0b10001,
-  0b11111,
-  0b11011,
-  0b11011,
-  0b11111,
-  0b00000};
-PGM_P plock_bitmap = reinterpret_cast<PGM_P>(lock_bitmap);
-
-
-// initializes the custom characters
-// we start from char 1 as char 0 terminates the string!
-void initMeter(){
-  uint8_t tmpbytes[8];
-  byte i;
-
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(plock_bitmap + i);
-  lcd.createChar(0, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i);
-  lcd.createChar(1, tmpbytes);
-
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 8);
-  lcd.createChar(2, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 16);
-  lcd.createChar(3, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 24);
-  lcd.createChar(4, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 32);
-  lcd.createChar(5, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 40);
-  lcd.createChar(6, tmpbytes);
-}
-
 void LCD_Init(void)
 {
   lcd.begin(16, 2);
   initMeter(); //for Meter Display
+  lcd.backlight();
 }
-
-//by KD8CEC
-//0 ~ 25 : 30 over : + 10
-void drawMeter(int needle) {
-  //5Char + O over
-  int i;
-
-  for (i = 0; i < 5; i++) {
-    if (needle >= 5)
-      lcdMeter[i] = 5; //full
-    else if (needle > 0)
-      lcdMeter[i] = needle; //full
-    else  //0
-      lcdMeter[i] = 0x20;
-    
-    needle -= 5;
-  }
-
-  if (needle > 0)
-    lcdMeter[5] = 6;
-  else
-    lcdMeter[5] = 0x20;
-}
-
-
 
 // The generic routine to display one line on the LCD 
 void printLine(unsigned char linenmbr, const char *c) {
@@ -164,7 +82,10 @@ void printLine(unsigned char linenmbr, const char *c) {
     }
   }
 }
-
+void LCD_CreateChar(int aaa, int bbb)
+{
+  
+}
 void printLineF(char linenmbr, const __FlashStringHelper *c)
 {
   int i;

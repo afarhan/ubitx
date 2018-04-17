@@ -182,6 +182,31 @@ byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle,
 char lcdMeter[17];
 byte sMeterLevels[9];
 
+int KeyValues[16][2];
+/*= {
+  {1023, 1025},   //1
+  {707, 711},   //5
+  {570, 574},   //9
+  {493, 500},   //13
+  
+  {932, 936},    //2
+  {860, 864},   //3
+  {800, 805},   //4
+  
+  {672, 676},   //6
+  {642, 646},   //7
+  {616, 620},   //8
+  
+  {552, 556},   //10
+  {535, 539},   //11
+  {520, 524},   //12
+  
+  {438, 442},   //14
+  {403, 407},   //15
+  {378, 382}   //16
+};
+*/
+
 byte isIFShift = 0;     //1 = ifShift, 2 extend
 int ifShiftValue = 0;  //
                               
@@ -603,7 +628,87 @@ void checkPTT(){
   if (digitalRead(PTT) == 1 && inTx == 1)
     stopTx();
 }
+#ifdef EXTEND_KEY_GROUP1  
+void checkButton(){
+  //only if the button is pressed
+  int keyStatus = getBtnStatus();
+  if (keyStatus == -1)
+    return;
+    
+  delay(50);
+  keyStatus = getBtnStatus();   //will be remove 3 lines
+  if (keyStatus == -1)
+    return;
+    
+  if (keyStatus == FKEY_PRESS)  //Menu Key
+    doMenu();
+  else if (keyStatus <= FKEY_STEP)  //EXTEND KEY GROUP #1
+  {
+    if (keyStatus == FKEY_MODE) //Press Mode Key
+    {
+      if (cwMode == 1)
+      {
+        cwMode = 2;
+      }
+      else if (cwMode == 2)
+      {
+        cwMode = 0;
+        isUSB = 0;
+      }
+      else if (isUSB == 0)
+      {
+        isUSB = 1;
+      }
+      else
+      {
+        cwMode = 1;
+      }
+    }
+    //else if (keyStatus == FKEY_BANDDOWN)  //Press Mode Key
+    //{
+    //  setNextHamBandFreq(frequency, -1);  //Prior Band      
+    //}
+    else if (keyStatus == FKEY_BANDUP || keyStatus == FKEY_BANDDOWN)  //Press Mode Key
+    {
 
+      char currentBandIndex = -1;
+      
+      //Save Band Information
+      if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
+        currentBandIndex = getIndexHambanBbyFreq(frequency);
+        
+        if (currentBandIndex >= 0) {
+          saveBandFreqByIndex(frequency, modeToByte(), currentBandIndex);
+        }
+      }
+      
+      setNextHamBandFreq(frequency, keyStatus == FKEY_BANDDOWN ? -1 : 1);  //Prior Band      
+    }
+    else if (keyStatus == FKEY_STEP)  //FKEY_BANDUP
+    {
+      if (++tuneStepIndex > 5)
+        tuneStepIndex = 1;
+
+      EEPROM.put(TUNING_STEP, tuneStepIndex);
+      printLine2ClearAndUpdate();
+    }
+      
+    FrequencyToVFO(1);
+    SetCarrierFreq();
+    setFrequency(frequency);
+    //delay_background(delayTime, 0);
+    updateDisplay();
+  }
+  
+  //wait for the button to go up again
+  while(keyStatus == getBtnStatus()) {
+    delay(10);
+    Check_Cat(0);
+  }
+  //delay(50);//debounce
+}
+
+#else
 void checkButton(){
   //only if the button is pressed
   if (!btnDown())
@@ -621,7 +726,7 @@ void checkButton(){
   }
   //delay(50);//debounce
 }
-
+#endif
 
 /************************************
 Replace function by KD8CEC
@@ -830,6 +935,12 @@ void initSettings(){
 
   for (byte i = 0; i < 8; i++) {
     sMeterLevels[i + 1] = EEPROM.read(S_METER_LEVELS + i);
+  }
+
+  //KeyValues
+  for (byte i = 0; i < 16; i++) {
+    KeyValues[i][0] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 2));
+    KeyValues[i][1] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 2) + 1);
   }
 
   //User callsign information

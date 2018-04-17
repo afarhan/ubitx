@@ -24,11 +24,14 @@
 
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
-#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
+//#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
 //#define UBITX_DISPLAY_LCD1602I      //I2C type 16 x 02 LCD
-//#define UBITX_DISPLAY_LCD1602I_CUST   //I2C type 16 x 02 Custom Tiny Library
+#define UBITX_DISPLAY_LCD1602I_CUST   //I2C type 16 x 02 Custom Tiny Library
 //#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD
 //#define UBITX_DISPLAY_LCD2004I      //I2C type 24 x 04 LCD
+
+//#define EXTEND_KEY_GROUP1     //MODE, BAND(-), BAND(+), STEP
+//#define EXTEND_KEY_GROUP2     //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
 
 //==============================================================================
 // Hardware, Define PIN Usage
@@ -93,9 +96,17 @@
 #define printLineF1(x) (printLineF(1, x))
 #define printLineF2(x) (printLineF(0, x))
 
+#define FUNCTION_KEY_ADC  80  //MODE, BAND(-), BAND(+), STEP
+#define FKEY_PRESS    120
+#define FKEY_MODE     0
+#define FKEY_BANDUP   1
+#define FKEY_BANDDOWN 2
+#define FKEY_STEP     3
+
 extern unsigned long frequency;
 extern byte WsprMSGCount;
 extern byte sMeterLevels[9];
+extern int KeyValues[16][2];    //ADC value Ranges for Extend Key
 
 extern void printLine1(const char *c);
 extern void printLine2(const char *c);

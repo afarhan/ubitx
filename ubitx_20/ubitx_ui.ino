@@ -162,11 +162,36 @@ void drawMeter(int needle)
 
 //returns true if the button is pressed
 int btnDown(void){
+#ifdef EXTEND_KEY_GROUP1  
+  if (analogRead(FBUTTON) > FUNCTION_KEY_ADC)
+    return 0;
+  else
+    return 1;
+
+#else
   if (digitalRead(FBUTTON) == HIGH)
     return 0;
   else
     return 1;
+#endif    
 }
+
+#ifdef EXTEND_KEY_GROUP1  
+int getBtnStatus(void){
+  int readButtonValue = analogRead(FBUTTON);
+
+  if (analogRead(FBUTTON) < FUNCTION_KEY_ADC)
+    return FKEY_PRESS;
+  else
+  {
+    for (int i = 0; i < 16; i++)
+      if (KeyValues[i][0] <= readButtonValue && KeyValues[i][1] >= readButtonValue)
+        return i;
+  }
+
+  return -1;
+}
+#endif
 
 int enc_prev_state = 3;
 
