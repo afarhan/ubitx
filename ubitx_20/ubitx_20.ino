@@ -1,5 +1,5 @@
 //Firmware Version
-#define FIRMWARE_VERSION_INFO F("CE v1.070")
+#define FIRMWARE_VERSION_INFO F("CE v1.071")
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
@@ -1008,10 +1008,10 @@ void initSettings(){
   {
     //Default Setting
     arTuneStep[0] = 10;
-    arTuneStep[1] = 20;
-    arTuneStep[2] = 50;
-    arTuneStep[3] = 100;
-    arTuneStep[4] = 200;
+    arTuneStep[1] = 50;
+    arTuneStep[2] = 100;
+    arTuneStep[3] = 500;    
+    arTuneStep[4] = 1000;
   }
 
   if (tuneStepIndex == 0) //New User
