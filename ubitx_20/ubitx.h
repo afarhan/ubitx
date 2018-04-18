@@ -19,19 +19,22 @@
 //==============================================================================
 // Compile Option
 //==============================================================================
-#define ENABLE_FACTORYALIGN
-#define ENABLE_ADCMONITOR //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
-
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
 //#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
 //#define UBITX_DISPLAY_LCD1602I      //I2C type 16 x 02 LCD
-#define UBITX_DISPLAY_LCD1602I_CUST   //I2C type 16 x 02 Custom Tiny Library
-//#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD
-//#define UBITX_DISPLAY_LCD2004I      //I2C type 24 x 04 LCD
+#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD (Parallel)
+//#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
 
-//#define EXTEND_KEY_GROUP1     //MODE, BAND(-), BAND(+), STEP
-//#define EXTEND_KEY_GROUP2     //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
+#define I2C_DISPLAY_ADDRESS  0x3F     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
+
+//#define EXTEND_KEY_GROUP1           //MODE, BAND(-), BAND(+), STEP
+//#define EXTEND_KEY_GROUP2           //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
+
+#define ENABLE_FACTORYALIGN
+#define ENABLE_ADCMONITOR   //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
+
+#define SMeterLatency   3  //1 is 0.25 sec
 
 //==============================================================================
 // Hardware, Define PIN Usage

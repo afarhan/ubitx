@@ -1000,10 +1000,10 @@ void initSettings(){
   {
     //Default Setting
     arTuneStep[0] = 10;
-    arTuneStep[1] = 20;
-    arTuneStep[2] = 50;
-    arTuneStep[3] = 100;
-    arTuneStep[4] = 200;
+    arTuneStep[1] = 50;
+    arTuneStep[2] = 100;
+    arTuneStep[3] = 500;
+    arTuneStep[4] = 1000;
   }
 
   if (tuneStepIndex == 0) //New User
