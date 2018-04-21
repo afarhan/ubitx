@@ -50,6 +50,9 @@
 // 256 ~ 1023 (EEProm Section #1)
 // 255 ~ 101  (EEProm Section #2)
 //==============================================================================
+#define I2C_LCD_MASTER        190
+#define I2C_LCD_SECOND        191
+//RESERVE 192 ~ 195
 #define EXTENDED_KEY_RANGE    196 //Extended Key, KEY RANGE (MODE, BAND+, BAND-, TUNE_STEP, NUM0~NUM9, POINT, ENTER
 #define S_METER_LEVELS        230 //LEVEL0 ~ LEVEL7
 

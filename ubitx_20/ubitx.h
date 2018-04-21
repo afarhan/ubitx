@@ -23,10 +23,12 @@
 //You must select only one.
 //#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
 //#define UBITX_DISPLAY_LCD1602I      //I2C type 16 x 02 LCD
-#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD (Parallel)
+#define UBITX_DISPLAY_LCD1602I_DUAL
+//#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD (Parallel)
 //#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
 
-#define I2C_DISPLAY_ADDRESS  0x3F     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
+#define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x3F     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
+#define I2C_LCD_SECOND_ADDRESS_DEFAULT  0x27     //0x27  //only using Dual LCD Mode
 
 //#define EXTEND_KEY_GROUP1           //MODE, BAND(-), BAND(+), STEP
 //#define EXTEND_KEY_GROUP2           //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
@@ -34,7 +36,18 @@
 #define ENABLE_FACTORYALIGN
 #define ENABLE_ADCMONITOR   //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
 
+extern byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
+extern byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
+
 #define SMeterLatency   3  //1 is 0.25 sec
+
+#ifdef defined(UBITX_DISPLAY_LCD1602I)
+  #define USE_I2C_LCD
+#elif defined(UBITX_DISPLAY_LCD1602I_DUAL)
+  #define USE_I2C_LCD
+#elif defined(UBITX_DISPLAY_LCD2004I)
+  #define USE_I2C_LCD
+#endif
 
 //==============================================================================
 // Hardware, Define PIN Usage

@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.072")  
+#define FIRMWARE_VERSION_INFO F("+v1.073")  
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 /**
@@ -181,6 +181,10 @@ unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
 char lcdMeter[17];
 byte sMeterLevels[9];
+
+byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
+byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
+
 
 int KeyValues[16][2];
 /*= {
@@ -927,7 +931,6 @@ void initSettings(){
     else
       keyerControl |= IAMBICB;
   }
-    
 
   EEPROM.get(COMMON_OPTION0, commonOption0);
   EEPROM.get(DISPLAY_OPTION1, displayOption1);
@@ -1190,6 +1193,19 @@ void setup()
   //while(1);
   //end section of test
   */
+
+  //Load I2C LCD Address for I2C LCD 
+  //I2C LCD Parametere
+#ifdef USE_I2C_LCD  
+  EEPROM.get(I2C_LCD_MASTER, I2C_LCD_MASTER_ADDRESS);
+  EEPROM.get(I2C_LCD_SECOND, I2C_LCD_SECOND_ADDRESS);
+
+  if (I2C_LCD_MASTER_ADDRESS < 0x10 || I2C_LCD_MASTER_ADDRESS > 0xF0)
+    I2C_LCD_MASTER_ADDRESS = I2C_LCD_MASTER_ADDRESS_DEFAULT;
+    
+  if (I2C_LCD_SECOND_ADDRESS < 0x10 || I2C_LCD_SECOND_ADDRESS > 0xF0)
+    I2C_LCD_SECOND_ADDRESS = I2C_LCD_SECOND_ADDRESS_DEFAULT;
+#endif  
   
   //Serial.begin(9600);
   LCD_Init();

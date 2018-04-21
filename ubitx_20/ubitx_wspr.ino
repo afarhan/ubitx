@@ -36,7 +36,6 @@ unsigned long TX_P2;    // Variable values for MSNB_P2 which defines the frequen
 extern int enc_read(void);
 
 byte WsprMSGCount = 0;
-#define PTT   (A3)
 
 #define WSPR_BAND1 401
 
