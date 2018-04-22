@@ -721,7 +721,8 @@ void idle_process()
       newSMeter = analogRead(ANALOG_SMETER);
   
       //Faster attack, Slower release
-      currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
+      //currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
+      currentSMeter = (currentSMeter * 3 + newSMeter * 7) / 10; //remarked becaused of have already Latency time
   
       scaledSMeter = 0;
       for (byte s = 8; s >= 1; s--) {

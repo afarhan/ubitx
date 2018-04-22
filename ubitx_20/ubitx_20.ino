@@ -186,7 +186,7 @@ byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manage
 byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 
 
-int KeyValues[16][2];
+byte KeyValues[16][2];
 /*= {
   {1023, 1025},   //1
   {707, 711},   //5

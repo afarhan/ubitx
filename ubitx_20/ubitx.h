@@ -21,16 +21,16 @@
 //==============================================================================
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
-//#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
+#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
 //#define UBITX_DISPLAY_LCD1602I      //I2C type 16 x 02 LCD
-#define UBITX_DISPLAY_LCD1602I_DUAL
+//#define UBITX_DISPLAY_LCD1602I_DUAL
 //#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD (Parallel)
 //#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
 
 #define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x3F     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
 #define I2C_LCD_SECOND_ADDRESS_DEFAULT  0x27     //0x27  //only using Dual LCD Mode
 
-//#define EXTEND_KEY_GROUP1           //MODE, BAND(-), BAND(+), STEP
+#define EXTEND_KEY_GROUP1           //MODE, BAND(-), BAND(+), STEP
 //#define EXTEND_KEY_GROUP2           //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
 
 #define ENABLE_FACTORYALIGN
@@ -41,7 +41,7 @@ extern byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 
 #define SMeterLatency   3  //1 is 0.25 sec
 
-#ifdef defined(UBITX_DISPLAY_LCD1602I)
+#ifdef UBITX_DISPLAY_LCD1602I
   #define USE_I2C_LCD
 #elif defined(UBITX_DISPLAY_LCD1602I_DUAL)
   #define USE_I2C_LCD
@@ -122,7 +122,7 @@ extern byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 extern unsigned long frequency;
 extern byte WsprMSGCount;
 extern byte sMeterLevels[9];
-extern int KeyValues[16][2];    //ADC value Ranges for Extend Key
+extern byte KeyValues[16][2];    //ADC value Ranges for Extend Key
 
 extern void printLine1(const char *c);
 extern void printLine2(const char *c);
