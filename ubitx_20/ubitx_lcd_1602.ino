@@ -20,34 +20,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
-#ifdef UBITX_DISPLAY_LCD1602P
 
-
-//========================================================================
-//Begin of TinyLCD Library by KD8CEC
-//========================================================================
-/*************************************************************************
-  LCD1602_TINY Library for 16 x 2 LCD
-  Referecnce Source : LiquidCrystal.cpp 
-  KD8CEC
-
-  This source code is modified version for small program memory 
-  from Arduino LiquidCrystal Library
-
-  I wrote this code myself, so there is no license restriction. 
-  So this code allows anyone to write with confidence.
-  But keep it as long as the original author of the code.
-  DE Ian KD8CEC
-**************************************************************************/
-#define LCD_Command(x)  (LCD_Send(x, LOW))
-#define LCD_Write(x)    (LCD_Send(x, HIGH))
-
-//Define  connected PIN
-#define LCD_PIN_RS 8
-#define LCD_PIN_EN 9
-uint8_t LCD_PIN_DAT[4] = {10, 11, 12, 13};
-
-// commands
+//Common Defines *********************************************************
 #define LCD_CLEARDISPLAY 0x01
 #define LCD_RETURNHOME 0x02
 #define LCD_ENTRYMODESET 0x04
@@ -84,6 +58,39 @@ uint8_t LCD_PIN_DAT[4] = {10, 11, 12, 13};
 #define LCD_1LINE 0x00
 #define LCD_5x10DOTS 0x04
 #define LCD_5x8DOTS 0x00
+
+// flags for backlight control
+#define LCD_BACKLIGHT 0x08
+#define LCD_NOBACKLIGHT 0x00
+
+//========================================================================
+//Begin of TinyLCD Library by KD8CEC
+//========================================================================
+
+#ifdef UBITX_DISPLAY_LCD1602P
+/*************************************************************************
+  LCD1602_TINY Library for 16 x 2 LCD
+  Referecnce Source : LiquidCrystal.cpp 
+  KD8CEC
+
+  This source code is modified version for small program memory 
+  from Arduino LiquidCrystal Library
+
+  I wrote this code myself, so there is no license restriction. 
+  So this code allows anyone to write with confidence.
+  But keep it as long as the original author of the code.
+  DE Ian KD8CEC
+**************************************************************************/
+
+#define LCD_Command(x)  (LCD_Send(x, LOW))
+#define LCD_Write(x)    (LCD_Send(x, HIGH))
+
+#define UBITX_DISPLAY_LCD1602_BASE
+
+//Define  connected PIN
+#define LCD_PIN_RS 8
+#define LCD_PIN_EN 9
+uint8_t LCD_PIN_DAT[4] = {10, 11, 12, 13};
 
 void write4bits(uint8_t value) 
 {
@@ -148,7 +155,7 @@ void LCD1602_Init()
 
 void LCD_Print(const char *c) 
 {
-  for (int i = 0; i < strlen(c); i++)
+  for (uint8_t i = 0; i < strlen(c); i++)
   {
     if (*(c + i) == 0x00) return;
     LCD_Write(*(c + i));
@@ -167,107 +174,183 @@ void LCD_CreateChar(uint8_t location, uint8_t charmap[])
   for (int i=0; i<8; i++)
     LCD_Write(charmap[i]);
 }
+#endif
 //========================================================================
 //End of TinyLCD Library by KD8CEC
 //========================================================================
 
-/*
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(8,9,10,11,12,13);
-*/
+
+//========================================================================
+//Begin of I2CTinyLCD Library by KD8CEC
+//========================================================================
+#ifdef UBITX_DISPLAY_LCD1602I
+#include <Wire.h>
+/*************************************************************************
+  I2C Tiny LCD Library
+  Referecnce Source : LiquidCrystal_I2C.cpp // Based on the work by DFRobot
+  KD8CEC
+
+  This source code is modified version for small program memory 
+  from Arduino LiquidCrystal_I2C Library
+
+  I wrote this code myself, so there is no license restriction. 
+  So this code allows anyone to write with confidence.
+  But keep it as long as the original author of the code.
+  Ian KD8CEC
+**************************************************************************/
+#define UBITX_DISPLAY_LCD1602_BASE
+
+#define En B00000100  // Enable bit
+#define Rw B00000010  // Read/Write bit
+#define Rs B00000001  // Register select bit
+
+#define LCD_Command(x)  (LCD_Send(x, 0))
+#define LCD_Write(x)    (LCD_Send(x, Rs))
+
+uint8_t _Addr;
+uint8_t _displayfunction;
+uint8_t _displaycontrol;
+uint8_t _displaymode;
+uint8_t _numlines;
+uint8_t _cols;
+uint8_t _rows;
+uint8_t _backlightval;
+
+#define printIIC(args)  Wire.write(args)
+
+void expanderWrite(uint8_t _data)
+{
+  Wire.beginTransmission(_Addr);
+  printIIC((int)(_data) | _backlightval);
+  Wire.endTransmission();   
+}
+
+void pulseEnable(uint8_t _data){
+  expanderWrite(_data | En);  // En high
+  delayMicroseconds(1);       // enable pulse must be >450ns
+  
+  expanderWrite(_data & ~En); // En low
+  delayMicroseconds(50);      // commands need > 37us to settle
+}
+
+void write4bits(uint8_t value) 
+{
+  expanderWrite(value);
+  pulseEnable(value);
+}
+
+void LCD_Send(uint8_t value, uint8_t mode)
+{
+  uint8_t highnib=value&0xf0;
+  uint8_t lownib=(value<<4)&0xf0;
+       write4bits((highnib)|mode);
+  write4bits((lownib)|mode); 
+}
+
+
+// Turn the (optional) backlight off/on
+void noBacklight(void) {
+  _backlightval=LCD_NOBACKLIGHT;
+  expanderWrite(0);
+}
+
+void backlight(void) {
+  _backlightval=LCD_BACKLIGHT;
+  expanderWrite(0);
+}
+
+void LCD1602_Init()
+{
+  //I2C Init
+  _Addr = I2C_DISPLAY_ADDRESS;
+  _cols = 16;
+  _rows = 2;
+  _backlightval = LCD_NOBACKLIGHT;
+  Wire.begin();
+
+  delay(50);
+  
+  // Now we pull both RS and R/W low to begin commands
+  expanderWrite(_backlightval); // reset expanderand turn backlight off (Bit 8 =1)
+  delay(1000);
+      //put the LCD into 4 bit mode
+  // this is according to the hitachi HD44780 datasheet
+  // figure 24, pg 46
+  
+    // we start in 8bit mode, try to set 4 bit mode
+   write4bits(0x03 << 4);
+   delayMicroseconds(4500); // wait min 4.1ms
+   
+   // second try
+   write4bits(0x03 << 4);
+   delayMicroseconds(4500); // wait min 4.1ms
+   
+   // third go!
+   write4bits(0x03 << 4); 
+   delayMicroseconds(150);
+   
+   // finally, set to 4-bit interface
+   write4bits(0x02 << 4); 
+
+  // finally, set # lines, font size, etc.
+  LCD_Command(LCD_FUNCTIONSET | LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS | LCD_2LINE);  
+
+  // turn the display on with no cursor or blinking default
+  LCD_Command(LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
+
+  // clear it off
+  LCD_Command(LCD_CLEARDISPLAY);  // clear display, set cursor position to zero
+  //delayMicroseconds(2000);  // this command takes a long time!
+  delayMicroseconds(1000);  // this command takes a long time!
+
+  LCD_Command(LCD_ENTRYMODESET | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
+
+  backlight();
+}
+
+void LCD_Print(const char *c) 
+{
+  for (uint8_t i = 0; i < strlen(c); i++)
+  {
+    if (*(c + i) == 0x00) return;
+    LCD_Write(*(c + i));
+  }
+}
+
+void LCD_SetCursor(uint8_t col, uint8_t row)
+{
+  LCD_Command(LCD_SETDDRAMADDR | (col + row * 0x40));  //0 : 0x00, 1 : 0x40, only for 16 x 2 lcd
+}
+
+void LCD_CreateChar(uint8_t location, uint8_t charmap[]) 
+{
+  location &= 0x7; // we only have 8 locations 0-7
+  LCD_Command(LCD_SETCGRAMADDR | (location << 3));
+  for (int i=0; i<8; i++)
+    LCD_Write(charmap[i]);
+}
+#endif
+//========================================================================
+//End of I2CTinyLCD Library by KD8CEC
+//========================================================================
 
 
 //========================================================================
+// 16 X 02 LCD Routines
 //Begin of Display Base Routines (Init, printLine..)
 //========================================================================
+#ifdef UBITX_DISPLAY_LCD1602_BASE
+
+//SWR GRAPH,  DrawMeter and drawingMeter Logic function by VK2ETA 
+#define OPTION_SKINNYBARS
+
 char c[30], b[30];
 char printBuff[2][17];  //mirrors what is showing on the two lines of the display
-
-const PROGMEM uint8_t meters_bitmap[] = {
-  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
-  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000 ,   //custom 2
-  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100 ,   //custom 3
-  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110 ,   //custom 4
-  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111 ,   //custom 5
-  B01000,  B11100,  B01000,  B00000,  B10111,  B10101,  B10101,  B10111     //custom 6
-};
-
-PGM_P p_metes_bitmap = reinterpret_cast<PGM_P>(meters_bitmap);
-
-const PROGMEM uint8_t lock_bitmap[8] = {
-  0b01110,
-  0b10001,
-  0b10001,
-  0b11111,
-  0b11011,
-  0b11011,
-  0b11111,
-  0b00000};
-PGM_P plock_bitmap = reinterpret_cast<PGM_P>(lock_bitmap);
-
-
-// initializes the custom characters
-// we start from char 1 as char 0 terminates the string!
-void initMeter(){
-  uint8_t tmpbytes[8];
-  byte i;
-
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(plock_bitmap + i);
-  LCD_CreateChar(0, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i);
-  LCD_CreateChar(1, tmpbytes);
-
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 8);
-  LCD_CreateChar(2, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 16);
-  LCD_CreateChar(3, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 24);
-  LCD_CreateChar(4, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 32);
-  LCD_CreateChar(5, tmpbytes);
-  
-  for (i = 0; i < 8; i++)
-    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 40);
-  LCD_CreateChar(6, tmpbytes);
-}
 
 void LCD_Init(void)
 {
   LCD1602_Init();  
   initMeter(); //for Meter Display
-}
-
-//by KD8CEC
-//0 ~ 25 : 30 over : + 10
-void drawMeter(int needle) {
-  //5Char + O over
-  int i;
-
-  for (i = 0; i < 5; i++) {
-    if (needle >= 5)
-      lcdMeter[i] = 5; //full
-    else if (needle > 0)
-      lcdMeter[i] = needle; //full
-    else  //0
-      lcdMeter[i] = 0x20;
-    
-    needle -= 5;
-  }
-
-  if (needle > 0)
-    lcdMeter[5] = 6;
-  else
-    lcdMeter[5] = 0x20;
 }
 
 // The generic routine to display one line on the LCD 
@@ -469,8 +552,10 @@ char line2Buffer[16];
 //L14.150 200Hz ST
 //U14.150 +150khz
 int freqScrollPosition = 0;
+
 //Example Line2 Optinal Display
 //immediate execution, not call by scheulder
+//warning : unused parameter 'displayType' <-- ignore, this is reserve
 void updateLine2Buffer(char displayType)
 {
   unsigned long tmpFreq = 0;
@@ -480,6 +565,16 @@ void updateLine2Buffer(char displayType)
 
     //display frequency
     tmpFreq = ritTxFrequency;
+
+    //Fixed by Mitani Massaru (JE4SMQ)
+    if (isShiftDisplayCWFreq == 1)
+    {
+      if (cwMode == 1)        //CWL
+          tmpFreq = tmpFreq - sideTone + shiftDisplayAdjustVal;
+      else if (cwMode == 2)   //CWU
+          tmpFreq = tmpFreq + sideTone + shiftDisplayAdjustVal;
+    }
+    
     for (int i = 15; i >= 6; i--) {
       if (tmpFreq > 0) {
         if (i == 12 || i == 8) line2Buffer[i] = '.';
@@ -522,13 +617,13 @@ void updateLine2Buffer(char displayType)
 
   //EXAMPLE #1
   if ((displayOption1 & 0x04) == 0x00)  //none scroll display
-    line2Buffer[6] = 'k';
+    line2Buffer[6] = 'M';
   else
   {
     //example #2
     if (freqScrollPosition++ > 18)    //none scroll display time
     {
-      line2Buffer[6] = 'k';
+      line2Buffer[6] = 'M';
       if (freqScrollPosition > 25)
         freqScrollPosition = -1;
     }
@@ -613,7 +708,13 @@ void updateLine2Buffer(char displayType)
     line2Buffer[13] = ' ';
     
     //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
-    if (cwKeyType == 0)
+    if (sdrModeOn == 1)
+    {
+      line2Buffer[13] = 'S';
+      line2Buffer[14] = 'D';
+      line2Buffer[15] = 'R';
+    }
+    else if (cwKeyType == 0)
     {
       line2Buffer[14] = 'S';
       line2Buffer[15] = 'T';
@@ -636,20 +737,26 @@ void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
 {
   if (meterType == 0 || meterType == 1 || meterType == 2)
   {
-    drawMeter(meterValue);  //call original source code
+    drawMeter(meterValue);
     int lineNumber = 0;
     if ((displayOption1 & 0x01) == 0x01)
       lineNumber = 1;
     
     LCD_SetCursor(drawPosition, lineNumber);
   
-    for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
-      LCD_Write(lcdMeter[i]);
+    //for (int i = 0; i <26; i++) //meter 5 + +db 1 = 6
+    LCD_Write(lcdMeter[0]);
+    LCD_Write(lcdMeter[1]);
   }
 }
 
 byte testValue = 0;
 char checkCount = 0;
+char checkCountSMeter = 0;
+
+int currentSMeter = 0;
+byte scaledSMeter = 0;
+
 void idle_process()
 {
   //space for user graphic display
@@ -667,6 +774,7 @@ void idle_process()
         line2DisplayStatus = 2;
         checkCount = 0;
       }
+    }
 
       //EX for Meters
       /*
@@ -674,21 +782,54 @@ void idle_process()
       if (testValue > 30)
         testValue = 0;
       */
-    }
+
+    //S-Meter Display
+    if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
+    {
+      int newSMeter;
+      checkCountSMeter = 0; //Reset Latency time
+
+      //VK2ETA S-Meter from MAX9814 TC pin / divide 4 by KD8CEC for reduce EEPromSize
+      newSMeter = analogRead(ANALOG_SMETER);
+  
+      //Faster attack, Slower release
+      currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10) / 4;
+  
+      scaledSMeter = 0;
+      for (byte s = 8; s >= 1; s--) {
+        if (currentSMeter > sMeterLevels[s]) {
+          scaledSMeter = s;
+          break;
+        }
+      }
+  
+      DisplayMeter(0, scaledSMeter, 14);
+    }   //end of S-Meter
+    
   }
 }
 
 //AutoKey LCD Display Routine
-void Display_AutoKeyTextIndex(char textIndex)
+void Display_AutoKeyTextIndex(byte textIndex)
 {
   byte diplayAutoCWLine = 0;
   
   if ((displayOption1 & 0x01) == 0x01)
     diplayAutoCWLine = 1;
   LCD_SetCursor(0, diplayAutoCWLine);
-  LCD_Write(byteToChar(selectedCWTextIndex));
+  LCD_Write(byteToChar(textIndex));
   LCD_Write(':');
 }
 
+void DisplayCallsign(byte callSignLength)
+{
+  printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+  //delay(500);
+}
+
+void DisplayVersionInfo(const __FlashStringHelper * fwVersionInfo)
+{
+  printLineF(1, fwVersionInfo);
+}
 
 #endif

@@ -23,14 +23,13 @@ Beta Tester :
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************************/
 
-#include <arduino.h>
 #include <EEPROM.h>
 #include "ubitx.h"
 
 //begin of test
 byte WsprToneCode[164];
 
-long lastTime=0;
+unsigned long lastTime=0;
 unsigned long TX_MSNB_P2;              // Si5351 register MSNB_P2  PLLB for Tx
 unsigned long TX_P2;    // Variable values for MSNB_P2 which defines the frequencies for the data
 
@@ -48,7 +47,7 @@ void SendWSPRManage()
 {
   int knob = 0;
   byte knobPosition = 0;
-  char isNeedDisplayInfo = 0;
+  //char isNeedDisplayInfo = 0;
   char nowSelectedIndex = 0;
   char nowWsprStep = 0; //0 : select Message, 1 : select band, 2 : send
   char selectedWsprMessageIndex = -1;
@@ -56,8 +55,8 @@ void SendWSPRManage()
 
   unsigned long WsprTXFreq = 0;
   unsigned int WsprMultiChan = 0;
-  unsigned long prevFreq;
-  char loopIndex;
+  //unsigned long prevFreq;
+  byte loopIndex;
 
   delay_background(500, 0);
   
