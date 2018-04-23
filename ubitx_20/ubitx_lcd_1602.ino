@@ -552,7 +552,7 @@ void updateDisplay() {
 
 
 
-char line2Buffer[16];
+char line2Buffer[17];
 //KD8CEC 200Hz ST
 //L14.150 200Hz ST
 //U14.150 +150khz

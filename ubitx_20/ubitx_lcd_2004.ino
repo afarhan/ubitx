@@ -326,7 +326,7 @@ void LCD_CreateChar(uint8_t location, uint8_t charmap[])
 //#define OPTION_SKINNYBARS
 
 char c[30], b[30];
-char printBuff[4][20];  //mirrors what is showing on the two lines of the display
+char printBuff[4][21];  //mirrors what is showing on the two lines of the display
 
 void LCD_Init(void)
 {
