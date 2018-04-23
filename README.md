@@ -1,27 +1,17 @@
 #IMPORTANT INFORMATION
 ----------------------------------------------------------------------------
-- Beta 0.26 and Beta 0.261, Beta 0.262, Beta 0.27 is complete test
-- You can download and use it.
+- Now Release Version 1.061 on my blog (http://www.hamskey.com)
+- You can download and compiled hex file and uBITX Manager application on my blog (http://www.hamskey.com)
 
 #NOTICE
 ----------------------------------------------------------------------------
 I received uBITX a month ago and found that many features are required, and began coding with the idea of implementing minimal functionality as a general hf transceiver rather than an experimental device.
-
-- fixed bugs...
-- Diallock for uBITX's sensitive encoders
-- built in softare Memory keyer and cw options control for CW communication
-- Implementation of CAT communication protocol for Digital Communication (as FT8, JT65, etc)
-- Delay Options for external Linear.
-- and more...
 
 Most of the basic functions of the HF transceiver I thought were implemented.
 The minimum basic specification for uBITX to operate as a radio, I think it is finished.
 So I will release the 0.27 version and if I do not see the bug anymore, I will try to change the version name to 1.0.
 Now uBITX is an HF radio and will be able to join you in your happy hams life.
 Based on this source, you can use it by adding functions.
-
-I am going to do a new project based on this source, linking with WSPR, WSJT-X and so on.
-Of course, this repository is still running. If you have any bugs or ideas, please feel free to email me.
 
 http://www.hamskey.com
 
@@ -36,16 +26,105 @@ The copyright information of the original is below.
 KD8CEC
 ----------------------------------------------------------------------------
 Prepared or finished tasks for the next version
-  - Most of them are implemented and included in version 0.27.
-  - User Interface on LCD -> Option by user (not need)
-  - Include WSPR Beacone function - (implement other new repository)
-    complete experiment
-    need solve : Big code size (over 100%, then remove some functions for experment)
-                 need replace Si5351 Library (increase risk and need more beta tester)
-                 W3PM sent me his wonderful source - using BITX, GPS 
-                  
+  - Reduce Program size
+  - uBITX with RTL-SDR 
+  - Direct control for Student
+  
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+1.07 (Working...)
+ - Please do not download it yet. The code will continue to change for the time being.
+ - BetaVersion for Reduce program size
+
+1.061
+ - Added WSPR
+   You only need uBITX to use WSPR. No external devices are required.
+   Added Si5351 module for WSPR
+ - Update uBITX Manager to Version 1.0
+ - Reduce program size
+   for WSPR
+   for other Module
+ - Fixed IF Shift Bug
+   Disable IF Shift on TX
+   IF shift available in USB mode
+   Fixed cat routine in IF Shift setup
+- Bugs fixed
+   cw start delay option
+   Auto key Bug
+   (found bug : LZ1LDO)
+   Message selection when Auto Key is used in RIT mode
+   (found bug : gerald)
+- Improve CW Keying (start TX)
+
+1.05
+ - include 1.05W, 1.051, 1.051W
+ - for WSPR Beta Test Version
+
+1.04
+  - Optimized from Version1.03
+  - Reduce program size (97% -> 95%)
+  
+1.03
+  - Change eBFO Calibration Step (50 to 5)
+  - Change CW Frequency Display type
+  
+1.02
+  - Applied CW Start Delay to New CW Key logic (This is my mistake when applying the new CW Key Logic.Since uBITX operations are not significantly affected, this does not create a separate Release, It will be reflected in the next release.) - complete
+  - Modified CW Key Logic for Auto Key, (available AutoKey function by any cw keytype) - complete
+  - reduce cpu use usage (working)
+  - reduce (working)
+
+1.01
+  - Fixed Cat problem with (IAMBIC A or B Selected)
+1.0 
+  - rename 0.30 to 1.0
+  
+0.35
+  - vfo to channel bug fixed (not saved mode -> fixed, channel has frequency and mode)
+  - add Channel tag (ch.1 ~ 10) by uBITX Manager
+  - add VFO to Channel, Channel To VFO
+  
+0.34
+  - TX Status check in auto Keysend logic
+  - optimize codes
+  - change default tune step size, and fixed bug
+  - change IF shift step (1Hz -> 50Hz)
+  
+0.33
+  - Added CWL, CWU Mode, (dont complete test yet)
+  - fixed VFO changed bug.
+  - Added Additional BFO for CWL, CWL
+  - Added IF Shift
+  - Change confirmation key PTT -> function key (not critical menus)
+  - Change CW Key Select type, (toggle -> select by dial)
+  
+0.32
+  - Added function Scroll Frequencty on upper line
+  - Added Example code for Draw meter and remarked (you can see and use this code in source codes)
+  - Added Split function, just toggle VFOs when TX/RX
+
+0.31
+  - Fixed CW ADC Range error
+  - Display Message on Upper Line (anothor VFO Frequency, Tune Step, Selected Key Type)
+
+0.30
+ - implemented the function to monitor the value of all analog inputs. This allows you to monitor the status of the CW keys connected to your uBITX. 
+ - possible to set the ADC range for CW Keying. If no setting is made, it will have the same range as the original code. If you set the CW Keying ADC Values using uBITX Manager 0.3, you can reduce the key error.
+ - Added the function to select Straight Key, IAMBICA, IAMBICB key from the menu.
+ - default Band select is Ham Band mode, if you want common type, long press function key at band select menu, uBITX Manager can be used to modify frequencies to suit your country.
+
+0.29
+ - Remove the use of initialization values in BFO settings - using crruent value, if factory reset
+ - Select Tune Step, default 0, 20, 50, 100, 200, Use the uBITX Manager to set the steps value you want. You can select Step by pressing and holding the Function Key (1sec ~ 2sec).
+ - Modify Dial Lock Function, Press the Function key for more than 3 seconds to toggle dial lock.
+ - created a new frequency tune method. remove original source codes, Threshold has been applied to reduce malfunction. checked the continuity of the user operating to make natural tune possible.
+ - stabilize and remove many warning messages - by Pullrequest and merge
+ - Changed cw keying method. removed the original code and applied Ron's code and Improved compatibility with original hardware and CAT commnication. It can be used without modification of hardware.
+ 
+0.28
+ - Fixed CAT problem with hamlib on Linux
+ - restore Protocol autorecovery logic
+
 0.27 
    (First alpha test version, This will be renamed to the major version 1.0)
  - Dual VFO Dial Lock (vfoA Dial lock)
