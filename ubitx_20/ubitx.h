@@ -14,6 +14,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
+#ifndef _UBITX_HEADER__
+#define _UBITX_HEADER__
+
 #include <Arduino.h>  //for Linux, On Linux it is case sensitive.
 
 //==============================================================================
@@ -172,3 +175,7 @@ extern void SendWSPRManage(void);
 extern char byteToChar(byte srcByte);
 extern void DisplayCallsign(byte callSignLength);
 extern void DisplayVersionInfo(const char* fwVersionInfo);
+
+#endif    //end of if header define
+
+

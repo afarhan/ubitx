@@ -15,6 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
+#ifndef _UBITX_EEPOM_HEADER__
+#define _UBITX_EEPOM_HEADER__
+
 //==============================================================================
 // Factory-shipped EEProm address
 // (factory Firmware)
@@ -124,4 +127,6 @@
 #define CW_AUTO_DATA          803   //[INDEX, INDEX, INDEX,DATA,DATA, DATA (Positon offset is CW_AUTO_DATA
 #define CW_DATA_OFSTADJ       CW_AUTO_DATA - USER_CALLSIGN_DAT   //offset adjust for ditect eeprom to lcd (basic offset is USER_CALLSIGN_DAT
 #define CW_STATION_LEN        1023  //value range : 4 ~ 30
+
+#endif    //end of if header define
 
