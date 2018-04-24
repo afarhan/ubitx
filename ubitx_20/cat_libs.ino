@@ -278,7 +278,19 @@ void WriteEEPRom(void)  //for remove warning
   }
   else
   {
-    EEPROM.write(eepromStartIndex, write1Byte);
+    //Special Command
+    if (eepromStartIndex == 13131)  //Magic Key
+    {
+      if (write1Byte == 0x51) //Restart
+      {
+        asm volatile ("  jmp 0");
+      }
+    }
+    else
+    {
+      EEPROM.write(eepromStartIndex, write1Byte);
+    }
+    
     Serial.write(0x77); //OK  
     Serial.write(ACK);
   }

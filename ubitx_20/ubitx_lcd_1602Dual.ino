@@ -1,5 +1,5 @@
 /*************************************************************************
-  KD8CEC's uBITX Display Routine for LCD1602 Parrel
+  KD8CEC's uBITX Display Routine for LCD1602 Dual LCD by KD8CEC
   1.This is the display code for the default LCD mounted in uBITX.
   2.Display related functions of uBITX.  Some functions moved from uBITX_Ui.
   3.uBITX Idle time Processing
@@ -65,105 +65,10 @@
 #define LCD_NOBACKLIGHT 0x00
 
 //========================================================================
-//Begin of TinyLCD Library by KD8CEC
+//Begin of I2CTinyLCD Library for Dual LCD by KD8CEC
 //========================================================================
+#ifdef UBITX_DISPLAY_LCD1602I_DUAL
 
-#ifdef UBITX_DISPLAY_LCD1602P
-/*************************************************************************
-  LCD1602_TINY Library for 16 x 2 LCD
-  Referecnce Source : LiquidCrystal.cpp 
-  KD8CEC
-
-  This source code is modified version for small program memory 
-  from Arduino LiquidCrystal Library
-
-  I wrote this code myself, so there is no license restriction. 
-  So this code allows anyone to write with confidence.
-  But keep it as long as the original author of the code.
-  DE Ian KD8CEC
-**************************************************************************/
-
-#define LCD_Command(x)  (LCD_Send(x, LOW))
-#define LCD_Write(x)    (LCD_Send(x, HIGH))
-
-#define UBITX_DISPLAY_LCD1602_BASE
-
-//Define  connected PIN
-#define LCD_PIN_RS 8
-#define LCD_PIN_EN 9
-uint8_t LCD_PIN_DAT[4] = {10, 11, 12, 13};
-
-void write4bits(uint8_t value) 
-{
-  for (int i = 0; i < 4; i++) 
-    digitalWrite(LCD_PIN_DAT[i], (value >> i) & 0x01);
-
-  digitalWrite(LCD_PIN_EN, LOW);
-  delayMicroseconds(1);    
-  digitalWrite(LCD_PIN_EN, HIGH);
-  delayMicroseconds(1);    // enable pulse must be >450ns
-  digitalWrite(LCD_PIN_EN, LOW);
-  delayMicroseconds(100);   // commands need > 37us to settle
-}
-
-void LCD_Send(uint8_t value, uint8_t mode)
-{
-    digitalWrite(LCD_PIN_RS, mode);
-    write4bits(value>>4);
-    write4bits(value);
-}
-
-void LCD1602_Init()
-{
-  pinMode(LCD_PIN_RS, OUTPUT);
-  pinMode(LCD_PIN_EN, OUTPUT);
-  for (int i = 0; i < 4; i++)
-    pinMode(LCD_PIN_DAT[i], OUTPUT);
-
-  delayMicroseconds(50); 
- 
-  // Now we pull both RS and R/W low to begin commands
-  digitalWrite(LCD_PIN_RS, LOW);
-  digitalWrite(LCD_PIN_EN, LOW);
-
-  // we start in 8bit mode, try to set 4 bit mode
-  write4bits(0x03);
-  delayMicroseconds(4500); // wait min 4.1ms
-  
-  // second try
-  write4bits(0x03);
-  delayMicroseconds(4500); // wait min 4.1ms
-  
-  // third go!
-  write4bits(0x03); 
-  delayMicroseconds(150);
-  
-  // finally, set to 4-bit interface
-  write4bits(0x02);
-
-  // finally, set # lines, font size, etc.
-  LCD_Command(LCD_FUNCTIONSET | LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS | LCD_2LINE);  
-
-  // turn the display on with no cursor or blinking default
-  LCD_Command(LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
-
-  // clear it off
-  LCD_Command(LCD_CLEARDISPLAY);  // clear display, set cursor position to zero
-  delayMicroseconds(2000);  // this command takes a long time!
-
-  LCD_Command(LCD_ENTRYMODESET | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
-}
-
-#endif
-//========================================================================
-//End of TinyLCD Library by KD8CEC
-//========================================================================
-
-
-//========================================================================
-//Begin of I2CTinyLCD Library by KD8CEC
-//========================================================================
-#ifdef UBITX_DISPLAY_LCD1602I
 #include <Wire.h>
 /*************************************************************************
   I2C Tiny LCD Library
@@ -239,10 +144,9 @@ void backlight(void) {
   expanderWrite(0);
 }
 
-void LCD1602_Init()
+void LCD1602_Dual_Init()
 {
   //I2C Init
-  _Addr = I2C_LCD_MASTER_ADDRESS;
   _cols = 16;
   _rows = 2;
   _backlightval = LCD_NOBACKLIGHT;
@@ -251,12 +155,16 @@ void LCD1602_Init()
   delay(50);
   
   // Now we pull both RS and R/W low to begin commands
+  _Addr = I2C_LCD_MASTER_ADDRESS;
+  expanderWrite(_backlightval); // reset expanderand turn backlight off (Bit 8 =1)
+  _Addr = I2C_LCD_SECOND_ADDRESS;
   expanderWrite(_backlightval); // reset expanderand turn backlight off (Bit 8 =1)
   delay(1000);
       //put the LCD into 4 bit mode
   // this is according to the hitachi HD44780 datasheet
   // figure 24, pg 46
   
+  _Addr = I2C_LCD_MASTER_ADDRESS;
     // we start in 8bit mode, try to set 4 bit mode
    write4bits(0x03 << 4);
    delayMicroseconds(4500); // wait min 4.1ms
@@ -286,49 +194,48 @@ void LCD1602_Init()
   LCD_Command(LCD_ENTRYMODESET | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
 
   backlight();
-}
 
-/*
-void LCD_Print(const char *c) 
-{
-  for (uint8_t i = 0; i < strlen(c); i++)
-  {
-    if (*(c + i) == 0x00) return;
-    LCD_Write(*(c + i));
-  }
-}
 
-void LCD_SetCursor(uint8_t col, uint8_t row)
-{
-  LCD_Command(LCD_SETDDRAMADDR | (col + row * 0x40));  //0 : 0x00, 1 : 0x40, only for 16 x 2 lcd
-}
+  _Addr = I2C_LCD_SECOND_ADDRESS;
+    // we start in 8bit mode, try to set 4 bit mode
+   write4bits(0x03 << 4);
+   delayMicroseconds(4500); // wait min 4.1ms
+   
+   // second try
+   write4bits(0x03 << 4);
+   delayMicroseconds(4500); // wait min 4.1ms
+   
+   // third go!
+   write4bits(0x03 << 4); 
+   delayMicroseconds(150);
+   
+   // finally, set to 4-bit interface
+   write4bits(0x02 << 4); 
 
-void LCD_CreateChar(uint8_t location, uint8_t charmap[]) 
-{
-  location &= 0x7; // we only have 8 locations 0-7
-  LCD_Command(LCD_SETCGRAMADDR | (location << 3));
-  for (int i=0; i<8; i++)
-    LCD_Write(charmap[i]);
+  // finally, set # lines, font size, etc.
+  LCD_Command(LCD_FUNCTIONSET | LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS | LCD_2LINE);  
+
+  // turn the display on with no cursor or blinking default
+  LCD_Command(LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
+
+  // clear it off
+  LCD_Command(LCD_CLEARDISPLAY);  // clear display, set cursor position to zero
+  //delayMicroseconds(2000);  // this command takes a long time!
+  delayMicroseconds(1000);  // this command takes a long time!
+
+  LCD_Command(LCD_ENTRYMODESET | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
+
+  backlight();
+
+  //Change to Default LCD (Master)
+  _Addr = I2C_LCD_MASTER_ADDRESS;
 }
-*/
-#endif
-//========================================================================
-//End of I2CTinyLCD Library by KD8CEC
-//========================================================================
 
 
 //========================================================================
 // 16 X 02 LCD Routines
 //Begin of Display Base Routines (Init, printLine..)
 //========================================================================
-#ifdef UBITX_DISPLAY_LCD1602_BASE
-
-//SWR GRAPH,  DrawMeter and drawingMeter Logic function by VK2ETA 
-#define OPTION_SKINNYBARS
-
-char c[30], b[30];
-char printBuff[2][17];  //mirrors what is showing on the two lines of the display
-
 
 void LCD_Print(const char *c) 
 {
@@ -339,9 +246,10 @@ void LCD_Print(const char *c)
   }
 }
 
+const int row_offsets[] = { 0x00, 0x40, 0x14, 0x54 };
 void LCD_SetCursor(uint8_t col, uint8_t row)
 {
-  LCD_Command(LCD_SETDDRAMADDR | (col + row * 0x40));  //0 : 0x00, 1 : 0x40, only for 16 x 2 lcd
+  LCD_Command(LCD_SETDDRAMADDR | (col + row_offsets[row]));  //0 : 0x00, 1 : 0x40, only for 20 x 4 lcd
 }
 
 void LCD_CreateChar(uint8_t location, uint8_t charmap[]) 
@@ -352,11 +260,21 @@ void LCD_CreateChar(uint8_t location, uint8_t charmap[])
     LCD_Write(charmap[i]);
 }
 
+//SWR GRAPH,  DrawMeter and drawingMeter Logic function by VK2ETA 
+//#define OPTION_SKINNYBARS
+
+char c[30], b[30];
+char printBuff[4][20];  //mirrors what is showing on the two lines of the display
+
 void LCD_Init(void)
 {
-  LCD1602_Init();  
-  initMeter(); //for Meter Display
+  LCD1602_Dual_Init();  
+
+  _Addr = I2C_LCD_SECOND_ADDRESS;
+  initMeter(); //for Meter Display  //when dual LCD, S.Meter on second LCD
+  _Addr = I2C_LCD_MASTER_ADDRESS;
 }
+
 
 // The generic routine to display one line on the LCD 
 void printLine(unsigned char linenmbr, const char *c) {
@@ -367,7 +285,7 @@ void printLine(unsigned char linenmbr, const char *c) {
     LCD_Print(c);
     strcpy(printBuff[linenmbr], c);
 
-    for (byte i = strlen(c); i < 16; i++) { // add white spaces until the end of the 16 characters line is reached
+    for (byte i = strlen(c); i < 20; i++) { // add white spaces until the end of the 20 characters line is reached
       LCD_Write(' ');
     }
   }
@@ -376,10 +294,10 @@ void printLine(unsigned char linenmbr, const char *c) {
 void printLineF(char linenmbr, const __FlashStringHelper *c)
 {
   int i;
-  char tmpBuff[17];
+  char tmpBuff[21];
   PGM_P p = reinterpret_cast<PGM_P>(c);  
 
-  for (i = 0; i < 17; i++){
+  for (i = 0; i < 21; i++){
     unsigned char fChar = pgm_read_byte(p++);
     tmpBuff[i] = fChar;
     if (fChar == 0)
@@ -389,7 +307,7 @@ void printLineF(char linenmbr, const __FlashStringHelper *c)
   printLine(linenmbr, tmpBuff);
 }
 
-#define LCD_MAX_COLUMN 16
+#define LCD_MAX_COLUMN 20
 void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, byte eepromEndIndex, char offsetTtype) {
   if ((displayOption1 & 0x01) == 0x01)
     linenmbr = (linenmbr == 0 ? 1 : 0); //Line Toggle
@@ -404,7 +322,7 @@ void printLineFromEEPRom(char linenmbr, char lcdColumn, byte eepromStartIndex, b
       break;
   }
   
-  for (byte i = lcdColumn; i < 16; i++) //Right Padding by Space
+  for (byte i = lcdColumn; i < 20; i++) //Right Padding by Space
       LCD_Write(' ');
 }
 
@@ -455,6 +373,7 @@ void updateDisplay() {
   // tks Jack Purdum W8TEE
   // replaced fsprint commmands by str commands for code size reduction
   // replace code for Frequency numbering error (alignment, point...) by KD8CEC
+  // i also Very TNX Purdum for good source code
   int i;
   unsigned long tmpFreq = frequency; //
   
@@ -496,6 +415,7 @@ void updateDisplay() {
           strcpy(c, "CWU ");
       }
     }
+    
     if (vfoActive == VFO_A) // VFO A is active
       strcat(c, "A:");
     else
@@ -526,8 +446,6 @@ void updateDisplay() {
 
   //remarked by KD8CEC
   //already RX/TX status display, and over index (16 x 2 LCD)
-  //if (inTx)
-  //  strcat(c, " TX");
   printLine(1, c);
 
   byte diplayVFOLine = 1;
@@ -552,7 +470,7 @@ void updateDisplay() {
 
 
 
-char line2Buffer[17];
+char line2Buffer[20];
 //KD8CEC 200Hz ST
 //L14.150 200Hz ST
 //U14.150 +150khz
@@ -619,52 +537,14 @@ void updateLine2Buffer(char displayType)
     else
       line2Buffer[i] = ' ';
   }
-
-  //EXAMPLE #1
-  if ((displayOption1 & 0x04) == 0x00)  //none scroll display
-    line2Buffer[6] = 'M';
-  else
-  {
-    //example #2
-    if (freqScrollPosition++ > 18)    //none scroll display time
-    {
-      line2Buffer[6] = 'M';
-      if (freqScrollPosition > 25)
-        freqScrollPosition = -1;
-    }
-    else                              //scroll frequency 
-    {
-      line2Buffer[10] = 'H';
-      line2Buffer[11] = 'z';
   
-      if (freqScrollPosition < 7)   
-      {
-        for (int i = 11; i >= 0; i--)
-          if (i - (7 - freqScrollPosition) >= 0)
-            line2Buffer[i] = line2Buffer[i - (7 - freqScrollPosition)];
-          else
-            line2Buffer[i] = ' ';
-      }
-      else
-      {
-        for (int i = 0; i < 11; i++)
-          if (i + (freqScrollPosition - 7) <= 11)
-            line2Buffer[i] = line2Buffer[i + (freqScrollPosition - 7)];
-          else
-            line2Buffer[i] = ' ';
-      }
-    }
-  } //scroll
-  
-  line2Buffer[7] = ' ';
+  memset(&line2Buffer[10], ' ', 10);
   
   if (isIFShift)
   {
-//    if (isDirectCall == 1)
-//      for (int i = 0; i < 16; i++)
-//        line2Buffer[i] = ' ';
-      
-      //IFShift Offset Value 
+    line2Buffer[6] = 'M';
+    line2Buffer[7] = ' ';
+    //IFShift Offset Value 
     line2Buffer[8] = 'I';
     line2Buffer[9] = 'F';
 
@@ -676,16 +556,15 @@ void updateLine2Buffer(char displayType)
     memset(b, 0, sizeof(b));
     ltoa(ifShiftValue, b, DEC);
     strncat(line2Buffer, b, 5);
-    
-    //if (isDirectCall == 1)  //if call by encoder (not scheduler), immediate print value
-    printLine2(line2Buffer);    
+
+    for (int i = 12; i < 17; i++)
+    {
+      if (line2Buffer[i] == 0)
+        line2Buffer[i] = ' ';
+    }
   }       // end of display IF
   else    // step & Key Type display
   {
-    //if (isDirectCall != 0)
-    //  return;
-
-    memset(&line2Buffer[8], ' ', 8);
     //Step
     long tmpStep = arTuneStep[tuneStepIndex -1];
     
@@ -695,7 +574,7 @@ void updateLine2Buffer(char displayType)
       isStepKhz = 2;
     }
       
-    for (int i = 10; i >= 8 - isStepKhz; i--) {
+    for (int i = 13; i >= 11 - isStepKhz; i--) {
       if (tmpStep > 0) {
           line2Buffer[i + isStepKhz] = tmpStep % 10 + 0x30;
           tmpStep /= 10;
@@ -706,36 +585,33 @@ void updateLine2Buffer(char displayType)
 
     if (isStepKhz == 0)
     {
-      line2Buffer[11] = 'H';
-      line2Buffer[12] = 'z';
+      line2Buffer[14] = 'H';
+      line2Buffer[15] = 'z';
     }
-  
-    line2Buffer[13] = ' ';
-    
-    //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
-    if (sdrModeOn == 1)
-    {
-      line2Buffer[13] = 'S';
-      line2Buffer[14] = 'D';
-      line2Buffer[15] = 'R';
-    }
-    else if (cwKeyType == 0)
-    {
-      line2Buffer[14] = 'S';
-      line2Buffer[15] = 'T';
-    }
-    else if (cwKeyType == 1)
-    {
-      line2Buffer[14] = 'I';
-      line2Buffer[15] = 'A';
-    }
-    else
-    {
-      line2Buffer[14] = 'I';
-      line2Buffer[15] = 'B';
-    }    
   }
+
+  //line2Buffer[17] = ' ';
+  /* ianlee  
+  //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
+  if (cwKeyType == 0)
+  {
+    line2Buffer[18] = 'S';
+    line2Buffer[19] = 'T';
+  }
+  else if (cwKeyType == 1)
+  {
+    line2Buffer[18] = 'I';
+    line2Buffer[19] = 'A';
+  }
+  else
+  {
+    line2Buffer[18] = 'I';
+    line2Buffer[19] = 'B';
+  }
+*/
+
 }
+
 
 //meterType : 0 = S.Meter, 1 : P.Meter
 void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
@@ -743,25 +619,28 @@ void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
   if (meterType == 0 || meterType == 1 || meterType == 2)
   {
     drawMeter(meterValue);
-    int lineNumber = 0;
-    if ((displayOption1 & 0x01) == 0x01)
-      lineNumber = 1;
-    
-    LCD_SetCursor(drawPosition, lineNumber);
-  
-    //for (int i = 0; i <26; i++) //meter 5 + +db 1 = 6
-    LCD_Write(lcdMeter[0]);
-    LCD_Write(lcdMeter[1]);
+
+    LCD_SetCursor(drawPosition, 0);
+    LCD_Write('S');
+      
+    LCD_Write(':');
+    for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
+      LCD_Write(lcdMeter[i]);
   }
 }
 
+
 byte testValue = 0;
 char checkCount = 0;
-char checkCountSMeter = 0;
 
 int currentSMeter = 0;
 byte scaledSMeter = 0;
+char checkCountSMeter = 0;
 
+char beforeKeyType = -1;
+char displaySDRON = 0;
+
+//execute interval : 0.25sec
 void idle_process()
 {
   //space for user graphic display
@@ -778,26 +657,72 @@ void idle_process()
         printLine2(line2Buffer);
         line2DisplayStatus = 2;
         checkCount = 0;
+
+        //check change CW Key Type
+        if (beforeKeyType != cwKeyType)
+        {
+          _Addr = I2C_LCD_SECOND_ADDRESS;
+          LCD_SetCursor(10, 0);
+          LCD_Write('K');
+          LCD_Write('E');
+          LCD_Write('Y');
+          LCD_Write(':');
+          
+          //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
+          if (cwKeyType == 0)
+          {
+            LCD_Write('S');
+            LCD_Write('T');
+          }
+          else if (cwKeyType == 1)
+          {
+            LCD_Write('I');
+            LCD_Write('A');
+          }
+          else
+          {
+            LCD_Write('I');
+            LCD_Write('B');
+          }
+
+          beforeKeyType = cwKeyType;
+          _Addr = I2C_LCD_MASTER_ADDRESS;
+        } //Display Second Screen
+        
       }
     }
 
-      //EX for Meters
-      /*
-      DisplayMeter(0, testValue++, 7);
-      if (testValue > 30)
-        testValue = 0;
-      */
-
+    //EX for Meters
+    
     //S-Meter Display
-    if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
+    _Addr = I2C_LCD_SECOND_ADDRESS;
+    if (sdrModeOn == 1)
+    {
+      if (displaySDRON == 0)  //once display
+      {
+        displaySDRON = 1;       
+        LCD_SetCursor(0, 0);
+        LCD_Write('S');
+        LCD_Write('D');
+        LCD_Write('R');
+        LCD_Write(' ');
+        LCD_Write('M');
+        LCD_Write('O');
+        LCD_Write('D');
+        LCD_Write('E');
+      }
+    }
+    else if (((displayOption1 & 0x08) == 0x08) && (++checkCountSMeter > 3))
     {
       int newSMeter;
-
-      //VK2ETA S-Meter from MAX9814 TC pin / divide 4 by KD8CEC for reduce EEPromSize
+      displaySDRON = 0;
+  
+      //VK2ETA S-Meter from MAX9814 TC pin
       newSMeter = analogRead(ANALOG_SMETER);
   
       //Faster attack, Slower release
-      currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10) / 4;
+      //currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
+      currentSMeter = (currentSMeter * 3 + newSMeter * 7) / 10; //remarked becaused of have already Latency time
   
       scaledSMeter = 0;
       for (byte s = 8; s >= 1; s--) {
@@ -807,10 +732,13 @@ void idle_process()
         }
       }
   
-      DisplayMeter(0, scaledSMeter, 14);
-      checkCountSMeter = 0; //Reset Latency time
-    }   //end of S-Meter
-    
+      DisplayMeter(0, scaledSMeter, 0);
+      
+      checkCountSMeter = 0;
+    } //end of S-Meter
+    _Addr = I2C_LCD_MASTER_ADDRESS;
+
+   
   }
 }
 
@@ -828,13 +756,16 @@ void Display_AutoKeyTextIndex(byte textIndex)
 
 void DisplayCallsign(byte callSignLength)
 {
-  printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
-  //delay(500);
+  _Addr = I2C_LCD_SECOND_ADDRESS;
+  printLineFromEEPRom(1, 16 - userCallsignLength, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
+  _Addr = I2C_LCD_MASTER_ADDRESS;
 }
 
 void DisplayVersionInfo(const __FlashStringHelper * fwVersionInfo)
 {
+  _Addr = I2C_LCD_SECOND_ADDRESS;
   printLineF(1, fwVersionInfo);
+  _Addr = I2C_LCD_MASTER_ADDRESS;
 }
 
 #endif

@@ -20,6 +20,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
+#include "ubitx.h"
 
 //Common Defines *********************************************************
 #define LCD_CLEARDISPLAY 0x01
@@ -241,7 +242,7 @@ void backlight(void) {
 void LCD2004_Init()
 {
   //I2C Init
-  _Addr = I2C_DISPLAY_ADDRESS;
+  _Addr = I2C_LCD_MASTER_ADDRESS;
   _cols = 20;
   _rows = 4;
   _backlightval = LCD_NOBACKLIGHT;
@@ -325,7 +326,7 @@ void LCD_CreateChar(uint8_t location, uint8_t charmap[])
 //#define OPTION_SKINNYBARS
 
 char c[30], b[30];
-char printBuff[4][20];  //mirrors what is showing on the two lines of the display
+char printBuff[4][21];  //mirrors what is showing on the two lines of the display
 
 void LCD_Init(void)
 {
@@ -807,7 +808,7 @@ void idle_process()
     if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
     {
       int newSMeter;
-  
+      
       //VK2ETA S-Meter from MAX9814 TC pin
       newSMeter = analogRead(ANALOG_SMETER);
   
@@ -823,6 +824,7 @@ void idle_process()
       }
   
       DisplayMeter(0, scaledSMeter, 0);
+      checkCountSMeter = 0; //Reset Latency time
     } //end of S-Meter
     
   }

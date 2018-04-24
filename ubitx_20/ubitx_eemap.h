@@ -50,7 +50,13 @@
 // 256 ~ 1023 (EEProm Section #1)
 // 255 ~ 101  (EEProm Section #2)
 //==============================================================================
-#define EXTENDED_KEY_RANGE    196 //Extended Key, KEY RANGE (MODE, BAND+, BAND-, TUNE_STEP, NUM0~NUM9, POINT, ENTER
+
+//0x00 : None, 0x01 : MODE, 0x02:BAND+, 0x03:BAND-, 0x04:TUNE_STEP, 0x05:VFO Toggle, 0x06:SplitOn/Off, 0x07:TX/ON-OFF,  0x08:SDR Mode On / Off, 0x09:Rit Toggle
+#define EXTENDED_KEY_RANGE    140 //Extended Key => Set : Start Value, End Value, Key Type, 16 Set (3 * 16 = 48)
+
+#define I2C_LCD_MASTER        190
+#define I2C_LCD_SECOND        191
+
 #define S_METER_LEVELS        230 //LEVEL0 ~ LEVEL7
 
 #define ADVANCED_FREQ_OPTION1 240 //Bit0: use IFTune_Value, Bit1 : use Stored enabled SDR Mode, Bit2 : dynamic sdr frequency

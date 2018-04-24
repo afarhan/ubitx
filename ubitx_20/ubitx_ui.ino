@@ -184,9 +184,12 @@ int getBtnStatus(void){
     return FKEY_PRESS;
   else
   {
+    readButtonValue = readButtonValue / 4;
+    //return FKEY_VFOCHANGE;
     for (int i = 0; i < 16; i++)
       if (KeyValues[i][0] <= readButtonValue && KeyValues[i][1] >= readButtonValue)
-        return i;
+        return KeyValues[i][2];
+        //return i;
   }
 
   return -1;

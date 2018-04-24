@@ -21,20 +21,33 @@
 //==============================================================================
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
-//#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
+#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
 //#define UBITX_DISPLAY_LCD1602I      //I2C type 16 x 02 LCD
-#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD (Parallel)
+//#define UBITX_DISPLAY_LCD1602I_DUAL
+//#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD (Parallel)
 //#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
 
-#define I2C_DISPLAY_ADDRESS  0x3F     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
+#define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x3F     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
+#define I2C_LCD_SECOND_ADDRESS_DEFAULT  0x27     //0x27  //only using Dual LCD Mode
 
-//#define EXTEND_KEY_GROUP1           //MODE, BAND(-), BAND(+), STEP
+#define EXTEND_KEY_GROUP1           //MODE, BAND(-), BAND(+), STEP
 //#define EXTEND_KEY_GROUP2           //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
 
 #define ENABLE_FACTORYALIGN
-#define ENABLE_ADCMONITOR   //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
+//#define ENABLE_ADCMONITOR   //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
+
+extern byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
+extern byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 
 #define SMeterLatency   3  //1 is 0.25 sec
+
+#ifdef UBITX_DISPLAY_LCD1602I
+  #define USE_I2C_LCD
+#elif defined(UBITX_DISPLAY_LCD1602I_DUAL)
+  #define USE_I2C_LCD
+#elif defined(UBITX_DISPLAY_LCD2004I)
+  #define USE_I2C_LCD
+#endif
 
 //==============================================================================
 // Hardware, Define PIN Usage
@@ -99,17 +112,41 @@
 #define printLineF1(x) (printLineF(1, x))
 #define printLineF2(x) (printLineF(0, x))
 
+//0x00 : None, 0x01 : MODE, 0x02:BAND+, 0x03:BAND-, 0x04:TUNE_STEP, 0x05:VFO Toggle, 0x06:SplitOn/Off, 0x07:TX/ON-OFF,  0x08:SDR Mode On / Off, 0x09:Rit Toggle
 #define FUNCTION_KEY_ADC  80  //MODE, BAND(-), BAND(+), STEP
-#define FKEY_PRESS    120
-#define FKEY_MODE     0
-#define FKEY_BANDUP   1
-#define FKEY_BANDDOWN 2
-#define FKEY_STEP     3
+#define FKEY_PRESS      0x78
+#define FKEY_MODE       0x01
+#define FKEY_BANDUP     0x02
+#define FKEY_BANDDOWN   0x03
+#define FKEY_STEP       0x04
+#define FKEY_VFOCHANGE  0x05
+#define FKEY_SPLIT      0x06
+#define FKEY_TXOFF      0x07
+#define FKEY_SDRMODE    0x08
+#define FKEY_RIT        0x09
+
+#define FKEY_ENTER      0x0A
+#define FKEY_POINT      0x0B
+#define FKEY_DELETE     0x0C
+#define FKEY_CANCEL     0x0D
+
+#define FKEY_NUM0       0x10
+#define FKEY_NUM1       0x11
+#define FKEY_NUM2       0x12
+#define FKEY_NUM3       0x13
+#define FKEY_NUM4       0x14
+#define FKEY_NUM5       0x15
+#define FKEY_NUM6       0x16
+#define FKEY_NUM7       0x17
+#define FKEY_NUM8       0x18
+#define FKEY_NUM9       0x19
+
+#define FKEY_TYPE_MAX   0x1F
 
 extern unsigned long frequency;
 extern byte WsprMSGCount;
 extern byte sMeterLevels[9];
-extern int KeyValues[16][2];    //ADC value Ranges for Extend Key
+extern byte KeyValues[16][3];    //Set : Start Value, End Value, Key Type, 16 Set (3 * 16 = 48)
 
 extern void printLine1(const char *c);
 extern void printLine2(const char *c);
