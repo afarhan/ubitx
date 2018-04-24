@@ -403,15 +403,15 @@ void menuSplitOnOff(int btn){
   else {
       if (splitOn == 1){
         splitOn = 0;
-        //printLineF2(F("Split Off!"));
-        printLineF2(F("[OFF]"));
+        printLineF2(F("SPT Off"));
+        //printLineF2(F("[OFF]"));
       }
       else {
         splitOn = 1;
         if (ritOn == 1)
           ritOn = 0;
-        //printLineF2(F("Split On!"));
-        printLineF2(F("[ON]"));
+        printLineF2(F("SPT On"));
+        //printLineF2(F("[ON]"));
       }
       
     menuClearExit(500);
@@ -430,11 +430,11 @@ void menuTxOnOff(int btn, byte optionType){
   else {
       if ((isTxType & optionType) == 0){
         isTxType |= optionType;
-        printLineF2(F("TX OFF!"));
+        printLineF2(F("TX OFF"));
       }
       else {
         isTxType &= ~(optionType);
-        printLineF2(F("TX ON!"));
+        printLineF2(F("TX ON"));
       }
       
     menuClearExit(500);
@@ -453,7 +453,7 @@ void menuSDROnOff(int btn)
   else {
       if (sdrModeOn == 1){
         sdrModeOn = 0;
-        printLineF2(F("[OFF]"));
+        printLineF2(F("SPK MODE"));
       }
       else {
         sdrModeOn = 1;
@@ -464,7 +464,7 @@ void menuSDROnOff(int btn)
         if (splitOn == 1)
           splitOn = 0;
           
-        printLineF2(F("[ON]"));
+        printLineF2(F("SDR MODE"));
       }
 
     EEPROM.put(ENABLE_SDR, sdrModeOn);

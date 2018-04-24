@@ -185,31 +185,7 @@ byte sMeterLevels[9];
 byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
 byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 
-
-byte KeyValues[16][2];
-/*= {
-  {1023, 1025},   //1
-  {707, 711},   //5
-  {570, 574},   //9
-  {493, 500},   //13
-  
-  {932, 936},    //2
-  {860, 864},   //3
-  {800, 805},   //4
-  
-  {672, 676},   //6
-  {642, 646},   //7
-  {616, 620},   //8
-  
-  {552, 556},   //10
-  {535, 539},   //11
-  {520, 524},   //12
-  
-  {438, 442},   //14
-  {403, 407},   //15
-  {378, 382}   //16
-};
-*/
+byte KeyValues[16][3];
 
 byte isIFShift = 0;     //1 = ifShift, 2 extend
 int ifShiftValue = 0;  //
@@ -426,7 +402,7 @@ void setFrequency(unsigned long f){
       //          Offset Frequency : 30Mhz and current Frequncy is 14.074 => 34.074Mhz
       moveFrequency = (f % 10000000);
     }
-    else if (sdrOption == 3)  //Khzz move
+    else if (sdrOption == 3)  //Khz move
     {
       //Offset Frequency + Khz, 
       //Example : Offset Frequency : 30Mhz and current Frequncy is 7.080 => 30.080Mhz
@@ -457,31 +433,6 @@ void setFrequency(unsigned long f){
       si5351bx_setfreq(1, SECOND_OSC_USB + if1AdjustValue);
     }
   }
-  
-  /*
-  if (cwMode == 0)
-  {
-    if (isUSB){
-      si5351bx_setfreq(2, SECOND_OSC_USB - appliedCarrier + f);
-      si5351bx_setfreq(1, SECOND_OSC_USB);
-    }
-    else{
-      si5351bx_setfreq(2, SECOND_OSC_LSB + appliedCarrier + f);
-      si5351bx_setfreq(1, SECOND_OSC_LSB);
-    }
-  }
-  else
-  {
-    if (cwMode == 1){ //CWL
-      si5351bx_setfreq(2, SECOND_OSC_LSB + appliedCarrier + f);
-      si5351bx_setfreq(1, SECOND_OSC_LSB);
-    }
-    else{             //CWU
-      si5351bx_setfreq(2, SECOND_OSC_USB - appliedCarrier + f);
-      si5351bx_setfreq(1, SECOND_OSC_USB);
-    }
-  }
-  */
   
   frequency = f;
 }
@@ -634,6 +585,8 @@ void checkPTT(){
 }
 #ifdef EXTEND_KEY_GROUP1  
 void checkButton(){
+  char currentBandIndex = -1;
+  
   //only if the button is pressed
   int keyStatus = getBtnStatus();
   if (keyStatus == -1)
@@ -646,8 +599,69 @@ void checkButton(){
     
   if (keyStatus == FKEY_PRESS)  //Menu Key
     doMenu();
-  else if (keyStatus <= FKEY_STEP)  //EXTEND KEY GROUP #1
+  else if (keyStatus <= FKEY_TYPE_MAX)  //EXTEND KEY GROUP #1
   {
+
+    switch(keyStatus)
+    {
+      case FKEY_MODE :
+        if (cwMode == 1)
+        {
+          cwMode = 2;
+        }
+        else if (cwMode == 2)
+        {
+          cwMode = 0;
+          isUSB = 0;
+        }
+        else if (isUSB == 0)
+        {
+          isUSB = 1;
+        }
+        else
+        {
+          cwMode = 1;
+        }
+        break;
+      case FKEY_BANDUP :
+      case FKEY_BANDDOWN :
+        //Save Band Information
+        if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
+          currentBandIndex = getIndexHambanBbyFreq(frequency);
+          
+          if (currentBandIndex >= 0) {
+            saveBandFreqByIndex(frequency, modeToByte(), currentBandIndex);
+          }
+        }
+        setNextHamBandFreq(frequency, keyStatus == FKEY_BANDDOWN ? -1 : 1);  //Prior Band      
+        break;
+
+      case FKEY_STEP :
+        if (++tuneStepIndex > 5)
+          tuneStepIndex = 1;
+  
+        EEPROM.put(TUNING_STEP, tuneStepIndex);
+        printLine2ClearAndUpdate();
+        break;
+
+      case FKEY_VFOCHANGE :
+        menuVfoToggle(1); //Vfo Toggle
+        break;
+      
+      case FKEY_SPLIT :
+        menuSplitOnOff(1);
+        break;
+      case  FKEY_TXOFF:
+        menuTxOnOff(1, 0x01);
+        break;
+      case  FKEY_SDRMODE :
+         menuSDROnOff(1);
+        break;
+      case FKEY_RIT :
+        menuRitToggle(1);
+        break;
+    }
+    /*
     if (keyStatus == FKEY_MODE) //Press Mode Key
     {
       if (cwMode == 1)
@@ -668,10 +682,6 @@ void checkButton(){
         cwMode = 1;
       }
     }
-    //else if (keyStatus == FKEY_BANDDOWN)  //Press Mode Key
-    //{
-    //  setNextHamBandFreq(frequency, -1);  //Prior Band      
-    //}
     else if (keyStatus == FKEY_BANDUP || keyStatus == FKEY_BANDDOWN)  //Press Mode Key
     {
 
@@ -696,6 +706,28 @@ void checkButton(){
       EEPROM.put(TUNING_STEP, tuneStepIndex);
       printLine2ClearAndUpdate();
     }
+
+    else if (keyStatus == FKEY_VFOCHANGE)
+    {
+      menuVfoToggle(1); //Vfo Toggle
+    }
+    else if (keyStatus == FKEY_SPLIT)
+    {
+      menuSplitOnOff(1);
+    }
+    else if (keyStatus == FKEY_TXOFF)
+    {
+      menuTxOnOff(1, 0x01);
+    }
+    else if (keyStatus == FKEY_SDRMODE)
+    {
+      menuSDROnOff(1);
+    }
+    else if (keyStatus == FKEY_RIT)
+    {
+      menuRitToggle(1);
+    }
+    */
       
     FrequencyToVFO(1);
     SetCarrierFreq();
@@ -942,8 +974,9 @@ void initSettings(){
 
   //KeyValues
   for (byte i = 0; i < 16; i++) {
-    KeyValues[i][0] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 2));
-    KeyValues[i][1] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 2) + 1);
+    KeyValues[i][0] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 3));        //RANGE : Start Value
+    KeyValues[i][1] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 3) + 1);    //RANGE : End Value
+    KeyValues[i][2] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 3) + 2);    //KEY TYPE 
   }
 
   //User callsign information

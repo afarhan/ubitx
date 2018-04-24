@@ -15,7 +15,6 @@
  ************************************************************************************/
 
 // *************  SI5315 routines - tks Jerry Gaffke, KE7ER   ***********************
-
 // An minimalist standalone set of Si5351 routines.
 // VCOA is fixed at 875mhz, VCOB not used.
 // The output msynth dividers are used to generate 3 independent clocks
@@ -127,7 +126,9 @@ void si5351_set_calibration(int32_t cal){
 void SetCarrierFreq()
 {
   unsigned long appliedCarrier = ((cwMode == 0 ? usbCarrier : cwmCarrier) + (isIFShift && (inTx == 0) ? ifShiftValue : 0));
-  si5351bx_setfreq(0, (sdrModeOn ? 0 : appliedCarrier));
+  //si5351bx_setfreq(0, (sdrModeOn ? 0 : appliedCarrier));
+  si5351bx_setfreq(0, ((sdrModeOn && (inTx == 0)) ? 0 : appliedCarrier)); //found bug by KG4GEK
+  
 
     /*
   if (cwMode == 0)
