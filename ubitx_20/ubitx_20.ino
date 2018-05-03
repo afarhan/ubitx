@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.073")  
+#define FIRMWARE_VERSION_INFO F("+v1.074")  
 #define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 /**
@@ -181,6 +181,10 @@ unsigned long beforeIdle_ProcessTime = 0; //for check Idle time
 byte line2DisplayStatus = 0;  //0:Clear, 1 : menu, 1: DisplayFrom Idle, 
 char lcdMeter[17];
 byte sMeterLevels[9];
+
+//Current ADC Value for S.Meter, and S Meter Level
+int currentSMeter = 0;
+byte scaledSMeter = 0;
 
 byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
 byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode

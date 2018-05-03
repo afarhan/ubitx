@@ -95,7 +95,7 @@ void initMeter(){
 
   for (i = 0; i < 8; i++)
     tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 48);
-  LCD_CreateChar(6, tmpbytes);
+  LCD_CreateChar(7, tmpbytes);
 }
 
 
@@ -128,13 +128,23 @@ void drawMeter(int needle)
 {
 #ifdef OPTION_SKINNYBARS
   //Fill buffer with growing set of bars, up to needle value
+  lcdMeter[0] = 0x20;
+  lcdMeter[1] = 0x20;
   for (int i = 0; i < 6; i++) {
     if (needle > i)
       lcdMeter[i / 3] = byte(i + 1); //Custom characters above
-    else if (i == 1 || i == 4) {
-      lcdMeter[i / 3] = 0x20; //blank
-    }
+    //else if (i == 1 || i == 4) {
+    //  lcdMeter[i / 3] = 0x20; //blank
+    //}
   }
+
+  if (needle > 7) {
+    lcdMeter[2] = byte(7); //Custom character "++"
+  } else if (needle > 6) {
+    lcdMeter[2] = '+'; //"+"
+  } else lcdMeter[2] = 0x20;
+  
+  
 #else //Must be "fat" bars
   //Fill buffer with growing set of bars, up to needle value
   for (int i = 0; i < 6; i++) {
@@ -143,11 +153,13 @@ void drawMeter(int needle)
     else
       lcdMeter[i] = 0x20; //blank
   }
+
   if (needle > 7) {
     lcdMeter[6] = byte(7); //Custom character "++"
   } else if (needle > 6) {
-    lcdMeter[6] = 0x2B; //"+"
+    lcdMeter[6] = '+'; //"+"
   } else lcdMeter[6] = 0x20;
+  
 #endif //OPTION_FATBARS
 }
 

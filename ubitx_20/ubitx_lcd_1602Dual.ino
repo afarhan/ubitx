@@ -583,17 +583,13 @@ void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
     LCD_Write('S');
       
     LCD_Write(':');
-    for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
+    for (int i = 0; i < 7; i++)
       LCD_Write(lcdMeter[i]);
   }
 }
 
 
-byte testValue = 0;
 char checkCount = 0;
-
-int currentSMeter = 0;
-byte scaledSMeter = 0;
 char checkCountSMeter = 0;
 
 char beforeKeyType = -1;
@@ -676,12 +672,13 @@ void idle_process()
       int newSMeter;
       displaySDRON = 0;
   
-      //VK2ETA S-Meter from MAX9814 TC pin
-      newSMeter = analogRead(ANALOG_SMETER);
+      //VK2ETA S-Meter from MAX9814 TC pin / divide 4 by KD8CEC for reduce EEPromSize
+      newSMeter = analogRead(ANALOG_SMETER) / 4;
   
       //Faster attack, Slower release
       //currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
-      currentSMeter = (currentSMeter * 3 + newSMeter * 7) / 10; //remarked becaused of have already Latency time
+      //currentSMeter = (currentSMeter * 3 + newSMeter * 7) / 10; //remarked becaused of have already Latency time
+      currentSMeter = newSMeter;
   
       scaledSMeter = 0;
       for (byte s = 8; s >= 1; s--) {

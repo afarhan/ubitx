@@ -31,8 +31,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 **************************************************************************/
-#define printLineF1(x) (printLineF(1, x))
-#define printLineF2(x) (printLineF(0, x))
+
+#include "ubitx.h"
 
 //for broken protocol
 #define CAT_RECEIVE_TIMEOUT 500
@@ -654,7 +654,7 @@ void SetIFSValue(void)
 //void CatRxStatus(byte fromType) 
 void CatRxStatus(void)  //for remove warning
 {
-  byte sMeterValue = 1;
+  byte sMeterValue = 0;
 
   /*
     http://www.ka7oei.com/ft817_meow.html
@@ -667,6 +667,33 @@ void CatRxStatus(void)  //for remove warning
     Bit 7 is 0 if there is a signal present, or 1 if the receiver is squelched.
   */
   // The lower 4 bits (0-3) of this byte indicate the current S-meter reading.  00 refers to an S-Zero reading, 04 = S4, 09 = S9, 0A = "10 over," 0B = "20 over" and so on up to 0F.
+  //0~8
+  switch (scaledSMeter)
+  {
+  case 8 : sMeterValue = 0x0B;
+    break;
+  case 7 : sMeterValue = 0x0A;
+    break;
+  case 6 : sMeterValue = 0x09;
+    break;
+  case 5 : sMeterValue = 0x07;
+    break;
+  case 4 : sMeterValue = 0x05;
+    break;
+  case 3 : sMeterValue = 0x04;
+    break;
+  case 2 : sMeterValue = 0x02;
+    break;
+  case 1 : sMeterValue = 0x01;
+    break;
+  }
+
+/*
+  sMeterValue = (scaledSMeter * 2) -1;
+  if (sMeterValue > 0)
+    sMeterValue--;
+*/    
+   
   CAT_BUFF[0] = sMeterValue & 0b00001111;
   SendCatData(1);
 }
