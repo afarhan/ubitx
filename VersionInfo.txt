@@ -22,6 +22,9 @@ Files modified in Version1.074 Beta
   - cat_libs.ino
   - ubitx.h
   - ubitx_eemap.h
-
+  - ubitx_lcd_1602.ino
+  - ubitx_lcd_1602Dual.ino
+  - ubitx_lcd_2004.ino
+  -ubitx_wspr.ino
 
   
