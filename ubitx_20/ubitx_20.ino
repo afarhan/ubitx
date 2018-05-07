@@ -1230,8 +1230,11 @@ void factory_Recovery()
 {
   if (EEPROM.read(FACTORY_BACKUP_YN) != 0x13)
     return;
-  
-  printLineF2(F("FactoryRecovery?"));
+
+  if (digitalRead(PTT) == 0)  //Do not proceed if PTT is pressed to prevent malfunction.
+    return;
+    
+  printLineF2(F("Factory Recovery"));
   delay(2000);
   if (!btnDown())
     return;
