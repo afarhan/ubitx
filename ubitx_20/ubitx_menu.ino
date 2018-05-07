@@ -1106,7 +1106,6 @@ void menuSetupKeyType(int btn){
     }
     */
     
-    
     printLineF2(F("CW Key Type set!"));
     cwKeyType = selectedKeyType;
     EEPROM.put(CW_KEY_TYPE, cwKeyType);
@@ -1127,7 +1126,7 @@ void menuSetupKeyType(int btn){
 }
 
 //=====================================================
-//END OF STANDARD Tune Setup for reduce Program Memory
+//END OF STANDARD Set by Knob for reduce Program Memory
 //=====================================================
  
 
