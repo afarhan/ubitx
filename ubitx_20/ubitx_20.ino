@@ -254,8 +254,8 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
   if ((resultFreq / 1000) < hamBandRange[(unsigned char)findedIndex][0] || (resultFreq / 1000) > hamBandRange[(unsigned char)findedIndex][1])
     resultFreq = (unsigned long)(hamBandRange[(unsigned char)findedIndex][0]) * 1000;
 
-  setFrequency(resultFreq);
   byteToMode(loadMode, 1);
+  setFrequency(resultFreq);
 }
 
 void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
