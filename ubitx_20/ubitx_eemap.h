@@ -44,7 +44,9 @@
 // (Enabled if the EEProm address is insufficient)
 // Address : 64 ~ 100
 //==============================================================================
-#define RESERVE_FOR_FACTORY2  64
+#define RESERVE_FOR_FACTORY2  64  //use Factory backup from Version 1.075
+#define FACTORY_BACKUP_YN     64  //Check Backup //Magic : 0x13
+#define FACTORY_VALUES        65  //65 ~ 65 + 32
 
 //==============================================================================
 // KD8CEC EEPROM MAP

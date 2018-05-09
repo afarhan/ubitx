@@ -37,6 +37,7 @@
 //#define EXTEND_KEY_GROUP2           //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
 
 //#define ENABLE_FACTORYALIGN
+#define FACTORY_RECOVERY_BOOTUP     //Whether to enter Factory Recovery mode by pressing FKey and turning on power
 #define ENABLE_ADCMONITOR   //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
 
 extern byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manager, read from EEProm

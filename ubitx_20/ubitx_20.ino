@@ -6,8 +6,8 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.074")  
-#define FIRMWARE_VERSION_NUM 0x02       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
+#define FIRMWARE_VERSION_INFO F("+v1.075")  
+#define FIRMWARE_VERSION_NUM 0x03       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 /**
  Cat Suppoort uBITX CEC Version
@@ -254,8 +254,8 @@ void setNextHamBandFreq(unsigned long f, char moveDirection)
   if ((resultFreq / 1000) < hamBandRange[(unsigned char)findedIndex][0] || (resultFreq / 1000) > hamBandRange[(unsigned char)findedIndex][1])
     resultFreq = (unsigned long)(hamBandRange[(unsigned char)findedIndex][0]) * 1000;
 
-  setFrequency(resultFreq);
   byteToMode(loadMode, 1);
+  setFrequency(resultFreq);
 }
 
 void saveBandFreqByIndex(unsigned long f, unsigned long mode, char bandIndex) {
@@ -941,6 +941,15 @@ void initSettings(){
   if (EEPROM.read(VERSION_ADDRESS) != FIRMWARE_VERSION_NUM)
     EEPROM.write(VERSION_ADDRESS, FIRMWARE_VERSION_NUM);
 
+  //Backup Calibration Setting from Factory Setup
+  //Check Factory Setting Backup Y/N
+  if (EEPROM.read(FACTORY_BACKUP_YN) != 0x13) {
+    EEPROM.write(FACTORY_BACKUP_YN, 0x13);  //Set Backup Y/N
+    
+    for (unsigned int i = 0; i < 32; i++) //factory setting range
+      EEPROM.write(FACTORY_VALUES + i, EEPROM.read(i)); //0~31 => 65~96
+  }
+
   EEPROM.get(CW_CAL, cwmCarrier);
 
   //for Save VFO_A_MODE to eeprom
@@ -1216,6 +1225,40 @@ void initPorts(){
   digitalWrite(CW_KEY, 0);
 }
 
+//Recovery Factory Setting Values 
+void factory_Recovery()
+{
+  if (EEPROM.read(FACTORY_BACKUP_YN) != 0x13)
+    return;
+
+  if (digitalRead(PTT) == 0)  //Do not proceed if PTT is pressed to prevent malfunction.
+    return;
+    
+  printLineF2(F("Factory Recovery"));
+  delay(2000);
+  if (!btnDown())
+    return;
+
+  printLineF2(F("IF you continue"));
+  printLineF1(F("release the key"));
+  delay(2000);
+  if (btnDown())
+    return;
+  
+  printLineF1(F("Press Key PTT"));
+  delay(2000);
+  if (digitalRead(PTT) == 0)
+  {
+    for (unsigned int i = 0; i < 32; i++) //factory setting range
+      EEPROM.write(i, EEPROM.read(FACTORY_VALUES + i)); //65~96 => 0~31
+
+    //printLineF2(F("CompleteRecovery"));
+    printLineF1(F("Power Reset!"));
+    while(1);   //Hold 
+  }
+}
+
+
 void setup()
 {
   /*
@@ -1266,6 +1309,11 @@ void setup()
   
   initPorts();     
 
+#ifdef FACTORY_RECOVERY_BOOTUP
+  if (btnDown())
+    factory_Recovery();
+#endif
+
   byteToMode(vfoA_mode, 0);
   initOscillators();
 
@@ -1278,6 +1326,7 @@ void setup()
   if (btnDown())
     factory_alignment();
 #endif
+
 }
 
 //Auto save Frequency and Mode with Protected eeprom life by KD8CEC
