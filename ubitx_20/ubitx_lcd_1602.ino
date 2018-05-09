@@ -708,18 +708,14 @@ void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
     
     LCD_SetCursor(drawPosition, lineNumber);
   
-    //for (int i = 0; i <26; i++) //meter 5 + +db 1 = 6
     LCD_Write(lcdMeter[0]);
     LCD_Write(lcdMeter[1]);
+    LCD_Write(lcdMeter[2]);
   }
 }
 
-byte testValue = 0;
 char checkCount = 0;
 char checkCountSMeter = 0;
-
-int currentSMeter = 0;
-byte scaledSMeter = 0;
 
 void idle_process()
 {
@@ -740,24 +736,18 @@ void idle_process()
       }
     }
 
-      //EX for Meters
-      /*
-      DisplayMeter(0, testValue++, 7);
-      if (testValue > 30)
-        testValue = 0;
-      */
-
     //S-Meter Display
     if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
     {
       int newSMeter;
 
       //VK2ETA S-Meter from MAX9814 TC pin / divide 4 by KD8CEC for reduce EEPromSize
-      newSMeter = analogRead(ANALOG_SMETER);
+      newSMeter = analogRead(ANALOG_SMETER) / 4;
   
       //Faster attack, Slower release
-      currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10) / 4;
-  
+      //currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10) / 4;
+      currentSMeter = newSMeter;
+
       scaledSMeter = 0;
       for (byte s = 8; s >= 1; s--) {
         if (currentSMeter > sMeterLevels[s]) {
@@ -766,7 +756,7 @@ void idle_process()
         }
       }
   
-      DisplayMeter(0, scaledSMeter, 14);
+      DisplayMeter(0, scaledSMeter, 13);
       checkCountSMeter = 0; //Reset Latency time
     }   //end of S-Meter
     

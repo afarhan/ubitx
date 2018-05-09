@@ -1,0 +1,30 @@
+This file will guide you to change the source code file.
+For Windows-based Arduino IDE users, the directory name and the Main source file name must be the same.
+You do not need to learn github to download .hex files or source code that I release.
+However, if you want to see what I'm doing right now, you should use the github homepage.
+
+You do not need to learn git to suggest source code. If you give me an e-mail, I will correct it at any time.
+If you have not joined the BITX Group, join group. There will be discussions on various topics every day.
+I am getting a lot of hints from the group.
+
+Ian KD8CEC
+kd8cec@gmail.com
+==================================================================
+Files modified in Version1.074 Beta
+
+1.Delted Files.
+
+2.Added Files
+
+3.Modified Files
+  - ubitx_20.ino
+  - ubitx_ui.ino
+  - cat_libs.ino
+  - ubitx.h
+  - ubitx_eemap.h
+  - ubitx_lcd_1602.ino
+  - ubitx_lcd_1602Dual.ino
+  - ubitx_lcd_2004.ino
+  -ubitx_wspr.ino
+
+  

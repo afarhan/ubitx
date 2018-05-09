@@ -642,90 +642,16 @@ void DisplayMeter(byte meterType, byte meterValue, char drawPosition)
   if (meterType == 0 || meterType == 1 || meterType == 2)
   {
     drawMeter(meterValue);
-    //int lineNumber = 0;
-    //if ((displayOption1 & 0x01) == 0x01)
-    //lineNumber = 1;
     
     LCD_SetCursor(drawPosition, 2);
     LCD_Write('S');
     LCD_Write(':');
-    for (int i = 0; i < 6; i++) //meter 5 + +db 1 = 6
+    for (int i = 0; i < 7; i++) //meter 5 + +db 1 = 6
       LCD_Write(lcdMeter[i]);
   }
 }
 
-
-//meterType : 0 = S.Meter, 1 = Forward Power Meter, 2 = SWR Meter
-void DisplayMeter(byte meterType, int meterValue, char drawPosition)
-{
-
-#ifdef OPTION_SKINNYBARS //We want skinny meter bars with more text/numbers
-  memcpy(&(line2Buffer[drawPosition]), "        ", 8); //Blank that section of 8 characters first
-  if (meterType == 0) { //SWR meter
-    drawMeter(meterValue); //Only 2 characters
-    line2Buffer[drawPosition] = 'S';
-    byte sValue = round((float)meterValue * 1.5); //6 bars available only to show 9 S values
-    sValue = sValue > 9 ? 9 : sValue; //Max S9
-    line2Buffer[drawPosition + 1] = '0' +  sValue; //0 to 9
-    memcpy(&(line2Buffer[drawPosition + 2]), lcdMeter, 2); //Copy the S-Meter bars
-    //Add the +10, +20, etc...
-    if (meterValue > 6) {
-      //We are over S9
-      line2Buffer[drawPosition + 4] = '+';
-      line2Buffer[drawPosition + 5] = '0' +  meterValue - 6; //1,2,3 etc...
-      line2Buffer[drawPosition + 6] = '0';
-    }
-  } else if (meterType == 1) { //Forward Power
-    drawMeter(round((float)meterValue / 40)); //4 watts per bar
-    //meterValue contains power value x 10 (one decimal point)
-    line2Buffer[drawPosition] = 'P';
-    meterValue = meterValue > 999 ? 999 : meterValue; //Limit to 99.9 watts!!!!
-    //Remove decimal value and divide by 10
-    meterValue = round((float)meterValue / 10);
-    if (meterValue < 10) {
-      line2Buffer[drawPosition + 1] = ' ';
-      line2Buffer[drawPosition + 2] = '0' +  meterValue; //0 to 9
-    } else {
-      line2Buffer[drawPosition + 1] = '0' +  meterValue /  10;
-      line2Buffer[drawPosition + 2] = '0' +  (meterValue - ((meterValue / 10) * 10));
-    }
-    line2Buffer[drawPosition + 3] = 'W';
-    memcpy(&(line2Buffer[drawPosition + 4]), lcdMeter, 2); //Copy the S-Meter bars
-  } else { //SWR
-    drawMeter((int)(((float)meterValue - 21) / 100)); //no bar = < 1.2, then 1 bar = 1.2 to 2.2, 2 bars = 2.2 to 3.2, etc...
-    //meterValue contains SWR x 100 (two decimal point)
-    memcpy(&(line2Buffer[drawPosition]), "SWR", 3);
-    meterValue = round((float)meterValue / 10); //We now have swr x 10 (1 decimal point)
-    if (meterValue < 100) { //10 to 99, no decimal point
-      //Draw the decimal value
-      line2Buffer[drawPosition + 3] = '0' +  meterValue /  10;
-      line2Buffer[drawPosition + 4] = '.';
-      line2Buffer[drawPosition + 5] = '0' +  (meterValue - ((meterValue / 10) * 10));
-    } else {
-      memcpy(&(line2Buffer[drawPosition + 3]), "10+", 3); //over 10
-    }
-    memcpy(&(line2Buffer[drawPosition + 6]), lcdMeter, 2); //Copy the S-Meter bars
-  }
-#else //We want fat bars, easy to read, with less text/numbers
-  //Serial.print("In displaymeter, meterValue: "); Serial.println(meterValue);
-  drawMeter(meterValue);
-  //Always line 2
-  char sym = 'S';
-  if (meterType == 1) sym = 'P';
-  else if (meterType == 2) sym = 'R'; //For SWR
-  line2Buffer[drawPosition] = sym;
-  memcpy(&(line2Buffer[drawPosition + 1]), lcdMeter, 7);
-#endif //OPTION_SKINNYBARS
-
-}
-
-
-byte testValue = 0;
 char checkCount = 0;
-
-int currentSMeter = 0;
-//int sMeterLevels[] = {0, 5, 17, 41, 74, 140, 255, 365, 470};
-byte scaledSMeter = 0;
 char checkCountSMeter = 0;
 
 //execute interval : 0.25sec
@@ -769,10 +695,12 @@ void idle_process()
       int newSMeter;
       
       //VK2ETA S-Meter from MAX9814 TC pin
-      newSMeter = analogRead(ANALOG_SMETER);
+      newSMeter = analogRead(ANALOG_SMETER) / 4;
   
       //Faster attack, Slower release
-      currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
+      //currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
+      //currentSMeter = ((currentSMeter * 7 + newSMeter * 3) + 5) / 10;
+      currentSMeter = newSMeter;
   
       scaledSMeter = 0;
       for (byte s = 8; s >= 1; s--) {
