@@ -271,8 +271,10 @@ void menuCHMemory(int btn, byte isMemoryToVfo){
       if (isMemoryToVfo == 1)
       {
         if (resultFreq > 3000 && resultFreq < 60000000)
-        setFrequency(resultFreq);
-        byteToMode(loadMode, 1);
+        {
+          byteToMode(loadMode, 1);
+          setFrequency(resultFreq);
+        }
       }
       else
       {
