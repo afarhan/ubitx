@@ -1,10 +1,7 @@
 /*************************************************************************
   KD8CEC's uBITX Display Routine for LCD1602 Parrel
   1.This is the display code for the default LCD mounted in uBITX.
-  2.Display related functions of uBITX.  Some functions moved from uBITX_Ui.
-  3.uBITX Idle time Processing
-    Functions that run at times that do not affect TX, CW, and CAT
-    It is called in 1/10 time unit.
+  2.Some functions moved from uBITX_Ui.
 -----------------------------------------------------------------------------
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
