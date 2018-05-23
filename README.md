@@ -1,21 +1,12 @@
-#IMPORTANT INFORMATION
-----------------------------------------------------------------------------
-- Now Release Version 1.061 on my blog (http://www.hamskey.com)
-- You can download and compiled hex file and uBITX Manager application on my blog (http://www.hamskey.com)
-
 #NOTICE
 ----------------------------------------------------------------------------
-I received uBITX a month ago and found that many features are required, and began coding with the idea of implementing minimal functionality as a general hf transceiver rather than an experimental device.
-
-Most of the basic functions of the HF transceiver I thought were implemented.
-The minimum basic specification for uBITX to operate as a radio, I think it is finished.
-So I will release the 0.27 version and if I do not see the bug anymore, I will try to change the version name to 1.0.
-Now uBITX is an HF radio and will be able to join you in your happy hams life.
-Based on this source, you can use it by adding functions.
+- Now Release Version 1.08 on my blog (http://www.hamskey.com)
+- You can download and compiled hex file and uBITX Manager application on release section (https://github.com/phdlee/ubitx/releases)
+- For more information, see my blog (http://www.hamskey.com)
 
 http://www.hamskey.com
 
-DE KD8CEC
+Ian KD8CEC
 kd8cec@gmail.com
 
 #uBITX
@@ -26,15 +17,28 @@ The copyright information of the original is below.
 KD8CEC
 ----------------------------------------------------------------------------
 Prepared or finished tasks for the next version
-  - Reduce Program size
-  - uBITX with RTL-SDR 
+  - Nextion LCD
+  - Add TTS module
+  - Remote control on another MCU
   - Direct control for Student
   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
-1.07 (Working...)
- - Please do not download it yet. The code will continue to change for the time being.
- - BetaVersion for Reduce program size
+1.08
+ - Receive performance is improved compared to the original firmware or version 1.061
+ - ATT function has been added to reduce RF gain (Shift 45Mhz IF)
+ - Added the ability to connect SDR. (Low cost RTL-SDR available)
+ - Added a protocol to ADC Monitoring in CAT communications
+ - Various LCD support, 16x02 Parallel LCD - It is the LCD equipped with uBITX, 16x02 I2C LCD, 20x04 Parallel LCD, 20x04 I2C LCD, 16x02 I2C Dual LCD
+ - Added Extended Switch Support
+ - Support S Meter
+ - Added S-Meter setting assistant to uBITX Manager
+ - Add recovery mode (such as Factory Reset)
+ - There have been many other improvements and fixes. More information is available on the blog. (http://www.hamskey.com)
+
+1.07
+ - 1.071, 1.073, 1.075 is Beta
+ - Features implemented in the beta version have been applied to Version 1.08 above.
 
 1.061
  - Added WSPR
