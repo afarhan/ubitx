@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.075")  
+#define FIRMWARE_VERSION_INFO F("+v1.080")  
 #define FIRMWARE_VERSION_NUM 0x03       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
 
 /**
