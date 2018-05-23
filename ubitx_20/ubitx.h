@@ -24,26 +24,26 @@
 //==============================================================================
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
-#define UBITX_DISPLAY_LCD1602P      //LCD mounted on unmodified uBITX
-//#define UBITX_DISPLAY_LCD1602I      //I2C type 16 x 02 LCD
-//#define UBITX_DISPLAY_LCD1602I_DUAL
-//#define UBITX_DISPLAY_LCD2004P      //24 x 04 LCD (Parallel)
+#define UBITX_DISPLAY_LCD1602P        //LCD mounted on unmodified uBITX (Parallel)
+//#define UBITX_DISPLAY_LCD1602I        //I2C type 16 x 02 LCD
+//#define UBITX_DISPLAY_LCD1602I_DUAL   //I2C type 16 x02 LCD Dual
+//#define UBITX_DISPLAY_LCD2004P        //24 x 04 LCD (Parallel)
 //#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
 
 #define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x3F     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
 #define I2C_LCD_SECOND_ADDRESS_DEFAULT  0x27     //0x27  //only using Dual LCD Mode
 
-#define EXTEND_KEY_GROUP1           //MODE, BAND(-), BAND(+), STEP
-//#define EXTEND_KEY_GROUP2           //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
+#define EXTEND_KEY_GROUP1               //MODE, BAND(-), BAND(+), STEP
+//#define EXTEND_KEY_GROUP2             //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
 
 //#define ENABLE_FACTORYALIGN
-#define FACTORY_RECOVERY_BOOTUP     //Whether to enter Factory Recovery mode by pressing FKey and turning on power
-#define ENABLE_ADCMONITOR   //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
+#define FACTORY_RECOVERY_BOOTUP         //Whether to enter Factory Recovery mode by pressing FKey and turning on power
+#define ENABLE_ADCMONITOR               //Starting with Version 1.07, you can read ADC values directly from uBITX Manager. So this function is not necessary.
 
-extern byte I2C_LCD_MASTER_ADDRESS;        //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
-extern byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
+extern byte I2C_LCD_MASTER_ADDRESS;     //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
+extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
 
-#define SMeterLatency   3  //1 is 0.25 sec
+#define SMeterLatency   3               //1 is 0.25 sec
 
 #ifdef UBITX_DISPLAY_LCD1602I
   #define USE_I2C_LCD
@@ -89,7 +89,6 @@ extern byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 #define ANALOG_KEYER  (A6)
 #define ANALOG_SPARE  (A7)
 #define ANALOG_SMETER (A7)  //by KD8CEC
-
 
 /** 
  *  The second set of 16 pins on the Raduino's bottom connector are have the three clock outputs and the digital lines to control the rig.
@@ -150,10 +149,10 @@ extern byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 extern unsigned long frequency;
 extern byte WsprMSGCount;
 extern byte sMeterLevels[9];
-extern int currentSMeter;   //ADC Value for S.Meter
-extern byte scaledSMeter;   //Calculated S.Meter Level
+extern int currentSMeter;         //ADC Value for S.Meter
+extern byte scaledSMeter;         //Calculated S.Meter Level
 
-extern byte KeyValues[16][3];    //Set : Start Value, End Value, Key Type, 16 Set (3 * 16 = 48)
+extern byte KeyValues[16][3];     //Set : Start Value, End Value, Key Type, 16 Set (3 * 16 = 48)
 
 extern void printLine1(const char *c);
 extern void printLine2(const char *c);
