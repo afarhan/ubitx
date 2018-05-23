@@ -36,8 +36,8 @@ Prepared or finished tasks for the next version
  - Add recovery mode (such as Factory Reset)
  - There have been many other improvements and fixes. More information is available on the blog. (http://www.hamskey.com)
 
-1.07
- - 1.071, 1.073, 1.075 is Beta
+1.07 (Beta)
+ - include 1.071 beta, 1.073 beta, 1.075 beta
  - Features implemented in the beta version have been applied to Version 1.08 above.
 
 1.061
