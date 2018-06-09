@@ -296,18 +296,19 @@ void controlAutoCW(){
           {
               displayScrolStep = 0;
           }
-          
+
+#ifdef USE_SW_SERIAL
+          //Not need Scroll
+          //Display_AutoKeyTextIndex(selectedCWTextIndex);
+          SendCommand1Num('w', selectedCWTextIndex);                                              //Index
+          SendEEPromData('a', cwStartIndex + CW_DATA_OFSTADJ, cwEndIndex + CW_DATA_OFSTADJ, 0) ;  //Data
+          SendCommand1Num('y', 1);                                                                //Send YN
+          isNeedScroll = 0;
+#else          
           printLineFromEEPRom(0, 2, cwStartIndex + displayScrolStep + CW_DATA_OFSTADJ, cwEndIndex + CW_DATA_OFSTADJ, 0); 
-
-          //byte diplayAutoCWLine = 0;
-          //if ((displayOption1 & 0x01) == 0x01)
-          //  diplayAutoCWLine = 1;
-
-          Display_AutoKeyTextIndex(selectedCWTextIndex);
-          //lcd.setCursor(0, diplayAutoCWLine);
-          //lcd.write(byteToChar(selectedCWTextIndex));
-          //lcd.write(':');
           isNeedScroll = (cwEndIndex - cwStartIndex) > 14 ? 1 : 0;
+          Display_AutoKeyTextIndex(selectedCWTextIndex);
+#endif
           scrollDispayTime = millis() + scrollSpeed;
           beforeCWTextIndex = selectedCWTextIndex;
       }

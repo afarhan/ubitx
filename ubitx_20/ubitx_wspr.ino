@@ -73,13 +73,14 @@ void SendWSPRManage()
 
     if (nowWsprStep == 0) //select Message status
     {
-      printLineF2(F("WSPR:"));
+      //printLineF2(F("WSPR:"));
       
       if (selectedWsprMessageIndex != nowSelectedIndex)
       {
         selectedWsprMessageIndex = nowSelectedIndex;
         int wsprMessageBuffIndex = selectedWsprMessageIndex * 46;
         
+        printLineF2(F("WSPR:"));
         //Display WSPR Name tag
         printLineFromEEPRom(0, 6, wsprMessageBuffIndex, wsprMessageBuffIndex + 4, 1); 
 

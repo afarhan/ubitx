@@ -498,9 +498,9 @@ void menuCWAutoKey(int btn){
 
     printLineF1(F("PTT to Send"));
     delay_background(500, 0);
-    updateDisplay();
     beforeCWTextIndex = 255;  //255 value is for start check
     isCWAutoMode = 1;
+    updateDisplay();
     menuOn = 0;
 }
 
@@ -666,7 +666,11 @@ int getValueByKnob(int valueType, int targetValue, int minKnobValue, int maxKnob
             ifShiftValue = targetValue;
           else 
             attLevel = targetValue;
-            
+
+#ifdef USE_SW_SERIAL
+  menuOn=2;
+  updateDisplay();
+#endif
           setFrequency(frequency);
           SetCarrierFreq();
         }
