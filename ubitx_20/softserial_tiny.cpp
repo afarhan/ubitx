@@ -1,4 +1,5 @@
 /*
+Softserial for Nextion LCD and Control MCU
 KD8CEC, Ian Lee
 -----------------------------------------------------------------------
 It is a library rewritten in C format based on SoftwareSerial.c.
@@ -253,26 +254,6 @@ void SWSerial_Read(uint8_t * receive_cmdBuffer)
     receive_cmdBuffer[i] = swr_receive_buffer[i];
 }
 
-
-/*
-int SWSerial_Read(void)
-{
-  // Empty buffer?
-  if (_receive_buffer_head == _receive_buffer_tail)
-    return -1;
-
-  // Read from "head"
-  uint8_t d = _receive_buffer[_receive_buffer_head]; // grab next byte
-  _receive_buffer_head = (_receive_buffer_head + 1) % _SS_MAX_RX_BUFF;
-  return d;
-}
-
-int SWSerial_Available(void)
-{
-  return (_receive_buffer_tail + _SS_MAX_RX_BUFF - _receive_buffer_head) % _SS_MAX_RX_BUFF;
-}
-*/
-
 void SWSerial_Write(uint8_t b)
 {
   volatile uint8_t *reg = _transmitPortRegister;
@@ -348,7 +329,5 @@ void SWSerial_Begin(long speedBaud)
   }
 
   //Start Listen
-  //_buffer_overflow = false;
-  //_receive_buffer_head = _receive_buffer_tail = 0;
   setRxIntMsk(true);
 }

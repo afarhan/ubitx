@@ -58,8 +58,10 @@ extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
 
 #ifdef UBITX_DISPLAY_NEXTION
   #define USE_SW_SERIAL
+  #undef ENABLE_ADCMONITOR
 #elif defined(UBITX_CONTROL_MCU)
   #define USE_SW_SERIAL
+  #undef ENABLE_ADCMONITOR
 #endif
 
 //==============================================================================

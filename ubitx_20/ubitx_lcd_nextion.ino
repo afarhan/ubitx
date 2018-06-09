@@ -1,10 +1,5 @@
 /*************************************************************************
-  KD8CEC's uBITX Display Routine for LCD2004 Parrel
-  1.This is the display code for the default LCD mounted in uBITX.
-  2.Display related functions of uBITX.  Some functions moved from uBITX_Ui.
-  3.uBITX Idle time Processing
-    Functions that run at times that do not affect TX, CW, and CAT
-    It is called in 1/10 time unit.
+  KD8CEC's uBITX Display Routine for Nextion LCD
 -----------------------------------------------------------------------------
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,11 +23,9 @@
 //========================================================================
 #ifdef UBITX_DISPLAY_NEXTION
 /*************************************************************************
-  Nextion Library for 20 x 4 LCD
+  Nextion Library for uBItX
   KD8CEC
 **************************************************************************/
-//#include <SoftwareSerial.h>
-//SoftwareSerial softSerial(8, 9); // RX, TX
 extern void SWSerial_Begin(long speedBaud);
 extern void SWSerial_Write(uint8_t b);
 extern int SWSerial_Available(void);
@@ -55,10 +48,6 @@ void LCD2004_Init()
   softBuffLines[0][TEXT_LINE_LENGTH + 1] = 0x00;
   memset(softBuffLines[1], ' ', TEXT_LINE_LENGTH);
   softBuffLines[1][TEXT_LINE_LENGTH + 1] = 0x00;
-}
-
-void LCD_CreateChar(uint8_t location, uint8_t charmap[]) 
-{
 }
 
 void LCD_Init(void)
@@ -179,6 +168,19 @@ byte L_displayOption2;            //byte displayOption2 (Reserve)
 #define CMD_CALLSIGN        'c'   //sc
 #define CMD_VERSION         'v'   //sv
 
+#define TS_CMD_MODE           1
+#define TS_CMD_FREQ           2
+#define TS_CMD_BAND           3
+#define TS_CMD_VFO            4
+#define TS_CMD_SPLIT          5
+#define TS_CMD_RIT            6
+#define TS_CMD_TXSTOP         7
+#define TS_CMD_SDR            8
+#define TS_CMD_LOCK           9  //Dial Lock
+#define TS_CMD_ATT           10  //ATT
+#define TS_CMD_IFS           11  //IFS Enabled
+#define TS_CMD_IFSVALUE      12  //IFS VALUE
+
 char nowdisp = 0;
 
 #define SWS_HEADER_CHAR_TYPE 'c'  //1Byte Protocol Prefix
@@ -186,22 +188,22 @@ char nowdisp = 0;
 #define SWS_HEADER_STR_TYPE  's'  //for TEXT Line compatiable Character LCD Control
 
 //Control must have prefix 'v' or 's'
-char softSTRHeader[14] = {'p', 'a', 'g', 'e', '0', '.', 's', '0', '.', 't', 'x', 't', '=', '\"'};
-char softINTHeader[13] = {'p', 'a', 'g', 'e', '0', '.', 'v', '0', '.', 'v', 'a', 'l', '='};
+char softSTRHeader[11] = {'p', 'm', '.', 's', '0', '.', 't', 'x', 't', '=', '\"'};
+char softINTHeader[10] = {'p', 'm', '.', 'v', '0', '.', 'v', 'a', 'l', '='};
 
 //send data for Nextion LCD
 void SendHeader(char varType, char varIndex)
 {
   if (varType == SWS_HEADER_STR_TYPE)
   {
-    softSTRHeader[7] = varIndex;
-    for (int i = 0; i < 14; i++)
+    softSTRHeader[4] = varIndex;
+    for (int i = 0; i < 11; i++)
       SWSerial_Write(softSTRHeader[i]);
   }
   else
   {
-    softINTHeader[7] = varIndex;
-    for (int i = 0; i < 13; i++)
+    softINTHeader[4] = varIndex;
+    for (int i = 0; i < 10; i++)
       SWSerial_Write(softINTHeader[i]);
   }
 }
@@ -294,13 +296,13 @@ void SendEEPromData(char varIndex, int eepromStartIndex, int eepromEndIndex, cha
   SWSerial_Write(0xFF);
 }
 
-char softBuff1Num[17] = {'p', 'a', 'g', 'e', '0', '.', 'c', '0', '.', 'v', 'a', 'l', '=', 0, 0xFF, 0xFF, 0xFF};
+char softBuff1Num[14] = {'p', 'm', '.', 'c', '0', '.', 'v', 'a', 'l', '=', 0, 0xFF, 0xFF, 0xFF};
 void SendCommand1Num(char varType, char sendValue) //0~9 : Mode, nowDisp, ActiveVFO, IsDialLock, IsTxtType, IsSplitType
 {
-  softBuff1Num[7] = varType;
-  softBuff1Num[13] = sendValue + 0x30;
+  softBuff1Num[4] = varType;
+  softBuff1Num[10] = sendValue + 0x30;
 
-  for (int i = 0; i < 17; i++)
+  for (int i = 0; i < 14; i++)
     SWSerial_Write(softBuff1Num[i]);
 }
 
@@ -609,95 +611,7 @@ void sendUIData(int sendType)
 }
 
 void updateDisplay() {
-  //clearLine1();
   sendUIData(0);  //UI 
-
-  /*
-  int i;
-  unsigned long tmpFreq = frequency; //
-  
-  memset(c, 0, sizeof(c));
-
-  if (inTx){
-    if (isCWAutoMode == 2) {
-      for (i = 0; i < 4; i++)
-        c[3-i] = (i < autoCWSendReservCount ? byteToChar(autoCWSendReserv[i]) : ' ');
-
-      //display Sending Index
-      c[4] = byteToChar(sendingCWTextIndex);
-      c[5] = '=';
-    }
-    else {
-      if (cwTimeout > 0)
-        strcpy(c, "   CW:");
-      else
-        strcpy(c, "   TX:");
-    }
-  }
-  else {
-    if (ritOn)
-      strcpy(c, "RIT ");
-    else {
-      if (cwMode == 0)
-      {
-        if (isUSB)
-          strcpy(c, "USB ");
-        else
-          strcpy(c, "LSB ");
-      }
-      else if (cwMode == 1)
-      {
-          strcpy(c, "CWL ");
-      }
-      else
-      {
-          strcpy(c, "CWU ");
-      }
-    }
-    
-    if (vfoActive == VFO_A) // VFO A is active
-      strcat(c, "A:");
-    else
-      strcat(c, "B:");
-  }
-
-  //Fixed by Mitani Massaru (JE4SMQ)
-  if (isShiftDisplayCWFreq == 1)
-  {
-    if (cwMode == 1)        //CWL
-        tmpFreq = tmpFreq - sideTone + shiftDisplayAdjustVal;
-    else if (cwMode == 2)   //CWU
-        tmpFreq = tmpFreq + sideTone + shiftDisplayAdjustVal;
-  }
-
-  //display frequency
-  for (int i = 15; i >= 6; i--) {
-    if (tmpFreq > 0) {
-      if (i == 12 || i == 8) c[i] = '.';
-      else {
-        c[i] = tmpFreq % 10 + 0x30;
-        tmpFreq /= 10;
-      }
-    }
-    else
-      c[i] = ' ';
-  }
-
-  if (sdrModeOn)
-    strcat(c, " SDR");
-  else
-    strcat(c, " SPK");
-
-  //remarked by KD8CEC
-  //already RX/TX status display, and over index (20 x 4 LCD)
-  //if (inTx)
-  //  strcat(c, " TX");
-  printLine(1, c);
-
-  byte diplayVFOLine = 1;
-  if ((displayOption1 & 0x01) == 0x01)
-    diplayVFOLine = 0;
-    */
 }
 
 // tern static uint8_t swr_receive_buffer[20];
@@ -705,19 +619,6 @@ extern uint8_t receivedCommandLength;
 extern void SWSerial_Read(uint8_t * receive_cmdBuffer);
 //extern void byteToMode(byte modeValue, byte autoSetModebyFreq);
 uint8_t swr_buffer[20];
-
-#define TS_CMD_MODE      1
-#define TS_CMD_FREQ      2
-#define TS_CMD_BAND      3
-#define TS_CMD_VFO       4
-#define TS_CMD_SPLIT     5
-#define TS_CMD_RIT       6
-#define TS_CMD_TXSTOP    7
-#define TS_CMD_SDR       8
-#define TS_CMD_LOCK      9  //Dial Lock
-#define TS_CMD_ATT      10  //ATT
-#define TS_CMD_IFS      11  //IFS Enabled
-#define TS_CMD_IFSVALUE 12  //IFS VALUE
 
 //SoftwareSerial_Process
 void SWS_Process(void)
@@ -747,13 +648,6 @@ void SWS_Process(void)
       //Complete received command from touch screen
       uint8_t commandType = swr_buffer[commandStartIndex + 3];
 
-/*
-#define TS_CMD_MODE     1
-#define TS_CMD_FREQ     2
-#define TS_CMD_BAND     3
- */
-#define TS_CMD_BAND     3
-
       if (commandType == TS_CMD_MODE)
       {
         byteToMode(swr_buffer[commandStartIndex + 4], 1);
@@ -767,10 +661,12 @@ void SWS_Process(void)
       else if (commandType == TS_CMD_BAND)
       {
         char currentBandIndex = -1;
-        if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
+        if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) 
+        {  //only ham band move
           currentBandIndex = getIndexHambanBbyFreq(frequency);
           
-          if (currentBandIndex >= 0) {
+          if (currentBandIndex >= 0) 
+          {
             saveBandFreqByIndex(frequency, modeToByte(), currentBandIndex);
           }
         }
@@ -823,156 +719,6 @@ void SWS_Process(void)
   }
 }
 
-void updateLine2Buffer(char displayType)
-{
-
-}
-
-/*
-char line2Buffer[20];
-//KD8CEC 200Hz ST
-//L14.150 200Hz ST
-//U14.150 +150khz
-int freqScrollPosition = 0;
-
-//Example Line2 Optinal Display
-//immediate execution, not call by scheulder
-//warning : unused parameter 'displayType' <-- ignore, this is reserve
-void updateLine2Buffer(char displayType)
-{
-  return;
-  unsigned long tmpFreq = 0;
-  if (ritOn)
-  {
-    strcpy(line2Buffer, "RitTX:");
-
-    //display frequency
-    tmpFreq = ritTxFrequency;
-
-    //Fixed by Mitani Massaru (JE4SMQ)
-    if (isShiftDisplayCWFreq == 1)
-    {
-      if (cwMode == 1)        //CWL
-          tmpFreq = tmpFreq - sideTone + shiftDisplayAdjustVal;
-      else if (cwMode == 2)   //CWU
-          tmpFreq = tmpFreq + sideTone + shiftDisplayAdjustVal;
-    }
-    
-    for (int i = 15; i >= 6; i--) {
-      if (tmpFreq > 0) {
-        if (i == 12 || i == 8) line2Buffer[i] = '.';
-        else {
-          line2Buffer[i] = tmpFreq % 10 + 0x30;
-          tmpFreq /= 10;
-        }
-      }
-      else
-        line2Buffer[i] = ' ';
-    }
-
-    return;
-  } //end of ritOn display
-
-  //other VFO display
-  if (vfoActive == VFO_B)
-  {
-    tmpFreq = vfoA;
-  }
-  else 
-  {
-    tmpFreq = vfoB;
-  }
-
-  // EXAMPLE 1 & 2
-  //U14.150.100
-  //display frequency
-  for (int i = 9; i >= 0; i--) {
-    if (tmpFreq > 0) {
-      if (i == 2 || i == 6) line2Buffer[i] = '.';
-      else {
-        line2Buffer[i] = tmpFreq % 10 + 0x30;
-        tmpFreq /= 10;
-      }
-    }
-    else
-      line2Buffer[i] = ' ';
-  }
-  
-  memset(&line2Buffer[10], ' ', 10);
-  
-  if (isIFShift)
-  {
-    line2Buffer[6] = 'M';
-    line2Buffer[7] = ' ';
-    //IFShift Offset Value 
-    line2Buffer[8] = 'I';
-    line2Buffer[9] = 'F';
-
-    line2Buffer[10] = ifShiftValue >= 0 ? '+' : 0;
-    line2Buffer[11] = 0;
-    line2Buffer[12] = ' ';
-  
-    //11, 12, 13, 14, 15
-    memset(b, 0, sizeof(b));
-    ltoa(ifShiftValue, b, DEC);
-    strncat(line2Buffer, b, 5);
-
-    for (int i = 12; i < 17; i++)
-    {
-      if (line2Buffer[i] == 0)
-        line2Buffer[i] = ' ';
-    }
-  }       // end of display IF
-  else    // step & Key Type display
-  {
-    //Step
-    long tmpStep = arTuneStep[tuneStepIndex -1];
-    
-    byte isStepKhz = 0;
-    if (tmpStep >= 1000)
-    {
-      isStepKhz = 2;
-    }
-      
-    for (int i = 14; i >= 12 - isStepKhz; i--) {
-      if (tmpStep > 0) {
-          line2Buffer[i + isStepKhz] = tmpStep % 10 + 0x30;
-          tmpStep /= 10;
-      }
-      else
-        line2Buffer[i +isStepKhz] = ' ';
-    }
-
-    if (isStepKhz == 0)
-    {
-      line2Buffer[15] = 'H';
-      line2Buffer[16] = 'z';
-    }
-  }
-
-  line2Buffer[17] = ' ';
-  
-  //Check CW Key cwKeyType = 0; //0: straight, 1 : iambica, 2: iambicb
-  if (cwKeyType == 0)
-  {
-    line2Buffer[18] = 'S';
-    line2Buffer[19] = 'T';
-  }
-  else if (cwKeyType == 1)
-  {
-    line2Buffer[18] = 'I';
-    line2Buffer[19] = 'A';
-  }
-  else
-  {
-    line2Buffer[18] = 'I';
-    line2Buffer[19] = 'B';
-  }
-
-}
-
-*/
-
 char checkCount = 0;
 char checkCountSMeter = 0;
 
@@ -1004,51 +750,6 @@ void idle_process()
   
     checkCountSMeter = 0; //Reset Latency time
   } //end of S-Meter
-  
-  /*
-    return;
-  //space for user graphic display
-  if (menuOn == 0)
-  {
-    if ((displayOption1 & 0x10) == 0x10)    //always empty topline
-      return;
-      
-    //if line2DisplayStatus == 0 <-- this condition is clear Line, you can display any message
-    if (line2DisplayStatus == 0 || (((displayOption1 & 0x04) == 0x04) && line2DisplayStatus == 2)) {
-      if (checkCount++ > 1)
-      {
-        updateLine2Buffer(0); //call by scheduler
-        printLine2(line2Buffer);
-        line2DisplayStatus = 2;
-        checkCount = 0;
-      }
-    }
-
-    //S-Meter Display
-    if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
-    {
-      int newSMeter;
-      
-      //VK2ETA S-Meter from MAX9814 TC pin
-      newSMeter = analogRead(ANALOG_SMETER) / 4;
-  
-      //Faster attack, Slower release
-      //currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
-      //currentSMeter = ((currentSMeter * 7 + newSMeter * 3) + 5) / 10;
-      currentSMeter = newSMeter;
-  
-      scaledSMeter = 0;
-      for (byte s = 8; s >= 1; s--) {
-        if (currentSMeter > sMeterLevels[s]) {
-          scaledSMeter = s;
-          break;
-        }
-      }
-  
-      checkCountSMeter = 0; //Reset Latency time
-    } //end of S-Meter
-  }
-  */
 }
 
 //When boot time, send data
@@ -1091,8 +792,14 @@ void Display_AutoKeyTextIndex(byte textIndex)
   softBuffLines[diplayAutoCWLine][1] = ':';
 
   SendTextLineBuff(diplayAutoCWLine);
-  //LCD_Write(byteToChar(textIndex));
-  //LCD_Write(':');
+}
+
+void LCD_CreateChar(uint8_t location, uint8_t charmap[]) 
+{
+}
+
+void updateLine2Buffer(char displayType)
+{
 }
 
 //not use with Nextion LCD
