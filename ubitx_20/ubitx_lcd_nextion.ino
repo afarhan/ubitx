@@ -878,7 +878,7 @@ void SendUbitxData(void)
   SendCommandL(CMD_DISP_OPTION1, displayOption1);  
   SendCommandL(CMD_DISP_OPTION2, displayOption2);
 
-  SendCommandStr(CMD_VERSION, "+v1.0N1"); //Version
+  SendCommandStr(CMD_VERSION, "+v1.092"); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
   //Complte Send Info
