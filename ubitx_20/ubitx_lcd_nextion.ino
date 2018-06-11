@@ -176,10 +176,15 @@ byte L_displayOption2;            //byte displayOption2 (Reserve)
 #define TS_CMD_RIT            6
 #define TS_CMD_TXSTOP         7
 #define TS_CMD_SDR            8
-#define TS_CMD_LOCK           9  //Dial Lock
-#define TS_CMD_ATT           10  //ATT
-#define TS_CMD_IFS           11  //IFS Enabled
-#define TS_CMD_IFSVALUE      12  //IFS VALUE
+#define TS_CMD_LOCK           9 //Dial Lock
+#define TS_CMD_ATT           10 //ATT
+#define TS_CMD_IFS           11 //IFS Enabled
+#define TS_CMD_IFSVALUE      12 //IFS VALUE
+#define TS_CMD_STARTADC      13
+#define TS_CMD_STOPADC       14
+#define TS_CMD_SPECTRUMOPT   15 //Option for Spectrum
+#define TS_CMD_SPECTRUM      16 //Get Spectrum Value
+#define TS_CMD_SWTRIG        21 //SW Action Trigger for WSPR and more
 
 char nowdisp = 0;
 
@@ -190,6 +195,7 @@ char nowdisp = 0;
 //Control must have prefix 'v' or 's'
 char softSTRHeader[11] = {'p', 'm', '.', 's', '0', '.', 't', 'x', 't', '=', '\"'};
 char softINTHeader[10] = {'p', 'm', '.', 'v', '0', '.', 'v', 'a', 'l', '='};
+const byte ADCIndex[6] = {A0, A1, A2, A3, A6, A7};
 
 //send data for Nextion LCD
 void SendHeader(char varType, char varIndex)
@@ -614,6 +620,60 @@ void updateDisplay() {
   sendUIData(0);  //UI 
 }
 
+uint8_t SpectrumHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
+uint8_t SpectrumFooter[4]={'"', 0xFF, 0xFF, 0xFF};
+
+char HexCodes[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', };
+void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCount, int delayTime, int sendCount)
+{
+  unsigned long beforFreq = frequency;
+  unsigned long k;
+  uint8_t adcBytes[200];    //Maximum 200 Step
+  
+  //Voltage drop
+  //scanResult[0] = analogRead(ANALOG_SMETER);
+  //adcBytes[0] = analogRead(ANALOG_SMETER);
+  //delay(10);
+  int readedValue = 0;
+
+  for (int si = 0; si < sendCount; si++)
+  //while(1)
+  {
+    for (int i = 0; i < 11; i++)
+      SWSerial_Write(SpectrumHeader[i]);
+      
+    for (k = 0; k < scanCount; k ++)
+    {
+      //Sampling Range
+      //setScanFreq(startFreq + k * incStep);
+      setFrequency(startFreq + (k * incStep));
+
+      //Wait time for charging
+      delay(delayTime);
+
+      //ADC
+      readedValue = analogRead(ANALOG_SMETER);
+      if (readedValue>255)
+      {
+        readedValue=255;
+      }
+      SWSerial_Write(HexCodes[readedValue >> 4]);
+      SWSerial_Write(HexCodes[readedValue & 0xf]);
+    }
+
+    for (int i = 0; i < 4; i++)
+      SWSerial_Write(SpectrumFooter[i]);
+      
+  } //end of for
+}
+
+//sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
+//sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
+int spectrumSendCount = 10;   //count of full scan and Send
+int spectrumDelayTime = 0;    //Scan interval time
+int spectrumScanCount = 100;  //Maximum 200
+unsigned long spectrumIncStep = 1000;   //Increaase Step
+
 // tern static uint8_t swr_receive_buffer[20];
 extern uint8_t receivedCommandLength;
 extern void SWSerial_Read(uint8_t * receive_cmdBuffer);
@@ -711,6 +771,57 @@ void SWS_Process(void)
       {
         ifShiftValue = *(long *)(&swr_buffer[commandStartIndex + 4]);
       }
+      else if (commandType == TS_CMD_STARTADC)
+      {
+        int startIndex = swr_buffer[commandStartIndex + 4];
+        int endIndex = swr_buffer[commandStartIndex + 5];
+        int adcCheckInterval = swr_buffer[commandStartIndex + 6] * 10;
+        int nowCheckIndex = startIndex;
+        
+        while(1 == 1)
+        {
+          if (receivedCommandLength > 0)
+          {
+            //receivedCommandLength = 0;
+            break;
+          }
+          
+          //SendCommandL('x', analogRead(ADCIndex[swr_buffer[commandStartIndex + 4]]));
+          SendCommandL('n', nowCheckIndex);    //Index Input
+          SendCommandL('x', analogRead(ADCIndex[nowCheckIndex++]));
+          
+          if (nowCheckIndex > endIndex)
+            nowCheckIndex = startIndex;
+            
+          delay(adcCheckInterval);
+        } //end of while
+      }
+      else if (commandType == TS_CMD_STOPADC)
+      {
+          //None Action
+          return;
+      }
+      else if (commandType == TS_CMD_SPECTRUM)
+      {
+        //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
+        //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
+        //*(long *)(&swr_buffer[commandStartIndex + 4])
+        //sendSpectrumData(*(long *)(&swr_buffer[commandStartIndex + 4]), spectrumIncStep, spectrumScanCount, spectrumDelayTime, spectrumSendCount);
+        sendSpectrumData(*(long *)(&swr_buffer[commandStartIndex + 4]), 1000, 100, 0, 32);
+      }
+      else if (commandType == TS_CMD_SPECTRUMOPT)
+      {
+        //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
+        //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
+        spectrumSendCount = swr_buffer[commandStartIndex + 4];    //count of full scan and Send
+        spectrumDelayTime = swr_buffer[commandStartIndex + 5];    //Scan interval time
+        spectrumScanCount = swr_buffer[commandStartIndex + 6];    //Maximum 120
+        spectrumIncStep = swr_buffer[commandStartIndex + 7] * 10;      //Increaase Step
+      }
+      else if (commandType == TS_CMD_SWTRIG)
+      {
+        TriggerBySW = 1;    //Action Trigger by Software
+      }
 
       setFrequency(frequency);
       SetCarrierFreq();
@@ -725,8 +836,6 @@ char checkCountSMeter = 0;
 //execute interval : 0.25sec
 void idle_process()
 {
-  sendUIData(1);
-
   //S-Meter Display
   if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
   {
@@ -750,6 +859,8 @@ void idle_process()
   
     checkCountSMeter = 0; //Reset Latency time
   } //end of S-Meter
+
+  sendUIData(1);
 }
 
 //When boot time, send data

@@ -64,6 +64,7 @@ extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
   #undef ENABLE_ADCMONITOR
 #endif
 
+
 //==============================================================================
 // Hardware, Define PIN Usage
 //==============================================================================
@@ -164,6 +165,7 @@ extern int currentSMeter;         //ADC Value for S.Meter
 extern byte scaledSMeter;         //Calculated S.Meter Level
 
 extern byte KeyValues[16][3];     //Set : Start Value, End Value, Key Type, 16 Set (3 * 16 = 48)
+extern byte TriggerBySW;   //Action Start from Nextion LCD, Other MCU
 
 extern void printLine1(const char *c);
 extern void printLine2(const char *c);

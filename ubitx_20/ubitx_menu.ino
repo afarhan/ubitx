@@ -1227,6 +1227,7 @@ void doMenu(){
 
   //Below codes are origial code with modified by KD8CEC
   menuOn = 2;
+  TriggerBySW = 0;  //Nextion LCD and Other MCU
   
   while (menuOn){
     i = enc_read();

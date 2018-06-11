@@ -192,7 +192,9 @@ byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 byte KeyValues[16][3];
 
 byte isIFShift = 0;     //1 = ifShift, 2 extend
-int ifShiftValue = 0;  //
+int ifShiftValue = 0;   //
+
+byte TriggerBySW = 0;   //Action Start from Nextion LCD, Other MCU
                               
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
