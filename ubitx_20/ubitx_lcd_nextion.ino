@@ -185,6 +185,9 @@ byte L_displayOption2;            //byte displayOption2 (Reserve)
 #define TS_CMD_SPECTRUMOPT   15 //Option for Spectrum
 #define TS_CMD_SPECTRUM      16 //Get Spectrum Value
 #define TS_CMD_SWTRIG        21 //SW Action Trigger for WSPR and more
+#define TS_CMD_READMEM       31 //Read EEProm
+#define TS_CMD_WRITEMEM      32 //Write EEProm
+#define TS_CMD_FACTORYRESET  33 //Factory Reset
 
 char nowdisp = 0;
 
@@ -782,13 +785,11 @@ void SWS_Process(void)
         {
           if (receivedCommandLength > 0)
           {
-            //receivedCommandLength = 0;
             break;
           }
           
-          //SendCommandL('x', analogRead(ADCIndex[swr_buffer[commandStartIndex + 4]]));
-          SendCommandL('n', nowCheckIndex);    //Index Input
           SendCommandL('x', analogRead(ADCIndex[nowCheckIndex++]));
+          SendCommandL('n', nowCheckIndex);    //Index Input
           
           if (nowCheckIndex > endIndex)
             nowCheckIndex = startIndex;
@@ -805,7 +806,6 @@ void SWS_Process(void)
       {
         //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
         //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
-        //*(long *)(&swr_buffer[commandStartIndex + 4])
         //sendSpectrumData(*(long *)(&swr_buffer[commandStartIndex + 4]), spectrumIncStep, spectrumScanCount, spectrumDelayTime, spectrumSendCount);
         sendSpectrumData(*(long *)(&swr_buffer[commandStartIndex + 4]), 1000, 100, 0, 32);
       }
@@ -821,6 +821,39 @@ void SWS_Process(void)
       else if (commandType == TS_CMD_SWTRIG)
       {
         TriggerBySW = 1;    //Action Trigger by Software
+      }
+      else if (commandType == TS_CMD_READMEM || commandType == TS_CMD_WRITEMEM) //Read Mem
+      {
+        uint16_t eepromIndex = *(uint16_t *)(&swr_buffer[commandStartIndex + 4]);
+        byte eepromData     = swr_buffer[commandStartIndex + 6];
+        byte eepromCheckSum = swr_buffer[commandStartIndex + 7];
+
+        //Check Checksum
+        if (eepromCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5] + swr_buffer[commandStartIndex + 6]))
+        {
+          if (commandType == TS_CMD_WRITEMEM)
+          {
+            if (eepromIndex > 64)
+              EEPROM.write(eepromIndex, eepromData);
+          }
+          else
+          {
+            SendCommandL('x', EEPROM.read(eepromIndex));
+          }
+        }
+        else
+        {
+          eepromIndex = -2;
+        }
+        SendCommandL('n', eepromIndex);    //Index Input
+      }
+      else if (commandType == TS_CMD_FACTORYRESET)
+      {
+        if (*(unsigned long *)&swr_buffer[commandStartIndex + 4] == 1497712748)
+        {
+          for (unsigned int i = 0; i < 32; i++) //factory setting range
+            EEPROM.write(i, EEPROM.read(FACTORY_VALUES + i)); //65~96 => 0~31
+        }
       }
 
       setFrequency(frequency);
@@ -881,6 +914,24 @@ void SendUbitxData(void)
   SendCommandStr(CMD_VERSION, "+v1.092"); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
+  /*
+  //Frequency of Bands
+  for (int i = 0; i < 11; i++)
+    SWSerial_Write(SpectrumHeader[i]);
+
+  byte *tmpByte;
+  tmpByte = (byte *)hamBandRange;
+  for (byte i = 0; i < (useHamBandCount -1) * 4; i++) 
+  {
+    SWSerial_Write(HexCodes[*tmpByte >> 4]);
+    SWSerial_Write(HexCodes[*tmpByte & 0xf]);
+    tmpByte++;
+  }
+      
+  for (int i = 0; i < 4; i++)
+    SWSerial_Write(SpectrumFooter[i]);
+  */    
+    
   //Complte Send Info
   SendCommand1Num(CMD_UBITX_INFO, 1);
 

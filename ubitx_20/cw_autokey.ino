@@ -235,30 +235,6 @@ void sendCWChar(char cwKeyChar)
   }
 }
 
-/*
-void sendAutoCW(int cwSendLength, char *sendString)
-{
-  byte i;
-
-  if (!inTx){
-    keyDown = 0;
-    cwTimeout = millis() + cwDelayTime * 10;
-    startTx(TX_CW, 0);  //disable updateDisplay Command for reduce latency time
-    updateDisplay();
-
-    delay_background(delayBeforeCWStartTime * 2, 2);
-  }
-
-  for (i = 0; i < cwSendLength; i++)
-  {
-    sendCWChar(sendString[i]);
-    if (i != cwSendLength -1) delay_background(cwSpeed * 3, 3);
-  }
-
-  delay_background(cwDelayTime * 10, 2);
-  stopTx();
-}
-*/
 byte isNeedScroll = 0;
 unsigned long scrollDispayTime = 0;
 #define scrollSpeed 500

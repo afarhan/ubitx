@@ -1311,8 +1311,6 @@ void setup()
 
   if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
     userCallsignLength = userCallsignLength & 0x7F;
-    //printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
-    //delay(500);
     DisplayCallsign(userCallsignLength);
   }
   else {
