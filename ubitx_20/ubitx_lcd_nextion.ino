@@ -626,8 +626,9 @@ void updateDisplay() {
 
 #define RESPONSE_SPECTRUM     0
 #define RESPONSE_EEPROM       1
-#define RESPONSE_EEPROM_HEX   0
-#define RESPONSE_EEPROM_STR   1
+#define RESPONSE_EEPROM_HEX_F 89  //C Language order
+#define RESPONSE_EEPROM_HEX_R 72  //Nextion order (Reverse)
+#define RESPONSE_EEPROM_STR   87  //String
 
 uint8_t ResponseHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
 uint8_t ResponseFooter[4]={'"', 0xFF, 0xFF, 0xFF};
@@ -677,7 +678,7 @@ void sendResponseData(int protocolType, unsigned long startFreq, unsigned int se
       }
       else
       {
-        readedValue = EEPROM.read(k + sendOption1);
+        readedValue = EEPROM.read(((sendOption2 == RESPONSE_EEPROM_HEX_R) ? (readCount - k - 1) : k) + sendOption1);
       }
 
       if (protocolType == RESPONSE_EEPROM && sendOption2 == RESPONSE_EEPROM_STR) //None HEX
