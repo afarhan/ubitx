@@ -188,6 +188,7 @@ byte L_displayOption2;            //byte displayOption2 (Reserve)
 #define TS_CMD_READMEM       31 //Read EEProm
 #define TS_CMD_WRITEMEM      32 //Write EEProm
 #define TS_CMD_FACTORYRESET  33 //Factory Reset
+#define TS_CMD_UBITX_REBOOT  95 //Reboot
 
 char nowdisp = 0;
 
@@ -623,11 +624,24 @@ void updateDisplay() {
   sendUIData(0);  //UI 
 }
 
-uint8_t SpectrumHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
-uint8_t SpectrumFooter[4]={'"', 0xFF, 0xFF, 0xFF};
+#define RESPONSE_SPECTRUM     0
+#define RESPONSE_EEPROM       1
+#define RESPONSE_EEPROM_HEX   0
+#define RESPONSE_EEPROM_STR   1
+
+uint8_t ResponseHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
+uint8_t ResponseFooter[4]={'"', 0xFF, 0xFF, 0xFF};
 
 char HexCodes[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', };
-void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCount, int delayTime, int sendCount)
+//void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCount, int delayTime, int sendCount)
+//sendResponseData(RESPONSE_EEPROM, 0, eepromIndex, eepromReadLength, eepromDataType, 1);
+//protocol Type : 0 - Spectrum, 1 : EEProm
+//startFreq   : Spectrum - Frequency, EEProm - 0
+//sendOption1 : Spectrum - 1 Step Frequency, EEProm - EEProm Start Address
+//scanCount   : Spectrum - 1 Set Length, EEProm - Read Length
+//sendOption2 : Spectrum - Value offset (because support various S-Meter), EEProm - EEProm Response DataType (0:HEX, 1:String)
+//sendCount : Spectrum - All scan set count, EEProm - always 1
+void sendResponseData(int protocolType, unsigned long startFreq, unsigned int sendOption1, int readCount, int sendOption2, int sendCount)  //Spectrum and EEProm Data
 {
   unsigned long beforFreq = frequency;
   unsigned long k;
@@ -640,32 +654,45 @@ void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCo
   int readedValue = 0;
 
   for (int si = 0; si < sendCount; si++)
-  //while(1)
   {
     for (int i = 0; i < 11; i++)
-      SWSerial_Write(SpectrumHeader[i]);
+      SWSerial_Write(ResponseHeader[i]);
       
-    for (k = 0; k < scanCount; k ++)
+    for (k = 0; k < readCount; k ++)
     {
-      //Sampling Range
-      //setScanFreq(startFreq + k * incStep);
-      setFrequency(startFreq + (k * incStep));
-
-      //Wait time for charging
-      delay(delayTime);
-
-      //ADC
-      readedValue = analogRead(ANALOG_SMETER);
-      if (readedValue>255)
+      if (protocolType == RESPONSE_SPECTRUM)
       {
-        readedValue=255;
+        //Spectrum Data
+        //Sampling Range
+        setFrequency(startFreq + (k * sendOption1));
+        //Wait time for charging
+        delay(sendOption2);
+  
+        //ADC
+        readedValue = analogRead(ANALOG_SMETER);
+        if (readedValue>255)
+        {
+          readedValue=255;
+        }
       }
-      SWSerial_Write(HexCodes[readedValue >> 4]);
-      SWSerial_Write(HexCodes[readedValue & 0xf]);
+      else
+      {
+        readedValue = EEPROM.read(k + sendOption1);
+      }
+
+      if (protocolType == RESPONSE_EEPROM && sendOption2 == RESPONSE_EEPROM_STR) //None HEX
+      {
+        SWSerial_Write(readedValue);
+      }
+      else
+      {
+        SWSerial_Write(HexCodes[readedValue >> 4]);
+        SWSerial_Write(HexCodes[readedValue & 0xf]);
+      }
     }
 
     for (int i = 0; i < 4; i++)
-      SWSerial_Write(SpectrumFooter[i]);
+      SWSerial_Write(ResponseFooter[i]);
       
   } //end of for
 }
@@ -673,9 +700,9 @@ void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCo
 //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
 //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
 int spectrumSendCount = 10;   //count of full scan and Send
-int spectrumDelayTime = 0;    //Scan interval time
+int spectrumOffset = 0;    //offset position
 int spectrumScanCount = 100;  //Maximum 200
-unsigned long spectrumIncStep = 1000;   //Increaase Step
+unsigned int spectrumIncStep = 1000;   //Increaase Step
 
 // tern static uint8_t swr_receive_buffer[20];
 extern uint8_t receivedCommandLength;
@@ -807,14 +834,14 @@ void SWS_Process(void)
         //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
         //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
         //sendSpectrumData(*(long *)(&swr_buffer[commandStartIndex + 4]), spectrumIncStep, spectrumScanCount, spectrumDelayTime, spectrumSendCount);
-        sendSpectrumData(*(long *)(&swr_buffer[commandStartIndex + 4]), 1000, 100, 0, 32);
+        sendResponseData(RESPONSE_SPECTRUM, *(long *)(&swr_buffer[commandStartIndex + 4]), spectrumIncStep, spectrumScanCount, spectrumOffset, spectrumSendCount);
       }
       else if (commandType == TS_CMD_SPECTRUMOPT)
       {
         //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
         //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
         spectrumSendCount = swr_buffer[commandStartIndex + 4];    //count of full scan and Send
-        spectrumDelayTime = swr_buffer[commandStartIndex + 5];    //Scan interval time
+        spectrumOffset = swr_buffer[commandStartIndex + 5];    //Scan interval time
         spectrumScanCount = swr_buffer[commandStartIndex + 6];    //Maximum 120
         spectrumIncStep = swr_buffer[commandStartIndex + 7] * 10;      //Increaase Step
       }
@@ -822,7 +849,15 @@ void SWS_Process(void)
       {
         TriggerBySW = 1;    //Action Trigger by Software
       }
-      else if (commandType == TS_CMD_READMEM || commandType == TS_CMD_WRITEMEM) //Read Mem
+      else if (commandType == TS_CMD_READMEM ) //Read Mem
+      {
+       uint16_t eepromIndex    = *(uint16_t *)(&swr_buffer[commandStartIndex + 4]);
+        byte eepromReadLength   = swr_buffer[commandStartIndex + 6];
+        byte eepromDataType     = swr_buffer[commandStartIndex + 7];  //0 : Hex, 1 : String
+        
+        sendResponseData(RESPONSE_EEPROM, 0, eepromIndex, eepromReadLength, eepromDataType, 1);
+      }
+      else if (commandType == TS_CMD_WRITEMEM)    //Write Mem
       {
         uint16_t eepromIndex = *(uint16_t *)(&swr_buffer[commandStartIndex + 4]);
         byte eepromData     = swr_buffer[commandStartIndex + 6];
@@ -831,15 +866,8 @@ void SWS_Process(void)
         //Check Checksum
         if (eepromCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5] + swr_buffer[commandStartIndex + 6]))
         {
-          if (commandType == TS_CMD_WRITEMEM)
-          {
             if (eepromIndex > 64)
               EEPROM.write(eepromIndex, eepromData);
-          }
-          else
-          {
-            SendCommandL('x', EEPROM.read(eepromIndex));
-          }
         }
         else
         {
@@ -847,14 +875,25 @@ void SWS_Process(void)
         }
         SendCommandL('n', eepromIndex);    //Index Input
       }
-      else if (commandType == TS_CMD_FACTORYRESET)
+      else if (commandType == TS_CMD_FACTORYRESET || commandType == TS_CMD_UBITX_REBOOT)
       {
         if (*(unsigned long *)&swr_buffer[commandStartIndex + 4] == 1497712748)
         {
-          for (unsigned int i = 0; i < 32; i++) //factory setting range
-            EEPROM.write(i, EEPROM.read(FACTORY_VALUES + i)); //65~96 => 0~31
+          if (commandType == TS_CMD_UBITX_REBOOT)
+          {
+            asm volatile ("  jmp 0");
+          }
+          else
+          {
+            for (unsigned int i = 0; i < 32; i++) //factory setting range
+              EEPROM.write(i, EEPROM.read(FACTORY_VALUES + i)); //65~96 => 0~31
+          }
         }
       }
+      //else if (commandType == TS_CMD_UBITX_REBOOT)
+      //{
+        //asm volatile ("  jmp 0");
+      //}
 
       setFrequency(frequency);
       SetCarrierFreq();
@@ -911,7 +950,7 @@ void SendUbitxData(void)
   SendCommandL(CMD_DISP_OPTION1, displayOption1);  
   SendCommandL(CMD_DISP_OPTION2, displayOption2);
 
-  SendCommandStr(CMD_VERSION, "+v1.092"); //Version
+  SendCommandStr(CMD_VERSION, "+v1.093"); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
   /*

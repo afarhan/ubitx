@@ -6,8 +6,8 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.091")  
-#define FIRMWARE_VERSION_NUM 0x03       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
+#define FIRMWARE_VERSION_INFO F("+v1.093")  
+#define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
  Cat Suppoort uBITX CEC Version
