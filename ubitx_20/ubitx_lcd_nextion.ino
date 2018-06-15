@@ -865,7 +865,8 @@ void SWS_Process(void)
         byte eepromCheckSum = swr_buffer[commandStartIndex + 7];
 
         //Check Checksum
-        if (eepromCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5] + swr_buffer[commandStartIndex + 6]))
+        //if (eepromCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5] + swr_buffer[commandStartIndex + 6]))
+        if (eepromCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5]))
         {
             if (eepromIndex > 64)
               EEPROM.write(eepromIndex, eepromData);
