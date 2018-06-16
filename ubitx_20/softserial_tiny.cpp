@@ -32,6 +32,7 @@ SWSerial_Write to sSerial.write
 SWSerial_Available to sSerial.available
 SWSerial_Read to sSerial.read
 
+KD8CEC, Ian Lee
 -----------------------------------------------------------------------
 License
 All licenses for the source code are subject to the license of the original source SoftwareSerial Library.
@@ -76,7 +77,7 @@ http://arduiniana.org.
 //================================================================
 #define TX_PIN 9
 #define RX_PIN 8
-#define _SS_MAX_RX_BUFF 20 // RX buffer size
+#define _SS_MAX_RX_BUFF 35 // RX buffer size
 #define PRINT_MAX_LENGTH 30
 
 //================================================================

@@ -41,7 +41,7 @@ char c[30], b[30];
 char softBuff[20];
 char softTemp[20];
 
-void LCD2004_Init()
+void LCDNextion_Init()
 {
   SWSerial_Begin(9600);
   memset(softBuffLines[0], ' ', TEXT_LINE_LENGTH); 
@@ -52,8 +52,8 @@ void LCD2004_Init()
 
 void LCD_Init(void)
 {
-  LCD2004_Init();  
-  initMeter(); //for Meter Display
+  LCDNextion_Init();  
+  //initMeter(); //for Meter Display
 }
 
 //===================================================================
@@ -187,7 +187,7 @@ byte L_displayOption2;            //byte displayOption2 (Reserve)
 #define TS_CMD_SWTRIG        21 //SW Action Trigger for WSPR and more
 #define TS_CMD_READMEM       31 //Read EEProm
 #define TS_CMD_WRITEMEM      32 //Write EEProm
-#define TS_CMD_FACTORYRESET  33 //Factory Reset
+#define TS_CMD_FACTORYRESET  85 //Factory Reset
 #define TS_CMD_UBITX_REBOOT  95 //Reboot
 
 char nowdisp = 0;
@@ -630,10 +630,10 @@ void updateDisplay() {
 #define RESPONSE_EEPROM_HEX_R 72  //Nextion order (Reverse)
 #define RESPONSE_EEPROM_STR   87  //String
 
-uint8_t ResponseHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
-uint8_t ResponseFooter[4]={'"', 0xFF, 0xFF, 0xFF};
+const uint8_t ResponseHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
+const uint8_t ResponseFooter[4]={'"', 0xFF, 0xFF, 0xFF};
 
-char HexCodes[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', };
+const char HexCodes[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', };
 //void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCount, int delayTime, int sendCount)
 //sendResponseData(RESPONSE_EEPROM, 0, eepromIndex, eepromReadLength, eepromDataType, 1);
 //protocol Type : 0 - Spectrum, 1 : EEProm
@@ -860,16 +860,35 @@ void SWS_Process(void)
       }
       else if (commandType == TS_CMD_WRITEMEM)    //Write Mem
       {
+        /*
+          Address : 2 byte int
+          Length   : Data Length
+          Checksum : (Addr0+Addr1+Len) %256
+          Data      : Variable (Max 23)
+         */
         uint16_t eepromIndex = *(uint16_t *)(&swr_buffer[commandStartIndex + 4]);
-        byte eepromData     = swr_buffer[commandStartIndex + 6];
-        byte eepromCheckSum = swr_buffer[commandStartIndex + 7];
+        byte writeLength     = swr_buffer[commandStartIndex + 6];
+        byte writeCheckSum   = swr_buffer[commandStartIndex + 7];
 
         //Check Checksum
-        //if (eepromCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5] + swr_buffer[commandStartIndex + 6]))
-        if (eepromCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5]))
+        if (writeCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5] + swr_buffer[commandStartIndex + 6]))
+        //if (writeCheckSum == (swr_buffer[commandStartIndex + 4] + swr_buffer[commandStartIndex + 5] + writeLength))
         {
-            if (eepromIndex > 64)
-              EEPROM.write(eepromIndex, eepromData);
+            //if (eepromIndex > 64) //Safe #1
+#ifdef UBITX_DISPLAY_NEXTION_SAFE
+            //Safe #2
+            if (eepromIndex < 770 || eepromIndex > 775 )
+            {
+              eepromIndex = -2;              
+            }
+            else
+#else
+            if (1 == 1)            
+#endif
+            {
+              for (int i = 0; i < writeLength; i++)
+                EEPROM.write(eepromIndex + i , swr_buffer[commandStartIndex + 8 + i]);
+            }
         }
         else
         {
@@ -892,10 +911,6 @@ void SWS_Process(void)
           }
         }
       }
-      //else if (commandType == TS_CMD_UBITX_REBOOT)
-      //{
-        //asm volatile ("  jmp 0");
-      //}
 
       setFrequency(frequency);
       SetCarrierFreq();

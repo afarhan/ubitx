@@ -32,8 +32,10 @@
 #define UBITX_DISPLAY_NEXTION         //NEXTION LCD 
 //#define UBITX_CONTROL_MCU             //CONTROL MCU
 
+//#define UBITX_DISPLAY_NEXTION_SAFE      //Only EEProm Write 770~775
 #define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x27     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
 #define I2C_LCD_SECOND_ADDRESS_DEFAULT  0x3F     //0x27  //only using Dual LCD Mode
+
 
 #define EXTEND_KEY_GROUP1               //MODE, BAND(-), BAND(+), STEP
 //#define EXTEND_KEY_GROUP2             //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
