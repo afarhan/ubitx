@@ -667,11 +667,18 @@ void sendResponseData(int protocolType, unsigned long startFreq, unsigned int se
         //Sampling Range
         setFrequency(startFreq + (k * sendOption1));
         //Wait time for charging
-        delay(sendOption2);
+        //delay(10);
   
         //ADC
         readedValue = analogRead(ANALOG_SMETER);
-        if (readedValue>255)
+        readedValue -= (sendOption2 * 3); //0 ~ 765
+        //Down Scale
+        readedValue /= 2;
+        if (readedValue < 0)
+        {
+          readedValue = 0;
+        }
+        else if (readedValue>255)
         {
           readedValue=255;
         }
@@ -835,16 +842,18 @@ void SWS_Process(void)
         //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
         //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
         //sendSpectrumData(*(long *)(&swr_buffer[commandStartIndex + 4]), spectrumIncStep, spectrumScanCount, spectrumDelayTime, spectrumSendCount);
+        unsigned long beforeFreq = frequency;
         sendResponseData(RESPONSE_SPECTRUM, *(long *)(&swr_buffer[commandStartIndex + 4]), spectrumIncStep, spectrumScanCount, spectrumOffset, spectrumSendCount);
+        frequency = beforeFreq;
       }
       else if (commandType == TS_CMD_SPECTRUMOPT)
       {
         //sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
         //sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
-        spectrumSendCount = swr_buffer[commandStartIndex + 4];    //count of full scan and Send
-        spectrumOffset = swr_buffer[commandStartIndex + 5];    //Scan interval time
-        spectrumScanCount = swr_buffer[commandStartIndex + 6];    //Maximum 120
-        spectrumIncStep = swr_buffer[commandStartIndex + 7] * 10;      //Increaase Step
+        spectrumSendCount = swr_buffer[commandStartIndex + 4];          //count of full scan and Send
+        spectrumOffset = swr_buffer[commandStartIndex + 5];             //Scan interval time
+        spectrumScanCount = swr_buffer[commandStartIndex + 6];          //Maximum 120
+        spectrumIncStep = swr_buffer[commandStartIndex + 7] * 20;       //Increaase Step
       }
       else if (commandType == TS_CMD_SWTRIG)
       {
