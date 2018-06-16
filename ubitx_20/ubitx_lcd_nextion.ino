@@ -823,8 +823,8 @@ void SWS_Process(void)
             break;
           }
           
-          SendCommandL('x', analogRead(ADCIndex[nowCheckIndex++]));
           SendCommandL('n', nowCheckIndex);    //Index Input
+          SendCommandL('x', analogRead(ADCIndex[nowCheckIndex++]));
           
           if (nowCheckIndex > endIndex)
             nowCheckIndex = startIndex;
