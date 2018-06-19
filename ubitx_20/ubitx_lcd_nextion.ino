@@ -969,14 +969,17 @@ void SendUbitxData(void)
   SendCommandL(CMD_AR_TUNE3, arTuneStep[2]);
   SendCommandL(CMD_AR_TUNE4, arTuneStep[3]);
   SendCommandL(CMD_AR_TUNE5, arTuneStep[4]);
-
+  
   SendCommandL(CMD_IS_CW_SHIFT_DISPLAY, isShiftDisplayCWFreq);
   SendCommandL(CMD_CW_SHIFT_ADJUST, shiftDisplayAdjustVal);
   SendCommandL(CMD_COMM_OPTION, commonOption0);
   SendCommandL(CMD_DISP_OPTION1, displayOption1);  
-  SendCommandL(CMD_DISP_OPTION2, displayOption2);
 
-  SendCommandStr(CMD_VERSION, "+v1.093"); //Version
+  unsigned long nextionDisplayOption;
+  EEPROM.get(EXTERNAL_DEVICE_OPT1, nextionDisplayOption); 
+  SendCommandUL(CMD_DISP_OPTION2, nextionDisplayOption);
+
+  SendCommandStr(CMD_VERSION, "+v1.094"); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
   /*
