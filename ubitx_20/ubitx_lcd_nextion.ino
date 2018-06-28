@@ -184,9 +184,16 @@ byte L_displayOption2;            //byte displayOption2 (Reserve)
 #define TS_CMD_STOPADC       14
 #define TS_CMD_SPECTRUMOPT   15 //Option for Spectrum
 #define TS_CMD_SPECTRUM      16 //Get Spectrum Value
+#define TS_CMD_TUNESTEP      17 //Get Spectrum Value
 #define TS_CMD_SWTRIG        21 //SW Action Trigger for WSPR and more
 #define TS_CMD_READMEM       31 //Read EEProm
 #define TS_CMD_WRITEMEM      32 //Write EEProm
+#define TS_CMD_LOOPBACK0     74 //Loopback1 (Response to Loopback Channgel)
+#define TS_CMD_LOOPBACK1     75 //Loopback2 (Response to Loopback Channgel)
+#define TS_CMD_LOOPBACK2     76 //Loopback3 (Response to Loopback Channgel)
+#define TS_CMD_LOOPBACK3     77 //Loopback4 (Response to Loopback Channgel)
+#define TS_CMD_LOOPBACK4     78 //Loopback5 (Response to Loopback Channgel)
+#define TS_CMD_LOOPBACK5     79 //Loopback6 (Response to Loopback Channgel)
 #define TS_CMD_FACTORYRESET  85 //Factory Reset
 #define TS_CMD_UBITX_REBOOT  95 //Reboot
 
@@ -776,7 +783,7 @@ void SWS_Process(void)
       }
       else if (commandType == TS_CMD_SPLIT)
       {
-        menuSplitOnOff(1);
+        menuSplitOnOff(10);
       }
       else if (commandType == TS_CMD_RIT)
       {
@@ -855,6 +862,10 @@ void SWS_Process(void)
         spectrumScanCount = swr_buffer[commandStartIndex + 6];          //Maximum 120
         spectrumIncStep = swr_buffer[commandStartIndex + 7] * 20;       //Increaase Step
       }
+      else if (commandType == TS_CMD_TUNESTEP)      //Set Tune Step
+      {
+        tuneStepIndex = swr_buffer[commandStartIndex + 4];          //Tune Step Index
+      }
       else if (commandType == TS_CMD_SWTRIG)
       {
         TriggerBySW = 1;    //Action Trigger by Software
@@ -903,7 +914,14 @@ void SWS_Process(void)
         {
           eepromIndex = -2;
         }
-        SendCommandL('n', eepromIndex);    //Index Input
+        SendCommandL('n', eepromIndex);             //Index Input
+      }
+      //else if (TS_CMD_LOOPBACK0 <= commandType && commandType <= TS_CMD_LOOPBACK5)  //Loop back Channel 0 ~ 5 Loop back Channel 1~5 : Reserve
+      else if (TS_CMD_LOOPBACK0 == commandType)    //Loop back Channel 0 ~ 5
+      {
+        SendCommandUL('v', *(unsigned long *)&swr_buffer[commandStartIndex + 4]);     //Return data
+        SendCommandUL('g', commandType);                                               //Index Input
+        //return;
       }
       else if (commandType == TS_CMD_FACTORYRESET || commandType == TS_CMD_UBITX_REBOOT)
       {
@@ -911,6 +929,7 @@ void SWS_Process(void)
         {
           if (commandType == TS_CMD_UBITX_REBOOT)
           {
+            FrequencyToVFO(1);  //Save current Frequency and Mode to eeprom
             asm volatile ("  jmp 0");
           }
           else
@@ -979,7 +998,7 @@ void SendUbitxData(void)
   EEPROM.get(EXTERNAL_DEVICE_OPT1, nextionDisplayOption); 
   SendCommandUL(CMD_DISP_OPTION2, nextionDisplayOption);
 
-  SendCommandStr(CMD_VERSION, "+v1.094"); //Version
+  SendCommandStr(CMD_VERSION, "+v1.095"); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
   /*

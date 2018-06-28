@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.094")  
+#define FIRMWARE_VERSION_INFO F("+v1.095")  
 #define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
@@ -467,13 +467,17 @@ void startTx(byte txMode, byte isDisplayUpdate){
   }
   else 
   {
-    if (splitOn == 1) {
-      if (vfoActive == VFO_B) {
+    if (splitOn == 1) 
+    {
+      FrequencyToVFO(1);  //Save current Frequency and Mode to eeprom
+      if (vfoActive == VFO_B) 
+      {
         vfoActive = VFO_A;
         frequency = vfoA;
         byteToMode(vfoA_mode, 0);
       }
-      else if (vfoActive == VFO_A){
+      else if (vfoActive == VFO_A)
+      {
         vfoActive = VFO_B;
         frequency = vfoB;
         byteToMode(vfoB_mode, 0);

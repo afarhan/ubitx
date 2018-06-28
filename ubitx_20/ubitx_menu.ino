@@ -389,7 +389,14 @@ void menuVfoToggle(int btn)
 
       ritDisable();
       setFrequency(frequency);
-      menuClearExit(0);
+
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
+    menuClearExit(0);
+#endif    
+      
   }
 }
 
@@ -406,17 +413,20 @@ void menuSplitOnOff(int btn){
       if (splitOn == 1){
         splitOn = 0;
         printLineF2(F("SPT Off"));
-        //printLineF2(F("[OFF]"));
       }
       else {
         splitOn = 1;
         if (ritOn == 1)
           ritOn = 0;
         printLineF2(F("SPT On"));
-        //printLineF2(F("[ON]"));
       }
-      
+
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+//Only Clear And Delay for Character LCD
     menuClearExit(500);
+#endif    
   }
 }
 
@@ -438,8 +448,13 @@ void menuTxOnOff(int btn, byte optionType){
         isTxType &= ~(optionType);
         printLineF2(F("TX ON"));
       }
-      
+
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
     menuClearExit(500);
+#endif
   }
 }
 
@@ -472,7 +487,13 @@ void menuSDROnOff(int btn)
     EEPROM.put(ENABLE_SDR, sdrModeOn);
     setFrequency(frequency);
     SetCarrierFreq();
+
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
     menuClearExit(500);
+#endif
   }
 }
 
@@ -730,7 +751,14 @@ void menuCWSpeed(int btn){
   //printLineF2(F("CW Speed set!"));
   cwSpeed = 1200 / wpm;
   EEPROM.put(CW_SPEED, cwSpeed);
-  menuClearExit(1000);
+  //menuClearExit(1000);
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
+    menuClearExit(1000);
+#endif
+  
 }
 
 //Modified by KD8CEC
@@ -751,43 +779,21 @@ void menuSetupCwTone(int btn){
 
     sideTone = getValueByKnob(1, sideTone, 100, 2000, 10, "Tone", 2); //1 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
 
-    /*
-    //disable all clock 1 and clock 2 
-    while (digitalRead(PTT) == HIGH && !btnDown())
-    {
-      knob = enc_read();
-
-      if (knob > 0 && sideTone < 2000)
-        sideTone += 10;
-      else if (knob < 0 && sideTone > 100 )
-        sideTone -= 10;
-      else
-        continue; //don't update the frequency or the display
-        
-      tone(CW_TONE, sideTone);
-      itoa(sideTone, b, 10);
-      printLine2(b);
-
-      delay_background(100, 0);
-    }
-    */
-
-    
     noTone(CW_TONE);
     
-    //save the setting
-    //if (digitalRead(PTT) == LOW){
-      printLineF2(F("Sidetone set!"));
-      EEPROM.put(CW_SIDETONE, sideTone);
-      delay_background(2000, 0);
-    //}
-    //else
-    //  sideTone = prev_sideTone;
-   
-  menuClearExit(0);
+    printLineF2(F("Sidetone set!"));
+    EEPROM.put(CW_SIDETONE, sideTone);
+
+    //delay_background(2000, 0);
+    //menuClearExit(0);
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
+    delay_background(2000, 0);
+    menuClearExit(0);
+#endif
  }
-
-
 
 //Modified by KD8CEC
 void menuSetupCwDelay(int btn){
@@ -799,44 +805,18 @@ void menuSetupCwDelay(int btn){
      return;
     }
 
-    //printLineF1(F("Press, set Delay"));
-    /*
-    strcpy(b, "DELAY:");
-    itoa(tmpCWDelay,c, 10);
-    strcat(b, c);
-    printLine2(b);
-    */
-    //delay_background(300, 0);
-
     tmpCWDelay = getValueByKnob(0, tmpCWDelay, 3, 2500, 10, "Delay", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
 
-/*
-    while(!btnDown()){
-      knob = enc_read();
-      if (knob != 0){
-        if (tmpCWDelay > 3 && knob < 0)
-          tmpCWDelay -= 10;
-        if (tmpCWDelay < 2500 && knob > 0)
-          tmpCWDelay += 10;
-
-        strcpy(b, "DELAY:");
-        itoa(tmpCWDelay,c, 10);
-        strcat(b, c);
-        printLine2(b);
-      }
-      //abort if this button is down
-      if (btnDown())
-        break;
-
-      Check_Cat(0);  //To prevent disconnections
-    }
-*/
-    
     //save the setting
-    //printLineF2(F("CW Delay set!"));
     cwDelayTime = tmpCWDelay / 10;
     EEPROM.put(CW_DELAY, cwDelayTime);
-   menuClearExit(1000);
+   //menuClearExit(1000);
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
+    menuClearExit(1000);
+#endif
 }
 
 //CW Time delay by KD8CEC
@@ -855,41 +835,17 @@ void menuSetupTXCWInterval(int btn){
 
     tmpTXCWInterval = getValueByKnob(0, tmpTXCWInterval, 0, 500, 2, "Delay", 2); //0 : Generate Tone, targetValue, minKnobValue, maxKnobValue, stepSize
 
-/*
-    while(!btnDown()){
-
-      if (needDisplayInformation == 1) {
-        strcpy(b, "Start Delay:");
-        itoa(tmpTXCWInterval,c, 10);
-        strcat(b, c);
-        printLine2(b);
-        needDisplayInformation = 0;
-      }
-      
-      knob = enc_read();
-      if (knob != 0){
-        if (tmpTXCWInterval > 0 && knob < 0)
-          tmpTXCWInterval -= 2;
-        if (tmpTXCWInterval < 500 && knob > 0)
-          tmpTXCWInterval += 2;
-          
-        needDisplayInformation = 1;
-      }
-      //abort if this button is down
-      //if (btnDown())
-      //  break;
-
-      Check_Cat(0);  //To prevent disconnections
-    }
-*/
-
-    
-    //save the setting
-   //printLineF2(F("CW Start set!"));
    delayBeforeCWStartTime = tmpTXCWInterval / 2;
    EEPROM.put(CW_START, delayBeforeCWStartTime);
+   //menuClearExit(1000);
+
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
+    menuClearExit(1000);
+#endif
    
-   menuClearExit(1000);
 }
 
 //IF Shift function, BFO Change like RIT, by KD8CEC
@@ -907,36 +863,7 @@ void menuIFSSetup(int btn){
   {
       isIFShift = 1;
 
-      //delay_background(500, 0);
-      //updateLine2Buffer(1);
-      //setFrequency(frequency);
-
       ifShiftValue = getValueByKnob(2, ifShiftValue, -20000, 20000, 50, "IFS", 2); //2 : IF Setup (updateLine2Buffer(1), SetFrequency), targetValue, minKnobValue, maxKnobValue, stepSize
-
-/*
-      //Off or Change Value
-      while(!btnDown() ){
-        if (needApplyChangeValue ==1)
-        {
-          updateLine2Buffer(1);
-          setFrequency(frequency);
-          SetCarrierFreq();
-          needApplyChangeValue = 0;
-        }
-        
-        knob = enc_read();
-        if (knob != 0){
-          if (knob < 0)
-            ifShiftValue -= 50;
-          else if (knob > 0)
-            ifShiftValue += 50;
-
-          needApplyChangeValue = 1;
-        }
-        Check_Cat(0);  //To prevent disconnections
-      }
-*/
-
       delay_background(500, 0); //for check Long Press function key
       
       if (btnDown() || ifShiftValue == 0)
@@ -949,7 +876,13 @@ void menuIFSSetup(int btn){
 
       //Store IF Shiift
       EEPROM.put(IF_SHIFTVALUE, ifShiftValue);
-      menuClearExit(0);
+      //menuClearExit(0);
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
+    menuClearExit(0);
+#endif
   }
 }
 
@@ -975,7 +908,15 @@ void menuATTSetup(int btn){
         setFrequency(frequency);
         //SetCarrierFreq();
       }
+      //menuClearExit(0);
+
+#ifdef USE_SW_SERIAL
+      menuOn = 0;
+#else
+      //Only Clear And Delay for Character LCD
       menuClearExit(0);
+#endif
+      
   }
 }
 
@@ -1002,44 +943,10 @@ void menuSelectMode(int btn){
       selectModeType = 3;
 
     beforeMode = selectModeType;
-
-    //delay_background(500, 0);
-
     selectModeType = getValueByKnob(11, selectModeType, 0, 3, 1, " LSB USB CWL CWU", 4); //3 : Select Mode, targetValue, minKnobValue, maxKnobValue, stepSize
 
-/*
-    while(!btnDown()){
-      //Display Mode Name
-      memset(c, 0, sizeof(c));
-      strcpy(c, " LSB USB CWL CWU");
-      c[selectModeType * 4] = '>';
-      printLine1(c);
-      
-      knob = enc_read();
-
-      if (knob != 0)
-      {
-        moveStep += (knob > 0 ? 1 : -1);
-        if (moveStep < -3) {
-          if (selectModeType > 0)
-            selectModeType--;
-            
-          moveStep = 0;
-        }
-        else if (moveStep > 3) {
-          if (selectModeType < 3)
-            selectModeType++;
-            
-          moveStep = 0;
-        }
-      }
-
-      //Check_Cat(0);  //To prevent disconnections
-      delay_background(50, 0);
-    }
-*/
-
-    if (beforeMode != selectModeType) {
+    if (beforeMode != selectModeType) 
+    {
       //printLineF1(F("Changed Mode"));
       if (selectModeType == 0) {
         cwMode = 0; isUSB = 0;
@@ -1058,9 +965,14 @@ void menuSelectMode(int btn){
     }
 
     SetCarrierFreq();
-    
     setFrequency(frequency);
+    //menuClearExit(500);
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
     menuClearExit(500);
+#endif
   }
 }
 
@@ -1073,45 +985,11 @@ void menuSetupKeyType(int btn){
         printLineF2(F("Change Key Type?"));
   }
   else {
-    //printLineF2(F("Press to set Key")); //for reduce usable flash memory
-    //delay_background(500, 0);
     selectedKeyType = cwKeyType;
 
     //selectedKeyType = getValueByKnob(12, selectedKeyType, 0, 2, 1, " KEY:", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
     selectedKeyType = getValueByKnob(11, selectedKeyType, 0, 2, 1, " ST  IA  IB", 5); //4 : Select Key Type, targetValue, minKnobValue, maxKnobValue, stepSize
 
-    /*
-    while(!btnDown()){
-
-      //Display Key Type
-      if (selectedKeyType == 0)
-        printLineF1(F("Straight"));
-      else if (selectedKeyType == 1)
-        printLineF1(F("IAMBICA"));
-      else if (selectedKeyType == 2)
-        printLineF1(F("IAMBICB"));
-
-      knob = enc_read();
-
-      if (knob != 0)
-      {
-        moveStep += (knob > 0 ? 1 : -1);
-        if (moveStep < -3) {
-          if (selectedKeyType > 0)
-            selectedKeyType--;
-          moveStep = 0;
-        }
-        else if (moveStep > 3) {
-          if (selectedKeyType < 2)
-            selectedKeyType++;
-          moveStep = 0;
-        }
-      }
-
-      Check_Cat(0);  //To prevent disconnections
-    }
-    */
-    
     printLineF2(F("CW Key Type set!"));
     cwKeyType = selectedKeyType;
     EEPROM.put(CW_KEY_TYPE, cwKeyType);
@@ -1127,7 +1005,14 @@ void menuSetupKeyType(int btn){
         keyerControl |= IAMBICB;
     }
     
+    //menuClearExit(1000);
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
     menuClearExit(1000);
+#endif
+    
   }
 }
 
@@ -1364,7 +1249,14 @@ void menuSetup(int btn){
   else 
   {
     modeCalibrate = ! modeCalibrate;
+    //menuClearExit(1000);
+
+#ifdef USE_SW_SERIAL
+    menuOn = 0;
+#else
+    //Only Clear And Delay for Character LCD
     menuClearExit(1000);
+#endif
   }
 }
 
@@ -1395,12 +1287,16 @@ void menuRitToggle(int btn){
         ritDisable();
       }
       
+      //menuClearExit(500);
+#ifdef USE_SW_SERIAL
+      menuOn = 0;
+#else
+      //Only Clear And Delay for Character LCD
       menuClearExit(500);
+#endif
+      
   }
 }
-
-
-
 
 /**
  * Take a deep breath, math(ematics) ahead
