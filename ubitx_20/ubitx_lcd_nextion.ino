@@ -761,7 +761,10 @@ void SWS_Process(void)
       {
         unsigned long *tempFreq;
         tempFreq = (unsigned long *)(&swr_buffer[commandStartIndex + 4]);
-        frequency = *tempFreq;
+        //if (*tempFreq > 3000)  //for loss protcol
+        //{
+          frequency = *tempFreq;
+        //}
       }
       else if (commandType == TS_CMD_BAND)
       {
@@ -989,7 +992,7 @@ void SendUbitxData(void)
   SendCommandL(CMD_AR_TUNE4, arTuneStep[3]);
   SendCommandL(CMD_AR_TUNE5, arTuneStep[4]);
   
-  SendCommandL(CMD_IS_CW_SHIFT_DISPLAY, isShiftDisplayCWFreq);
+  SendCommand1Num(CMD_IS_CW_SHIFT_DISPLAY, isShiftDisplayCWFreq);
   SendCommandL(CMD_CW_SHIFT_ADJUST, shiftDisplayAdjustVal);
   SendCommandL(CMD_COMM_OPTION, commonOption0);
   SendCommandL(CMD_DISP_OPTION1, displayOption1);  
