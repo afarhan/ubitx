@@ -35,9 +35,12 @@
 
 //==============================================================================
 // The spare space available in the original firmware #1
-// Address : 32 ~ 63
+// Address : 32 ~ 62
 //==============================================================================
 #define RESERVE_FOR_FACTORY1  32
+
+//SI5351 I2C Address (Version 1.097)
+#define I2C_ADDR_SI5351       63
 
 //==============================================================================
 // The spare space available in the original firmware #2

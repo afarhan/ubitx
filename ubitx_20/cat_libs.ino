@@ -252,12 +252,35 @@ void ReadEEPRom() //for remove warnings.
 
   Serial.write(0x02); //STX
   checkSum = 0x02;
-  for (uint16_t i = 0; i < eepromReadLength; i++)
+  //I2C Scanner
+  //Magic Key Start 59414, Length : 48583
+  //if (eepromStartIndex == 59414 && eepromReadLength == 48583)
+  if (CAT_BUFF[0] == 0x16  && CAT_BUFF[1] == 0xe8)
   {
-    read1Byte = EEPROM.read(eepromStartIndex + i);
-    checkSum += read1Byte;
-    Serial.write(read1Byte);
+    for (uint8_t i = 1; i < 127; i++)
+    {
+      Wire.beginTransmission(i);
+      read1Byte = Wire.endTransmission();
+      if (read1Byte == 0)
+      {
+        Serial.write(i);
+      }
+      else
+      {
+        Serial.write(0);
+      }
+    }
   }
+  else
+  {
+    for (uint16_t i = 0; i < eepromReadLength; i++)
+    {
+      read1Byte = EEPROM.read(eepromStartIndex + i);
+      checkSum += read1Byte;
+      Serial.write(read1Byte);
+    }
+  }
+  
   Serial.write(checkSum);
   Serial.write(ACK);
 }

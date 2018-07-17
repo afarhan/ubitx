@@ -30,7 +30,6 @@
 //#define UBITX_DISPLAY_LCD2004P        //24 x 04 LCD (Parallel)
 //#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
 #define UBITX_DISPLAY_NEXTION         //NEXTION LCD 
-//#define UBITX_CONTROL_MCU             //CONTROL MCU
 
 //#define UBITX_DISPLAY_NEXTION_SAFE      //Only EEProm Write 770~775
 #define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x27     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
@@ -161,6 +160,8 @@ extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
 
 #define FKEY_TYPE_MAX   0x1F
 
+extern uint8_t SI5351BX_ADDR;     //change typical -> variable at Version 1.097, address read from eeprom, default value is 0x60
+                                  //EEProm Address : 63
 extern unsigned long frequency;
 extern byte WsprMSGCount;
 extern byte sMeterLevels[9];

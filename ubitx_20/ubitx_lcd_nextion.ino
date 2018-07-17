@@ -63,7 +63,7 @@ void LCD_Init(void)
 
 #define USE_I2CSMETER
 //S-Meter Address
-#define I2CMETER_ADDR     0x6A
+#define I2CMETER_ADDR     0x58
 //VALUE TYPE============================================
 //Signal
 #define I2CMETER_CALCS    0x59 //Calculated Signal Meter

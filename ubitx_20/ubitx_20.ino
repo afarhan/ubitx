@@ -958,6 +958,15 @@ void initSettings(){
   if (EEPROM.read(VERSION_ADDRESS) != FIRMWARE_VERSION_NUM)
     EEPROM.write(VERSION_ADDRESS, FIRMWARE_VERSION_NUM);
 
+  //SI5351 I2C Address
+  //I2C_ADDR_SI5351
+  SI5351BX_ADDR = EEPROM.read(I2C_ADDR_SI5351);
+  if (SI5351BX_ADDR < 0x10 || SI5351BX_ADDR > 0xF0)
+  {
+    SI5351BX_ADDR = 0x60;
+  }
+  
+
   //Backup Calibration Setting from Factory Setup
   //Check Factory Setting Backup Y/N
   if (EEPROM.read(FACTORY_BACKUP_YN) != 0x13) {
