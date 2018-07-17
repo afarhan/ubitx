@@ -57,6 +57,53 @@ void LCD_Init(void)
 }
 
 //===================================================================
+//I2C Signal Meter, Version 1.097
+//
+//===================================================================
+
+#define USE_I2CSMETER
+//S-Meter Address
+#define I2CMETER_ADDR     0x6A
+//VALUE TYPE============================================
+//Signal
+#define I2CMETER_CALCS    0x59 //Calculated Signal Meter
+#define I2CMETER_UNCALCS  0x58 //Uncalculated Signal Meter
+
+//Power
+#define I2CMETER_CALCP    0x57 //Calculated Power Meter
+#define I2CMETER_UNCALCP  0x56 //UnCalculated Power Meter
+
+//SWR
+#define I2CMETER_CALCR    0x55 //Calculated SWR Meter
+#define I2CMETER_UNCALCR  0x54 //Uncalculated SWR Meter
+
+// 0xA0 ~ 0xCF : CW Decode Mode + 100Hz ~
+// 0xD0 ~ 0xF3 : RTTY Decode Mode + 100Hz ~
+// 0x10 ~ 0x30 : Spectrum Mode
+int GetI2CSmeterValue(int valueType)
+{
+  if (valueType > 0)
+  {
+    Wire.beginTransmission(I2CMETER_ADDR);  //j : S-Meter
+    Wire.write(valueType);                  //Y : Get Value Type
+    Wire.endTransmission();
+  }
+  
+  Wire.requestFrom(I2CMETER_ADDR, 1);
+  for (int i = 0; i < 100; i++)
+  {
+    if (Wire.available() > 0)
+    {
+      return Wire.read();
+    }
+    else
+    {
+      delay(1);
+    }
+  }
+}
+
+//===================================================================
 //Begin of Nextion LCD Protocol
 //
 // v0~v9, va~vz : Numeric (Transceiver -> Nextion LCD)
@@ -675,6 +722,10 @@ void sendResponseData(int protocolType, unsigned long startFreq, unsigned int se
         setFrequency(startFreq + (k * sendOption1));
         //Wait time for charging
         //delay(10);
+
+#ifdef USE_I2CSMETER 
+        readedValue = GetI2CSmeterValue(I2CMETER_UNCALCS);
+#else
   
         //ADC
         readedValue = analogRead(ANALOG_SMETER);
@@ -689,6 +740,7 @@ void sendResponseData(int protocolType, unsigned long startFreq, unsigned int se
         {
           readedValue=255;
         }
+#endif        
       }
       else
       {
@@ -960,7 +1012,10 @@ void idle_process()
   if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
   {
     int newSMeter;
-    
+
+#ifdef USE_I2CSMETER 
+    scaledSMeter = GetI2CSmeterValue(I2CMETER_CALCS);
+#else
     //VK2ETA S-Meter from MAX9814 TC pin
     newSMeter = analogRead(ANALOG_SMETER) / 4;
   
@@ -976,7 +1031,8 @@ void idle_process()
         break;
       }
     }
-  
+
+#endif  
     checkCountSMeter = 0; //Reset Latency time
   } //end of S-Meter
 
@@ -1001,7 +1057,7 @@ void SendUbitxData(void)
   EEPROM.get(EXTERNAL_DEVICE_OPT1, nextionDisplayOption); 
   SendCommandUL(CMD_DISP_OPTION2, nextionDisplayOption);
 
-  SendCommandStr(CMD_VERSION, "+v1.095"); //Version
+  SendCommandStr(CMD_VERSION, "+v1.097"); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
   /*
