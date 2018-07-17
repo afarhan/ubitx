@@ -268,4 +268,34 @@ int enc_read(void) {
   return(result);
 }
 
+//===================================================================
+//I2C Signal Meter, Version 1.097
+//===================================================================
+
+// 0xA0 ~ 0xCF : CW Decode Mode + 100Hz ~
+// 0xD0 ~ 0xF3 : RTTY Decode Mode + 100Hz ~
+// 0x10 ~ 0x30 : Spectrum Mode
+int GetI2CSmeterValue(int valueType)
+{
+  if (valueType > 0)
+  {
+    Wire.beginTransmission(I2CMETER_ADDR);  //j : S-Meter
+    Wire.write(valueType);                  //Y : Get Value Type
+    Wire.endTransmission();
+  }
+  
+  Wire.requestFrom(I2CMETER_ADDR, 1);
+  for (int i = 0; i < 100; i++)
+  {
+    if (Wire.available() > 0)
+    {
+      return Wire.read();
+    }
+    else
+    {
+      delay(1);
+    }
+  }
+}
+
 

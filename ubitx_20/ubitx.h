@@ -29,12 +29,14 @@
 //#define UBITX_DISPLAY_LCD1602I_DUAL   //I2C type 16 x02 LCD Dual
 //#define UBITX_DISPLAY_LCD2004P        //24 x 04 LCD (Parallel)
 //#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
-#define UBITX_DISPLAY_NEXTION         //NEXTION LCD 
+#define UBITX_DISPLAY_NEXTION         //NEXTION LCD
 
 //#define UBITX_DISPLAY_NEXTION_SAFE      //Only EEProm Write 770~775
 #define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x27     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
 #define I2C_LCD_SECOND_ADDRESS_DEFAULT  0x3F     //0x27  //only using Dual LCD Mode
 
+//Select betwen Analog S-Meter and DSP (I2C) Meter
+//#define USE_I2CSMETER
 
 #define EXTEND_KEY_GROUP1               //MODE, BAND(-), BAND(+), STEP
 //#define EXTEND_KEY_GROUP2             //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
@@ -120,6 +122,24 @@ extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
 #define TX_LPF_C      (3)   //Relay
 #define CW_KEY        (2)
 
+//******************************************************
+//DSP (I2C) Meter 
+//******************************************************
+//S-Meter Address
+#define I2CMETER_ADDR     0x58
+//VALUE TYPE============================================
+//Signal
+#define I2CMETER_CALCS    0x59 //Calculated Signal Meter
+#define I2CMETER_UNCALCS  0x58 //Uncalculated Signal Meter
+
+//Power
+#define I2CMETER_CALCP    0x57 //Calculated Power Meter
+#define I2CMETER_UNCALCP  0x56 //UnCalculated Power Meter
+
+//SWR
+#define I2CMETER_CALCR    0x55 //Calculated SWR Meter
+#define I2CMETER_UNCALCR  0x54 //Uncalculated SWR Meter
+
 //==============================================================================
 // for public, Variable, functions
 //==============================================================================
@@ -195,6 +215,9 @@ extern void SendWSPRManage(void);
 extern char byteToChar(byte srcByte);
 extern void DisplayCallsign(byte callSignLength);
 extern void DisplayVersionInfo(const char* fwVersionInfo);
+
+//I2C Signal Meter, Version 1.097
+extern int GetI2CSmeterValue(int valueType);  //ubitx_ui.ino
 
 #endif    //end of if header define
 

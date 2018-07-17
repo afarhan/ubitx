@@ -1,5 +1,8 @@
 /*************************************************************************
   KD8CEC's uBITX Display Routine for Nextion LCD
+  
+  Uses the default protocol of Nextion LCD.
+  Do not assign a 2 byte address to Nextion LCD.
 -----------------------------------------------------------------------------
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -54,53 +57,6 @@ void LCD_Init(void)
 {
   LCDNextion_Init();  
   //initMeter(); //for Meter Display
-}
-
-//===================================================================
-//I2C Signal Meter, Version 1.097
-//
-//===================================================================
-
-#define USE_I2CSMETER
-//S-Meter Address
-#define I2CMETER_ADDR     0x58
-//VALUE TYPE============================================
-//Signal
-#define I2CMETER_CALCS    0x59 //Calculated Signal Meter
-#define I2CMETER_UNCALCS  0x58 //Uncalculated Signal Meter
-
-//Power
-#define I2CMETER_CALCP    0x57 //Calculated Power Meter
-#define I2CMETER_UNCALCP  0x56 //UnCalculated Power Meter
-
-//SWR
-#define I2CMETER_CALCR    0x55 //Calculated SWR Meter
-#define I2CMETER_UNCALCR  0x54 //Uncalculated SWR Meter
-
-// 0xA0 ~ 0xCF : CW Decode Mode + 100Hz ~
-// 0xD0 ~ 0xF3 : RTTY Decode Mode + 100Hz ~
-// 0x10 ~ 0x30 : Spectrum Mode
-int GetI2CSmeterValue(int valueType)
-{
-  if (valueType > 0)
-  {
-    Wire.beginTransmission(I2CMETER_ADDR);  //j : S-Meter
-    Wire.write(valueType);                  //Y : Get Value Type
-    Wire.endTransmission();
-  }
-  
-  Wire.requestFrom(I2CMETER_ADDR, 1);
-  for (int i = 0; i < 100; i++)
-  {
-    if (Wire.available() > 0)
-    {
-      return Wire.read();
-    }
-    else
-    {
-      delay(1);
-    }
-  }
 }
 
 //===================================================================
@@ -678,6 +634,9 @@ void updateDisplay() {
   sendUIData(0);  //UI 
 }
 
+//****************************************************************
+// Spectrum for Range scan and Band Scan
+//****************************************************************
 #define RESPONSE_SPECTRUM     0
 #define RESPONSE_EEPROM       1
 #define RESPONSE_EEPROM_HEX_F 89  //C Language order
@@ -686,8 +645,8 @@ void updateDisplay() {
 
 const uint8_t ResponseHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
 const uint8_t ResponseFooter[4]={'"', 0xFF, 0xFF, 0xFF};
-
 const char HexCodes[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', };
+
 //void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCount, int delayTime, int sendCount)
 //sendResponseData(RESPONSE_EEPROM, 0, eepromIndex, eepromReadLength, eepromDataType, 1);
 //protocol Type : 0 - Spectrum, 1 : EEProm
@@ -764,17 +723,15 @@ void sendResponseData(int protocolType, unsigned long startFreq, unsigned int se
   } //end of for
 }
 
-//sendSpectrumData(unsigned long startFreq, unsigned int incStep, int scanCount, int delayTime, int sendCount)
-//sendSpectrumData(frequency - (1000L * 50), 1000, 100, 0, 10);
+//****************************************************************
+//Receive command and processing from External device (LCD or MCU)
+//****************************************************************
 int spectrumSendCount = 10;   //count of full scan and Send
 int spectrumOffset = 0;    //offset position
 int spectrumScanCount = 100;  //Maximum 200
 unsigned int spectrumIncStep = 1000;   //Increaase Step
-
-// tern static uint8_t swr_receive_buffer[20];
 extern uint8_t receivedCommandLength;
 extern void SWSerial_Read(uint8_t * receive_cmdBuffer);
-//extern void byteToMode(byte modeValue, byte autoSetModebyFreq);
 uint8_t swr_buffer[20];
 
 //SoftwareSerial_Process

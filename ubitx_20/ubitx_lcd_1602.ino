@@ -738,6 +738,9 @@ void idle_process()
     {
       int newSMeter;
 
+#ifdef USE_I2CSMETER 
+    scaledSMeter = GetI2CSmeterValue(I2CMETER_CALCS);
+#else
       //VK2ETA S-Meter from MAX9814 TC pin / divide 4 by KD8CEC for reduce EEPromSize
       newSMeter = analogRead(ANALOG_SMETER) / 4;
   
@@ -752,6 +755,7 @@ void idle_process()
           break;
         }
       }
+#endif  
   
       DisplayMeter(0, scaledSMeter, 13);
       checkCountSMeter = 0; //Reset Latency time

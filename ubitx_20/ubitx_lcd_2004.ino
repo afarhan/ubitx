@@ -690,7 +690,10 @@ void idle_process()
     if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
     {
       int newSMeter;
-      
+
+#ifdef USE_I2CSMETER 
+    scaledSMeter = GetI2CSmeterValue(I2CMETER_CALCS);
+#else
       //VK2ETA S-Meter from MAX9814 TC pin
       newSMeter = analogRead(ANALOG_SMETER) / 4;
   
@@ -706,6 +709,7 @@ void idle_process()
           break;
         }
       }
+#endif  
   
       DisplayMeter(0, scaledSMeter, 0);
       checkCountSMeter = 0; //Reset Latency time
