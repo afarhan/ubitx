@@ -1113,7 +1113,190 @@ void doMenu(){
   //Below codes are origial code with modified by KD8CEC
   menuOn = 2;
   TriggerBySW = 0;  //Nextion LCD and Other MCU
-  
+
+  //*********************************************************************************
+  // New type menu for developer by KD8CEC
+  // Selectable menu
+  // Version : 1.097 ~
+  //*********************************************************************************
+#ifndef ENABLE_ADCMONITOR
+  #define FN_ADCMONITOR  0
+#endif
+
+  #define FN_DEFAULT_MENU     2 //Setup Onff / Exit
+  #define FN_DEFAULT_SETUP    1 //Exit
+
+  #define FN_BAND_IDX         (FN_BAND -1)        //0 or -1
+  #define FN_VFO_TOGGLE_IDX   (FN_BAND_IDX        + FN_VFO_TOGGLE)
+  #define FN_MODE_IDX         (FN_VFO_TOGGLE_IDX  + FN_MODE)
+  #define FN_RIT_IDX          (FN_MODE_IDX        + FN_RIT)
+  #define FN_IFSHIFT_IDX      (FN_RIT_IDX         + FN_IFSHIFT)
+  #define FN_ATT_IDX          (FN_IFSHIFT_IDX     + FN_ATT)
+  #define FN_CW_SPEED_IDX     (FN_ATT_IDX         + FN_CW_SPEED)
+  #define FN_SPLIT_IDX        (FN_CW_SPEED_IDX    + FN_SPLIT)
+  #define FN_VFOTOMEM_IDX     (FN_SPLIT_IDX       + FN_VFOTOMEM)
+  #define FN_MEMTOVFO_IDX     (FN_VFOTOMEM_IDX    + FN_MEMTOVFO)
+  #define FN_MEMORYKEYER_IDX  (FN_MEMTOVFO_IDX    + FN_MEMORYKEYER)
+  #define FN_WSPR_IDX         (FN_MEMORYKEYER_IDX + FN_WSPR)
+  #define FN_SDRMODE_IDX      (FN_WSPR_IDX        + FN_SDRMODE)
+  #define FN_SETUP_IDX        (FN_SDRMODE_IDX     + 1)
+  #define FN_EXIT_IDX         (FN_SETUP_IDX       + 1)
+  #define FN_CALIBRATION_IDX  (FN_EXIT_IDX        + FN_CALIBRATION)
+  #define FN_CARRIER_IDX      (FN_CALIBRATION_IDX + FN_CARRIER)
+  #define FN_CWCARRIER_IDX    (FN_CARRIER_IDX     + FN_CWCARRIER)
+  #define FN_CWTONE_IDX       (FN_CWCARRIER_IDX   + FN_CWTONE)
+  #define FN_CWDELAY_IDX      (FN_CWTONE_IDX      + FN_CWDELAY)
+  #define FN_TXCWDELAY_IDX    (FN_CWDELAY_IDX     + FN_TXCWDELAY)
+  #define FN_KEYTYPE_IDX      (FN_TXCWDELAY_IDX   + FN_KEYTYPE)
+  #define FN_ADCMONITOR_IDX   (FN_KEYTYPE_IDX     + FN_ADCMONITOR)
+  #define FN_TXONOFF_IDX      (FN_ADCMONITOR_IDX  + FN_TXONOFF)
+
+  #define FN_MENU_COUNT       (FN_DEFAULT_MENU + FN_BAND + FN_VFO_TOGGLE + FN_MODE + FN_RIT + FN_IFSHIFT + FN_ATT + FN_CW_SPEED + FN_SPLIT + FN_VFOTOMEM + FN_MEMTOVFO + FN_MEMORYKEYER + FN_WSPR + FN_SDRMODE)
+  #define FN_SETUP_COUNT      (FN_DEFAULT_SETUP + FN_CALIBRATION + FN_CARRIER + FN_CWCARRIER + FN_CWTONE + FN_CWDELAY + FN_TXCWDELAY + FN_KEYTYPE + FN_ADCMONITOR + FN_TXONOFF)
+  #define FN_STEP_COUNT       (FN_MENU_COUNT + FN_SETUP_COUNT)
+    
+  while (menuOn){
+    i = enc_read();
+    btnState = btnDown();
+
+    if (i > 0){
+      if (modeCalibrate && select + i < FN_STEP_COUNT * 10)
+        select += i;
+      else if (!modeCalibrate && select + i < FN_MENU_COUNT * 10)
+        select += i;
+    }
+    else if (i < 0 && select - i >= -10)
+      select += i;
+      
+    switch (select / 10)
+    {
+#if FN_BAND == 1
+      case FN_BAND_IDX : 
+        menuBand(btnState); 
+        break;
+#endif
+#if FN_VFO_TOGGLE == 1
+      case FN_VFO_TOGGLE_IDX : 
+        menuVfoToggle(btnState); 
+        break;
+#endif        
+#if FN_MODE == 1
+      case FN_MODE_IDX : 
+        menuSelectMode(btnState); 
+        break;
+#endif        
+#if FN_RIT == 1
+      case FN_RIT_IDX : 
+        menuRitToggle(btnState); 
+        break;
+#endif        
+#if FN_IFSHIFT == 1
+      case FN_IFSHIFT_IDX : 
+        menuIFSSetup(btnState); 
+        break;
+#endif        
+#if FN_ATT == 1
+      case FN_ATT_IDX : 
+        menuATTSetup(btnState); 
+        break;
+#endif        
+#if FN_CW_SPEED == 1
+      case FN_CW_SPEED_IDX : 
+        menuCWSpeed(btnState); 
+        break;
+#endif        
+#if FN_SPLIT == 1
+      case FN_SPLIT_IDX : 
+        menuSplitOnOff(btnState);        //SplitOn / off
+        break;
+#endif        
+#if FN_VFOTOMEM == 1
+      case FN_VFOTOMEM_IDX : 
+        menuCHMemory(btnState, 0);       //VFO to Memroy
+        break;
+#endif        
+#if FN_MEMTOVFO == 1
+      case FN_MEMTOVFO_IDX : 
+        menuCHMemory(btnState, 1);       //Memory to VFO
+        break;
+#endif        
+#if FN_MEMORYKEYER == 1
+      case FN_MEMORYKEYER_IDX : 
+        menuCWAutoKey(btnState);  
+        break;
+#endif        
+#if FN_WSPR == 1
+      case FN_WSPR_IDX : 
+        menuWSPRSend(btnState);
+        break;
+#endif        
+#if FN_SDRMODE == 1
+      case FN_SDRMODE_IDX : 
+        menuSDROnOff(btnState);
+        break;
+#endif        
+      case FN_SETUP_IDX : 
+        menuSetup(btnState);
+        break;
+      case FN_EXIT_IDX : 
+        menuExit(btnState);
+        break;
+        
+#if FN_CALIBRATION == 1
+      case FN_CALIBRATION_IDX : 
+        menuSetupCalibration(btnState);  //crystal
+        break;
+#endif        
+#if FN_CARRIER == 1
+      case FN_CARRIER_IDX : 
+        menuSetupCarrier(btnState);      //ssb
+        break;
+#endif        
+#if FN_CWCARRIER == 1
+      case FN_CWCARRIER_IDX : 
+        menuSetupCWCarrier(btnState);    //cw
+        break;
+#endif        
+#if FN_CWTONE == 1
+      case FN_CWTONE_IDX : 
+        menuSetupCwTone(btnState);  
+        break;
+#endif        
+#if FN_CWDELAY == 1
+      case FN_CWDELAY_IDX : 
+        menuSetupCwDelay(btnState);  
+        break;
+#endif        
+#if FN_TXCWDELAY == 1
+      case FN_TXCWDELAY_IDX : 
+        menuSetupTXCWInterval(btnState);  
+        break;
+#endif        
+#if FN_KEYTYPE == 1
+      case FN_KEYTYPE_IDX :
+        menuSetupKeyType(btnState);  
+        break;
+#endif        
+#if FN_ADCMONITOR == 1
+      case FN_ADCMONITOR_IDX :
+        menuADCMonitor(btnState);  
+        break;
+#endif        
+#if FN_TXONOFF == 1
+      case FN_TXONOFF_IDX :
+        menuTxOnOff(btnState, 0x01);       //TX OFF / ON
+        break;
+#endif        
+      default :
+        menuExit(btnState);  break;
+    } //end of switch
+    Check_Cat(0);  //To prevent disconnections
+  }   //end of while
+
+  //****************************************************************************
+  //Before change menu type (Version : ~ 0.95)
+  //****************************************************************************
+  /*
   while (menuOn){
     i = enc_read();
     btnState = btnDown();
@@ -1208,9 +1391,10 @@ void doMenu(){
         break;
       default :
         menuExit(btnState);  break;
-    }    
+    } //end of case    
     Check_Cat(0);  //To prevent disconnections
-  }
+  } //end of while
+  */
 }
 
 //*************************************************************************************

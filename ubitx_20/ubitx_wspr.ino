@@ -6,8 +6,6 @@ Thanks to G3ZIL for sharing great code.
 Due to the limited memory of uBITX, I have implemented at least only a few of the codes in uBITX.
 
 Thanks for testing
-Beta Tester : 
-
 -----------------------------------------------------------------------------
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

@@ -682,74 +682,7 @@ void checkButton(){
         menuRitToggle(1);
         break;
     }
-    /*
-    if (keyStatus == FKEY_MODE) //Press Mode Key
-    {
-      if (cwMode == 1)
-      {
-        cwMode = 2;
-      }
-      else if (cwMode == 2)
-      {
-        cwMode = 0;
-        isUSB = 0;
-      }
-      else if (isUSB == 0)
-      {
-        isUSB = 1;
-      }
-      else
-      {
-        cwMode = 1;
-      }
-    }
-    else if (keyStatus == FKEY_BANDUP || keyStatus == FKEY_BANDDOWN)  //Press Mode Key
-    {
 
-      char currentBandIndex = -1;
-      
-      //Save Band Information
-      if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
-        currentBandIndex = getIndexHambanBbyFreq(frequency);
-        
-        if (currentBandIndex >= 0) {
-          saveBandFreqByIndex(frequency, modeToByte(), currentBandIndex);
-        }
-      }
-      
-      setNextHamBandFreq(frequency, keyStatus == FKEY_BANDDOWN ? -1 : 1);  //Prior Band      
-    }
-    else if (keyStatus == FKEY_STEP)  //FKEY_BANDUP
-    {
-      if (++tuneStepIndex > 5)
-        tuneStepIndex = 1;
-
-      EEPROM.put(TUNING_STEP, tuneStepIndex);
-      printLine2ClearAndUpdate();
-    }
-
-    else if (keyStatus == FKEY_VFOCHANGE)
-    {
-      menuVfoToggle(1); //Vfo Toggle
-    }
-    else if (keyStatus == FKEY_SPLIT)
-    {
-      menuSplitOnOff(1);
-    }
-    else if (keyStatus == FKEY_TXOFF)
-    {
-      menuTxOnOff(1, 0x01);
-    }
-    else if (keyStatus == FKEY_SDRMODE)
-    {
-      menuSDROnOff(1);
-    }
-    else if (keyStatus == FKEY_RIT)
-    {
-      menuRitToggle(1);
-    }
-    */
-      
     FrequencyToVFO(1);
     SetCarrierFreq();
     setFrequency(frequency);

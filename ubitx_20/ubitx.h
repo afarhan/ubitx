@@ -36,7 +36,7 @@
 #define I2C_LCD_SECOND_ADDRESS_DEFAULT  0x3F     //0x27  //only using Dual LCD Mode
 
 //Select betwen Analog S-Meter and DSP (I2C) Meter
-//#define USE_I2CSMETER
+#define USE_I2CSMETER
 
 #define EXTEND_KEY_GROUP1               //MODE, BAND(-), BAND(+), STEP
 //#define EXTEND_KEY_GROUP2             //Numeric (0~9), Point(.), Enter  //Not supported in Version 1.0x
@@ -47,8 +47,89 @@
 
 extern byte I2C_LCD_MASTER_ADDRESS;     //0x27  //if Set I2C Address by uBITX Manager, read from EEProm
 extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
-
 #define SMeterLatency   3               //1 is 0.25 sec
+
+//==============================================================================
+// User Select feather list
+//==============================================================================
+//Enable all features
+#define FN_BAND         1 //592
+#define FN_VFO_TOGGLE   1 //78
+#define FN_MODE         1 //20
+#define FN_RIT          1 //58
+#define FN_SPLIT        1 //62
+#define FN_IFSHIFT      1 //238
+#define FN_ATT          1 //128
+#define FN_CW_SPEED     1 //152
+#define FN_VFOTOMEM     1 //254
+#define FN_MEMTOVFO     1 //188
+#define FN_MEMORYKEYER  1 //156
+#define FN_WSPR         1 //1044
+#define FN_SDRMODE      1 //68
+#define FN_CALIBRATION  1 //666
+#define FN_CARRIER      1 //382
+#define FN_CWCARRIER    1 //346
+#define FN_CWTONE       1 //148
+#define FN_CWDELAY      1 //98
+#define FN_TXCWDELAY    1 //94
+#define FN_KEYTYPE      1 //168
+#define FN_ADCMONITOR   1 //516
+#define FN_TXONOFF      1 //58
+
+/*
+//Recommended Character LCD Developer  87%
+#define FN_BAND         1 //592
+#define FN_VFO_TOGGLE   1 //78
+#define FN_MODE         1 //20
+#define FN_RIT          1 //58
+#define FN_SPLIT        1 //62
+#define FN_IFSHIFT      1 //238
+#define FN_ATT          0 //128
+#define FN_CW_SPEED     0 //152 //using MM
+#define FN_VFOTOMEM     1 //254
+#define FN_MEMTOVFO     1 //188
+#define FN_MEMORYKEYER  1 //156
+#define FN_WSPR         1 //1044
+#define FN_SDRMODE      1 //68
+#define FN_CALIBRATION  0 //667 //using MM
+#define FN_CARRIER      0 //382 //using MM
+#define FN_CWCARRIER    0 //346 //using MM
+#define FN_CWTONE       0 //148 //using MM
+#define FN_CWDELAY      0 //98 //using MM
+#define FN_TXCWDELAY    0 //94 //using MM
+#define FN_KEYTYPE      0 //168 //using MM
+#define FN_ADCMONITOR   0 //516 //using MM
+#define FN_TXONOFF      1 //58
+*/
+
+/*
+//Recommended for Nextion, TJC LCD 88%
+#define FN_BAND         1 //600
+#define FN_VFO_TOGGLE   1 //90
+#define FN_MODE         1 //318
+#define FN_RIT          1 //62
+#define FN_SPLIT        1 //2
+#define FN_IFSHIFT      1 //358
+#define FN_ATT          1 //250
+#define FN_CW_SPEED     0 //286
+#define FN_VFOTOMEM     0 //276
+#define FN_MEMTOVFO     0 //234
+#define FN_MEMORYKEYER  1 //168
+#define FN_WSPR         1 //1130
+#define FN_SDRMODE      1 //70
+#define FN_CALIBRATION  0 //790
+#define FN_CARRIER      0 //500
+#define FN_CWCARRIER    0 //464
+#define FN_CWTONE       0 //158
+#define FN_CWDELAY      0 //108
+#define FN_TXCWDELAY    0 //106
+#define FN_KEYTYPE      0 //294
+#define FN_ADCMONITOR   0 //526 //not available with Nextion or Serial UI
+#define FN_TXONOFF      1 //70
+*/
+//==============================================================================
+// End of User Select Mode and Compil options
+//==============================================================================
 
 #ifdef UBITX_DISPLAY_LCD1602I
   #define USE_I2C_LCD
