@@ -103,7 +103,7 @@ uint16_t _rx_delay_intrabit;
 
 //Customize for uBITX Protocol
 int8_t receiveIndex = 0;
-int8_t receivedCommandLength = 0;
+uint8_t receivedCommandLength = 0;
 int8_t ffCount = 0;
 
 //Values for Receive Buffer

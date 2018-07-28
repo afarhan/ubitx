@@ -77,6 +77,32 @@ extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
 #define FN_TXONOFF      1 //58
 
 /*
+//Test Configuration  (88%)
+#define FN_BAND         0 //592
+#define FN_VFO_TOGGLE   0 //78
+#define FN_MODE         0 //20
+#define FN_RIT          0 //58
+#define FN_SPLIT        0 //62
+#define FN_IFSHIFT      0 //238
+#define FN_ATT          0 //128
+#define FN_CW_SPEED     1 //152
+#define FN_VFOTOMEM     0 //254
+#define FN_MEMTOVFO     0 //188
+#define FN_MEMORYKEYER  1 //156
+#define FN_WSPR         0 //1044
+#define FN_SDRMODE      1 //68
+#define FN_CALIBRATION  1 //666
+#define FN_CARRIER      1 //382
+#define FN_CWCARRIER    1 //346
+#define FN_CWTONE       1 //148
+#define FN_CWDELAY      1 //98
+#define FN_TXCWDELAY    1 //94
+#define FN_KEYTYPE      1 //168
+#define FN_ADCMONITOR   1 //516
+#define FN_TXONOFF      1 //58
+*/
+
+/*
 //Recommended Character LCD Developer  87%
 #define FN_BAND         1 //592
 #define FN_VFO_TOGGLE   1 //78

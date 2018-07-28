@@ -56,7 +56,6 @@ void LCDNextion_Init()
 void LCD_Init(void)
 {
   LCDNextion_Init();  
-  //initMeter(); //for Meter Display
 }
 
 //===================================================================
@@ -113,16 +112,16 @@ byte L_scaledSMeter;      //scaledSMeter
 #define CMD_SIDE_TONE     't' //vt
 unsigned long L_sideTone; //sideTone
 #define CMD_KEY_TYPE      'k' //ck
-byte L_cwKeyType;          //L_cwKeyType 0: straight, 1 : iambica, 2: iambicb
+byte L_cwKeyType = -1;          //L_cwKeyType 0: straight, 1 : iambica, 2: iambicb
 
 #define CMD_CW_SPEED      's' //vs
 unsigned int L_cwSpeed;   //cwSpeed
 
 #define CMD_CW_DELAY      'y' //vy
-byte L_cwDelayTime;       //cwDelayTime
+byte L_cwDelayTime=-1;       //cwDelayTime
 
 #define CMD_CW_STARTDELAY 'e' //ve
-byte L_delayBeforeCWStartTime;  //byte delayBeforeCWStartTime
+byte L_delayBeforeCWStartTime=-1;  //byte delayBeforeCWStartTime
 
 #define CMD_ATT_LEVEL     'f' //vf
 byte L_attLevel;
@@ -188,6 +187,9 @@ byte L_displayOption2;            //byte displayOption2 (Reserve)
 #define TS_CMD_SPECTRUMOPT   15 //Option for Spectrum
 #define TS_CMD_SPECTRUM      16 //Get Spectrum Value
 #define TS_CMD_TUNESTEP      17 //Get Spectrum Value
+#define TS_CMD_WPM           18 //Set WPM
+#define TS_CMD_KEYTYPE       19 //Set KeyType
+
 #define TS_CMD_SWTRIG        21 //SW Action Trigger for WSPR and more
 #define TS_CMD_READMEM       31 //Read EEProm
 #define TS_CMD_WRITEMEM      32 //Write EEProm
@@ -316,7 +318,7 @@ void SendEEPromData(char varIndex, int eepromStartIndex, int eepromEndIndex, cha
   SWSerial_Write(0xFF);
 }
 
-char softBuff1Num[14] = {'p', 'm', '.', 'c', '0', '.', 'v', 'a', 'l', '=', 0, 0xFF, 0xFF, 0xFF};
+uint8_t softBuff1Num[14] = {'p', 'm', '.', 'c', '0', '.', 'v', 'a', 'l', '=', 0, 0xFF, 0xFF, 0xFF};
 void SendCommand1Num(char varType, char sendValue) //0~9 : Mode, nowDisp, ActiveVFO, IsDialLock, IsTxtType, IsSplitType
 {
   softBuff1Num[4] = varType;
@@ -876,7 +878,27 @@ void SWS_Process(void)
       }
       else if (commandType == TS_CMD_TUNESTEP)      //Set Tune Step
       {
-        tuneStepIndex = swr_buffer[commandStartIndex + 4];          //Tune Step Index
+        tuneStepIndex = swr_buffer[commandStartIndex + 4];    //Tune Step Index
+      }
+      else if (commandType == TS_CMD_WPM)      //Set WPM
+      {
+        cwSpeed = swr_buffer[commandStartIndex + 4];    //
+      }
+      else if (commandType == TS_CMD_KEYTYPE)                 //Set Key Type
+      {
+        cwKeyType = swr_buffer[commandStartIndex + 4];
+
+        //for reduce program memory
+        Iambic_Key = cwKeyType != 0;
+        //if (cwKeyType == 0)
+        //  Iambic_Key = false;
+        //else
+          //Iambic_Key = true;
+          if (cwKeyType == 1)
+            keyerControl &= ~IAMBICB;
+          else
+            keyerControl |= IAMBICB;
+        //}
       }
       else if (commandType == TS_CMD_SWTRIG)
       {
@@ -968,11 +990,11 @@ void idle_process()
   //S-Meter Display
   if (((displayOption1 & 0x08) == 0x08 && (sdrModeOn == 0)) && (++checkCountSMeter > SMeterLatency))
   {
-    int newSMeter;
-
 #ifdef USE_I2CSMETER 
     scaledSMeter = GetI2CSmeterValue(I2CMETER_CALCS);
 #else
+    int newSMeter;
+    
     //VK2ETA S-Meter from MAX9814 TC pin
     newSMeter = analogRead(ANALOG_SMETER) / 4;
   
@@ -999,6 +1021,10 @@ void idle_process()
 //When boot time, send data
 void SendUbitxData(void)
 {
+  //Wait for ready other device (LCD, DSP and more)
+  //delay(500);
+  delay_background(500, 2);
+  
   SendCommandL(CMD_AR_TUNE1, arTuneStep[0]);
   SendCommandL(CMD_AR_TUNE2, arTuneStep[1]);
   SendCommandL(CMD_AR_TUNE3, arTuneStep[2]);
@@ -1014,7 +1040,7 @@ void SendUbitxData(void)
   EEPROM.get(EXTERNAL_DEVICE_OPT1, nextionDisplayOption); 
   SendCommandUL(CMD_DISP_OPTION2, nextionDisplayOption);
 
-  SendCommandStr(CMD_VERSION, "+v1.097"); //Version
+  SendCommandStr(CMD_VERSION, (char *)("+v1.097")); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
   /*

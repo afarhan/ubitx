@@ -285,17 +285,16 @@ int GetI2CSmeterValue(int valueType)
   }
   
   Wire.requestFrom(I2CMETER_ADDR, 1);
-  for (int i = 0; i < 100; i++)
+
+  if (Wire.available() > 0)
   {
-    if (Wire.available() > 0)
-    {
-      return Wire.read();
-    }
-    else
-    {
-      delay(1);
-    }
+    return Wire.read();
   }
+  //else
+  //{
+  //  delay(10);
+  //  return Wire.read();
+  //}
 }
 
 

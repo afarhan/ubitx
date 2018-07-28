@@ -1,4 +1,4 @@
-//Firmware Version
+ //Firmware Version
 //+ : This symbol identifies the firmware. 
 //    It was originally called 'CEC V1.072' but it is too long to waste the LCD window.
 //    I do not want to make this Firmware users's uBITX messy with my callsign.
@@ -1255,6 +1255,8 @@ void setup()
   initSettings();
   initPorts();     
 
+#ifndef USE_SW_SERIAL
+//for Chracter LCD
   if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
     userCallsignLength = userCallsignLength & 0x7F;
     DisplayCallsign(userCallsignLength);
@@ -1264,7 +1266,7 @@ void setup()
     delay(500);
     clearLine2();
   }
-  
+#endif
 
 #ifdef FACTORY_RECOVERY_BOOTUP
   if (btnDown())
