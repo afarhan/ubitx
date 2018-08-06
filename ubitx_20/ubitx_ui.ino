@@ -290,11 +290,10 @@ int GetI2CSmeterValue(int valueType)
   {
     return Wire.read();
   }
-  //else
-  //{
-  //  delay(10);
-  //  return Wire.read();
-  //}
+  else
+  {
+    return 0;
+  }
 }
 
 

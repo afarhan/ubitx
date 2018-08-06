@@ -28,8 +28,8 @@
 //#define UBITX_DISPLAY_LCD1602I        //I2C type 16 x 02 LCD
 //#define UBITX_DISPLAY_LCD1602I_DUAL   //I2C type 16 x02 LCD Dual
 //#define UBITX_DISPLAY_LCD2004P        //24 x 04 LCD (Parallel)
-//#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
-#define UBITX_DISPLAY_NEXTION         //NEXTION LCD
+#define UBITX_DISPLAY_LCD2004I        //I2C type 24 x 04 LCD
+//#define UBITX_DISPLAY_NEXTION         //NEXTION LCD
 
 //#define UBITX_DISPLAY_NEXTION_SAFE      //Only EEProm Write 770~775
 #define I2C_LCD_MASTER_ADDRESS_DEFAULT  0x27     //0x27  //DEFAULT, if Set I2C Address by uBITX Manager, read from EEProm
@@ -187,7 +187,7 @@ extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
  * ground and six pins. Each of these six pins can be individually programmed 
  * either as an analog input, a digital input or a digital output. 
  * The pins are assigned as follows (left to right, display facing you): 
- *      Pin 1 (Violet), A7, SPARE
+ *      Pin 1 (Violet), A7, SPARE => Analog S-Meter
  *      Pin 2 (Blue),   A6, KEYER (DATA)
  *      Pin 3 (Green), +5v 
  *      Pin 4 (Yellow), Gnd
@@ -217,7 +217,7 @@ extern byte I2C_LCD_SECOND_ADDRESS;     //only using Dual LCD Mode
  *  The second set of 16 pins on the Raduino's bottom connector are have the three clock outputs and the digital lines to control the rig.
  *  This assignment is as follows :
  *    Pin   1   2    3    4    5    6    7    8    9    10   11   12   13   14   15   16
- *         GND +5V CLK0  GND  GND  CLK1 GND  GND  CLK2  GND  D2   D3   D4   D5   D6   D7  
+ *         GND +5V CLK2  GND  GND  CLK1 GND  GND  CLK0  GND  D2   D3   D4   D5   D6   D7  
  *  These too are flexible with what you may do with them, for the Raduino, we use them to :
  *  - TX_RX line : Switches between Transmit and Receive after sensing the PTT or the morse keyer
  *  - CW_KEY line : turns on the carrier for CW

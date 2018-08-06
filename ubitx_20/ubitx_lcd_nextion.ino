@@ -230,16 +230,37 @@ void SendHeader(char varType, char varIndex)
   }
 }
 
+#define INT_ETX 0
+#define STR_ETX 1
+#define TMP_ETX 2
+//Send 0xFF, 0xFF, 0xFF
+//etxType : INT_ETX = 0xFF, 0xFF, 0xFF
+//          STR_ETX = ", 0xFF, 0xFF, 0xFF
+//          TEMP_ETX = softTemp, 0xFF, 0xFF, 0xff
+
+void SendCommandETX(char etxType)
+{
+  if (etxType == 2)
+  {
+    SWSerial_Print(softTemp);
+  }
+  else if (etxType == 1)
+  {
+    SWSerial_Print("\"");
+  }
+  
+  SWSerial_Write(0xff);
+  SWSerial_Write(0xff);
+  SWSerial_Write(0xff);
+}
+
 void SendCommandUL(char varIndex, unsigned long sendValue)
 {
   SendHeader(SWS_HEADER_INT_TYPE, varIndex);
 
   memset(softTemp, 0, 20);
   ultoa(sendValue, softTemp, DEC);
-  SWSerial_Print(softTemp);
-  SWSerial_Write(0xff);
-  SWSerial_Write(0xff);
-  SWSerial_Write(0xff);  
+  SendCommandETX(TMP_ETX);
 }
 
 void SendCommandL(char varIndex, long sendValue)
@@ -248,10 +269,7 @@ void SendCommandL(char varIndex, long sendValue)
 
   memset(softTemp, 0, 20);
   ltoa(sendValue, softTemp, DEC);
-  SWSerial_Print(softTemp);
-  SWSerial_Write(0xff);
-  SWSerial_Write(0xff);
-  SWSerial_Write(0xff);  
+  SendCommandETX(TMP_ETX);
 }
 
 void SendCommandStr(char varIndex, char* sendValue)
@@ -259,10 +277,7 @@ void SendCommandStr(char varIndex, char* sendValue)
   SendHeader(SWS_HEADER_STR_TYPE, varIndex);
   
   SWSerial_Print(sendValue);
-  SWSerial_Write('\"');
-  SWSerial_Write(0xFF);
-  SWSerial_Write(0xFF);
-  SWSerial_Write(0xFF);
+  SendCommandETX(STR_ETX);
 }
 
 //Send String data with duplicate check
@@ -274,10 +289,7 @@ void SendTextLineBuff(char lineNumber)
     SendHeader(SWS_HEADER_STR_TYPE, lineNumber + 0x30);  //s0.txt, s1.txt
   
     SWSerial_Print(softBuffLines[lineNumber]);
-    SWSerial_Write('\"');
-    SWSerial_Write(0xFF);
-    SWSerial_Write(0xFF);
-    SWSerial_Write(0xFF);
+    SendCommandETX(STR_ETX);
     
     strcpy(softBuffSended[lineNumber], softBuffLines[lineNumber]);
   }
@@ -312,10 +324,7 @@ void SendEEPromData(char varIndex, int eepromStartIndex, int eepromEndIndex, cha
       SWSerial_Write(EEPROM.read((offsetTtype == 0 ? USER_CALLSIGN_DAT : WSPR_MESSAGE1) + i));
   }
 
-  SWSerial_Write('\"');
-  SWSerial_Write(0xFF);
-  SWSerial_Write(0xFF);
-  SWSerial_Write(0xFF);
+  SendCommandETX(STR_ETX);
 }
 
 uint8_t softBuff1Num[14] = {'p', 'm', '.', 'c', '0', '.', 'v', 'a', 'l', '=', 0, 0xFF, 0xFF, 0xFF};
@@ -646,7 +655,6 @@ void updateDisplay() {
 #define RESPONSE_EEPROM_STR   87  //String
 
 const uint8_t ResponseHeader[11]={'p', 'm', '.', 's', 'h', '.', 't', 'x', 't', '=', '"'};
-const uint8_t ResponseFooter[4]={'"', 0xFF, 0xFF, 0xFF};
 const char HexCodes[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', };
 
 //void sendSpectrumData(unsigned long startFreq, unsigned long incStep, int scanCount, int delayTime, int sendCount)
@@ -718,10 +726,8 @@ void sendResponseData(int protocolType, unsigned long startFreq, unsigned int se
         SWSerial_Write(HexCodes[readedValue & 0xf]);
       }
     }
-
-    for (int i = 0; i < 4; i++)
-      SWSerial_Write(ResponseFooter[i]);
-      
+    
+    SendCommandETX(STR_ETX);
   } //end of for
 }
 
@@ -995,12 +1001,7 @@ void idle_process()
 #else
     int newSMeter;
     
-    //VK2ETA S-Meter from MAX9814 TC pin
     newSMeter = analogRead(ANALOG_SMETER) / 4;
-  
-    //Faster attack, Slower release
-    //currentSMeter = (newSMeter > currentSMeter ? ((currentSMeter * 3 + newSMeter * 7) + 5) / 10 : ((currentSMeter * 7 + newSMeter * 3) + 5) / 10);
-    //currentSMeter = ((currentSMeter * 7 + newSMeter * 3) + 5) / 10;
     currentSMeter = newSMeter;
   
     scaledSMeter = 0;

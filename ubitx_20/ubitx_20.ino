@@ -1255,9 +1255,15 @@ void setup()
   initSettings();
   initPorts();     
 
-#ifndef USE_SW_SERIAL
+#ifdef USE_SW_SERIAL
+//  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) 
+//  {
+    userCallsignLength = userCallsignLength & 0x7F;
+//  }
+#else
 //for Chracter LCD
-  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
+  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) 
+  {
     userCallsignLength = userCallsignLength & 0x7F;
     DisplayCallsign(userCallsignLength);
   }
