@@ -35,9 +35,12 @@
 
 //==============================================================================
 // The spare space available in the original firmware #1
-// Address : 32 ~ 63
+// Address : 32 ~ 62
 //==============================================================================
 #define RESERVE_FOR_FACTORY1  32
+
+//SI5351 I2C Address (Version 1.097)
+#define I2C_ADDR_SI5351       63
 
 //==============================================================================
 // The spare space available in the original firmware #2
@@ -112,7 +115,8 @@
 
 #define CHANNEL_FREQ          630   //Channel 1 ~ 20, 1 Channel = 4 bytes
 #define CHANNEL_DESC          710   //Channel 1 ~ 20, 1 Channel = 4 bytes
-#define RESERVE3              770   //Reserve3 between Channel and Firmware id check
+#define EXTERNAL_DEVICE_OPT1  770   //for External Deivce 4byte
+#define EXTERNAL_DEVICE_OPT2  774   //for External Deivce 2byte
 
 //Check Firmware type and version
 #define FIRMWAR_ID_ADDR       776 //776 : 0x59, 777 :0x58, 778 : 0x68 : Id Number, if not found id, erase eeprom(32~1023) for prevent system error.

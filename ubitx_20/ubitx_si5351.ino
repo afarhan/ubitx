@@ -47,7 +47,8 @@
 #define BB1(x) ((uint8_t)(x>>8))
 #define BB2(x) ((uint8_t)(x>>16))
 
-#define SI5351BX_ADDR 0x60              // I2C address of Si5351   (typical)
+//#define SI5351BX_ADDR 0x60              // I2C address of Si5351   (typical)
+uint8_t SI5351BX_ADDR;                    // I2C address of Si5351   (variable from Version 1.097)
 #define SI5351BX_XTALPF 2               // 1:6pf  2:8pf  3:10pf
 
 // If using 27mhz crystal, set XTAL=27000000, MSA=33.  Then vco=891mhz

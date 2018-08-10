@@ -1,4 +1,4 @@
-//Firmware Version
+ //Firmware Version
 //+ : This symbol identifies the firmware. 
 //    It was originally called 'CEC V1.072' but it is too long to waste the LCD window.
 //    I do not want to make this Firmware users's uBITX messy with my callsign.
@@ -6,8 +6,8 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.080")  
-#define FIRMWARE_VERSION_NUM 0x03       //1st Complete Project : 1 (Version 1.061), 2st Project : 2
+#define FIRMWARE_VERSION_INFO F("+v1.097")  
+#define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
  Cat Suppoort uBITX CEC Version
@@ -192,7 +192,9 @@ byte I2C_LCD_SECOND_ADDRESS;         //only using Dual LCD Mode
 byte KeyValues[16][3];
 
 byte isIFShift = 0;     //1 = ifShift, 2 extend
-int ifShiftValue = 0;  //
+int ifShiftValue = 0;   //
+
+byte TriggerBySW = 0;   //Action Start from Nextion LCD, Other MCU
                               
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
@@ -465,13 +467,17 @@ void startTx(byte txMode, byte isDisplayUpdate){
   }
   else 
   {
-    if (splitOn == 1) {
-      if (vfoActive == VFO_B) {
+    if (splitOn == 1) 
+    {
+      FrequencyToVFO(1);  //Save current Frequency and Mode to eeprom
+      if (vfoActive == VFO_B) 
+      {
         vfoActive = VFO_A;
         frequency = vfoA;
         byteToMode(vfoA_mode, 0);
       }
-      else if (vfoActive == VFO_A){
+      else if (vfoActive == VFO_A)
+      {
         vfoActive = VFO_B;
         frequency = vfoB;
         byteToMode(vfoB_mode, 0);
@@ -602,7 +608,18 @@ void checkButton(){
     return;
     
   if (keyStatus == FKEY_PRESS)  //Menu Key
+  {
+    //for touch screen
+#ifdef USE_SW_SERIAL
+    SetSWActivePage(1);
     doMenu();
+
+    if (isCWAutoMode == 0)
+          SetSWActivePage(0);
+#else
+    doMenu();
+#endif    
+  }
   else if (keyStatus <= FKEY_TYPE_MAX)  //EXTEND KEY GROUP #1
   {
 
@@ -665,74 +682,7 @@ void checkButton(){
         menuRitToggle(1);
         break;
     }
-    /*
-    if (keyStatus == FKEY_MODE) //Press Mode Key
-    {
-      if (cwMode == 1)
-      {
-        cwMode = 2;
-      }
-      else if (cwMode == 2)
-      {
-        cwMode = 0;
-        isUSB = 0;
-      }
-      else if (isUSB == 0)
-      {
-        isUSB = 1;
-      }
-      else
-      {
-        cwMode = 1;
-      }
-    }
-    else if (keyStatus == FKEY_BANDUP || keyStatus == FKEY_BANDDOWN)  //Press Mode Key
-    {
 
-      char currentBandIndex = -1;
-      
-      //Save Band Information
-      if (tuneTXType == 2 || tuneTXType == 3 || tuneTXType == 102 || tuneTXType == 103) { //only ham band move
-        currentBandIndex = getIndexHambanBbyFreq(frequency);
-        
-        if (currentBandIndex >= 0) {
-          saveBandFreqByIndex(frequency, modeToByte(), currentBandIndex);
-        }
-      }
-      
-      setNextHamBandFreq(frequency, keyStatus == FKEY_BANDDOWN ? -1 : 1);  //Prior Band      
-    }
-    else if (keyStatus == FKEY_STEP)  //FKEY_BANDUP
-    {
-      if (++tuneStepIndex > 5)
-        tuneStepIndex = 1;
-
-      EEPROM.put(TUNING_STEP, tuneStepIndex);
-      printLine2ClearAndUpdate();
-    }
-
-    else if (keyStatus == FKEY_VFOCHANGE)
-    {
-      menuVfoToggle(1); //Vfo Toggle
-    }
-    else if (keyStatus == FKEY_SPLIT)
-    {
-      menuSplitOnOff(1);
-    }
-    else if (keyStatus == FKEY_TXOFF)
-    {
-      menuTxOnOff(1, 0x01);
-    }
-    else if (keyStatus == FKEY_SDRMODE)
-    {
-      menuSDROnOff(1);
-    }
-    else if (keyStatus == FKEY_RIT)
-    {
-      menuRitToggle(1);
-    }
-    */
-      
     FrequencyToVFO(1);
     SetCarrierFreq();
     setFrequency(frequency);
@@ -940,6 +890,15 @@ void initSettings(){
   //Version Write for Memory Management Software
   if (EEPROM.read(VERSION_ADDRESS) != FIRMWARE_VERSION_NUM)
     EEPROM.write(VERSION_ADDRESS, FIRMWARE_VERSION_NUM);
+
+  //SI5351 I2C Address
+  //I2C_ADDR_SI5351
+  SI5351BX_ADDR = EEPROM.read(I2C_ADDR_SI5351);
+  if (SI5351BX_ADDR < 0x10 || SI5351BX_ADDR > 0xF0)
+  {
+    SI5351BX_ADDR = 0x60;
+  }
+  
 
   //Backup Calibration Setting from Factory Setup
   //Check Factory Setting Backup Y/N
@@ -1294,11 +1253,18 @@ void setup()
 
   Init_Cat(38400, SERIAL_8N1);
   initSettings();
+  initPorts();     
 
-  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) {
+#ifdef USE_SW_SERIAL
+//  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) 
+//  {
     userCallsignLength = userCallsignLength & 0x7F;
-    //printLineFromEEPRom(0, 0, 0, userCallsignLength -1, 0); //eeprom to lcd use offset (USER_CALLSIGN_DAT)
-    //delay(500);
+//  }
+#else
+//for Chracter LCD
+  if (userCallsignLength > 0 && ((userCallsignLength & 0x80) == 0x80)) 
+  {
+    userCallsignLength = userCallsignLength & 0x7F;
     DisplayCallsign(userCallsignLength);
   }
   else {
@@ -1306,8 +1272,7 @@ void setup()
     delay(500);
     clearLine2();
   }
-  
-  initPorts();     
+#endif
 
 #ifdef FACTORY_RECOVERY_BOOTUP
   if (btnDown())
@@ -1320,6 +1285,11 @@ void setup()
   frequency = vfoA;
   saveCheckFreq = frequency;  //for auto save frequency
   setFrequency(vfoA);
+
+#ifdef USE_SW_SERIAL
+  SendUbitxData();
+#endif
+  
   updateDisplay();
 
 #ifdef ENABLE_FACTORYALIGN
@@ -1383,4 +1353,9 @@ void loop(){
 
   //we check CAT after the encoder as it might put the radio into TX
   Check_Cat(inTx? 1 : 0);
+
+  //for SEND SW Serial
+  #ifdef USE_SW_SERIAL
+    SWS_Process();
+  #endif  
 }
