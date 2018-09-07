@@ -39,6 +39,20 @@
 //==============================================================================
 #define RESERVE_FOR_FACTORY1  32
 
+//==============================================================================
+// custom LPF Filter
+// 48 : Using Custom LPF Filter  (48 = 0x57 or 0x58 => Using Custom LPF Filter, 0x58 = using A7 IO
+// 49, 50 : LPF1  (49 : MHz  (~ Mhz), 50 : Enabled PIN
+// 51, 52 : LPF2
+// 53, 54 : LPF3
+// 55, 56 : LPF4
+// 57, 58 : LPF5
+// 59, 60 : LPF6
+// 61, 62 : LPF7
+//==============================================================================
+#define CUST_LPF_ENABLED 48
+#define CUST_LPF_START   49
+
 //SI5351 I2C Address (Version 1.097)
 #define I2C_ADDR_SI5351       63
 

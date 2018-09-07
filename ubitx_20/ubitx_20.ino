@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.097")  
+#define FIRMWARE_VERSION_INFO F("+v1.100")  
 #define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
@@ -195,6 +195,13 @@ byte isIFShift = 0;     //1 = ifShift, 2 extend
 int ifShiftValue = 0;   //
 
 byte TriggerBySW = 0;   //Action Start from Nextion LCD, Other MCU
+
+//Use Custom Filter
+//#define CUST_LPF_ENABLED 48
+//#define CUST_LPF_START   49
+char isCustomFilter = 0;
+char isCustomFilter_A7 = 0;
+char CustFilters[7][2];
                               
 /**
  * Below are the basic functions that control the uBitx. Understanding the functions before 
@@ -317,7 +324,24 @@ byte delay_background(unsigned delayTime, byte fromType){ //fromType : 4 autoCWK
  */
 
 void setTXFilters(unsigned long freq){
-  
+#ifdef USE_CUSTOM_LPF_FILTER 
+  freq = freq / 1000000UL;
+  for (byte i = 0; i < 7; i++) {
+    if (freq > CustFilters[i][0])
+    {
+      char aIn = CustFilters[i][1];
+      digitalWrite(TX_LPF_A, aIn & 0x01);
+      digitalWrite(TX_LPF_B, aIn & 0x02);
+      digitalWrite(TX_LPF_C, aIn & 0x04);
+
+      if (isCustomFilter_A7 == 1)
+      {
+        digitalWrite(A7, aIn & 0x08);
+      }
+      return;
+    }
+  } //end of for
+#else
   if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
     digitalWrite(TX_LPF_A, 0);
     digitalWrite(TX_LPF_B, 0);
@@ -338,6 +362,8 @@ void setTXFilters(unsigned long freq){
     digitalWrite(TX_LPF_B, 1);
     digitalWrite(TX_LPF_C, 1);    
   }
+
+#endif
 }
 
 /**
@@ -950,6 +976,24 @@ void initSettings(){
     KeyValues[i][1] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 3) + 1);    //RANGE : End Value
     KeyValues[i][2] = EEPROM.read(EXTENDED_KEY_RANGE + (i * 3) + 2);    //KEY TYPE 
   }
+
+#ifdef USE_CUSTOM_LPF_FILTER 
+  //Custom Filters
+  EEPROM.get(CUST_LPF_ENABLED, isCustomFilter);
+  if (isCustomFilter == 0x58)
+  {
+    isCustomFilter_A7 = 1;
+  }
+  isCustomFilter = (isCustomFilter == 0x58 || isCustomFilter == 0x57);
+  
+  for (byte i = 0; i < 7; i++) {
+    CustFilters[i][0] = EEPROM.read(CUST_LPF_START + (i * 2));        //LPF (To) Mhz
+    CustFilters[i][1] = EEPROM.read(CUST_LPF_START + (i * 2) + 1);    //Enabled I/O
+  }
+//char isCustomFilter = 0;
+//char isCustomFilter_A7 = 0;
+//char CustFilters[2][7];
+#endif
 
   //User callsign information
   if (EEPROM.read(USER_CALLSIGN_KEY) == 0x59)
