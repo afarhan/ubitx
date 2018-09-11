@@ -24,6 +24,27 @@ Prepared or finished tasks for the next version
   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+1.1
+ - Support Nextion LCD, TJC LCD
+ - Read & Backup uBITX, ADC Monitoring, ATT, IF-Shift and more on Nextion LCD (TJC LCD)
+ - Factory Reset (Both Character LCD and Nextion LCD are applicable)
+ - Support Signal Meter using ADC (A7 Port)
+ - Supoort I2C Signal Meter
+ - Spectrum
+ - Band Scan
+ - Memory Control on Nextion LCD (TJC LCD)
+ - Speed Change CW-Option on Nextion LCD
+ - Fixed Band Change Bug (Both Character LCD and Nextion LCD are applicable)
+ - uBITX Manager removed the Encode and Decode buttons. The procedure has become a bit easier.
+ - I2C Device Scan on uBITX Manager ( Both Character LCD and Nextion LCD are applicable)
+ - Si5351 I2C Address can be changed
+ - Recovery using QR-Code Data from Server
+ - Nextion LCD and TJC LCD can display Spectrum and CW Decode (using Stand alone S-Meter)
+ - Other Minor Bugs
+ 
+1.09 (Beta)
+- include 1.094 beta, 1.095 beta, 1.097 beta
+
 1.08
  - Receive performance is improved compared to the original firmware or version 1.061
  - ATT function has been added to reduce RF gain (Shift 45Mhz IF)
