@@ -1041,7 +1041,7 @@ void SendUbitxData(void)
   EEPROM.get(EXTERNAL_DEVICE_OPT1, nextionDisplayOption); 
   SendCommandUL(CMD_DISP_OPTION2, nextionDisplayOption);
 
-  SendCommandStr(CMD_VERSION, (char *)("+v1.100")); //Version
+  SendCommandStr(CMD_VERSION, (char *)("+v1.110")); //Version
   SendEEPromData(CMD_CALLSIGN, 0, userCallsignLength -1, 0);
 
   /*

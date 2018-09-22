@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.100")  
+#define FIRMWARE_VERSION_INFO F("+v1.110")  
 #define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
@@ -327,7 +327,7 @@ void setTXFilters(unsigned long freq){
 #ifdef USE_CUSTOM_LPF_FILTER 
   freq = freq / 1000000UL;
   for (byte i = 0; i < 7; i++) {
-    if (freq > CustFilters[i][0])
+    if (freq >= CustFilters[i][0])
     {
       char aIn = CustFilters[i][1];
       digitalWrite(TX_LPF_A, aIn & 0x01);
@@ -336,7 +336,10 @@ void setTXFilters(unsigned long freq){
 
       if (isCustomFilter_A7 == 1)
       {
-        digitalWrite(A7, aIn & 0x08);
+        digitalWrite(10, aIn & 0x08);
+        digitalWrite(11, aIn & 0x10);
+        digitalWrite(12, aIn & 0x20);
+        digitalWrite(13, aIn & 0x40);
       }
       return;
     }
@@ -1210,6 +1213,16 @@ void initPorts(){
   pinMode(PTT, INPUT_PULLUP);
   pinMode(ANALOG_KEYER, INPUT_PULLUP);
   pinMode(ANALOG_SMETER, INPUT); //by KD8CEC
+
+#ifdef USE_CUSTOM_LPF_FILTER 
+  if (isCustomFilter_A7)
+  {
+    pinMode(10, OUTPUT);
+    pinMode(11, OUTPUT);
+    pinMode(12, OUTPUT);
+    pinMode(13, OUTPUT);
+  }
+#endif  
 
   pinMode(CW_TONE, OUTPUT);  
   digitalWrite(CW_TONE, 0);
