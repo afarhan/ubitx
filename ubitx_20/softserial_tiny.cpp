@@ -70,7 +70,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 The latest version of this library can always be found at
 http://arduiniana.org.
  */
-#include <arduino.h>
+#include <Arduino.h>
 
 //================================================================
 //Public Variable

@@ -22,6 +22,9 @@
 //==============================================================================
 // Compile Option
 //==============================================================================
+//Ubitx Board Version
+#define UBITX_BOARD_VERSION 4           //v1 ~ v4 : 4, v5: 5
+
 //Depending on the type of LCD mounted on the uBITX, uncomment one of the options below.
 //You must select only one.
 //#define UBITX_DISPLAY_LCD1602P        //LCD mounted on unmodified uBITX (Parallel)
@@ -330,5 +333,3 @@ extern void DisplayVersionInfo(const char* fwVersionInfo);
 extern int GetI2CSmeterValue(int valueType);  //ubitx_ui.ino
 
 #endif    //end of if header define
-
-

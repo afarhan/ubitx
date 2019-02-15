@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.110")  
+#define FIRMWARE_VERSION_INFO F("+v1.120")  
 #define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
@@ -72,10 +72,19 @@
 
 // the second oscillator should ideally be at 57 MHz, however, the crystal filter's center frequency 
 // is shifted down a little due to the loading from the impedance matching L-networks on either sides
-#define SECOND_OSC_USB (56995000l)
-#define SECOND_OSC_LSB (32995000l) 
-//these are the two default USB and LSB frequencies. The best frequencies depend upon your individual taste and filter shape
-#define INIT_USB_FREQ   (11996500l)
+
+#if UBITX_BOARD_VERSION == 5
+  #define SECOND_OSC_USB (56064200l)
+  #define SECOND_OSC_LSB (33945800l) 
+  #define INIT_USB_FREQ   (11059200l)
+#else
+  #define SECOND_OSC_USB (56995000l)
+  #define SECOND_OSC_LSB (32995000l) 
+  //these are the two default USB and LSB frequencies. The best frequencies depend upon your individual taste and filter shape
+  #define INIT_USB_FREQ   (11996500l)
+#endif
+  
+
 // limits the tuning and working range of the ubitx between 3 MHz and 30 MHz
 #define LOWEST_FREQ  (3000000l)
 #define HIGHEST_FREQ (30000000l)
@@ -345,26 +354,51 @@ void setTXFilters(unsigned long freq){
     }
   } //end of for
 #else
-  if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
-    digitalWrite(TX_LPF_A, 0);
-    digitalWrite(TX_LPF_B, 0);
-    digitalWrite(TX_LPF_C, 0);
-  }
-  else if (freq >= 14000000L){ //thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 0);
-    digitalWrite(TX_LPF_C, 0);
-  }
-  else if (freq > 7000000L){
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 1);
-    digitalWrite(TX_LPF_C, 0);    
-  }
-  else {
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 1);
-    digitalWrite(TX_LPF_C, 1);    
-  }
+  
+  #if UBITX_BOARD_VERSION == 5
+    if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq >= 14000000L){ //thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq > 7000000L){
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 1);
+      digitalWrite(TX_LPF_C, 0);    
+    }
+    else {
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 1);    
+    }
+  #else
+    if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq >= 14000000L){ //thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq > 7000000L){
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 1);
+      digitalWrite(TX_LPF_C, 0);    
+    }
+    else {
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 1);
+      digitalWrite(TX_LPF_C, 1);    
+    }
+  #endif
+
 
 #endif
 }
@@ -1159,12 +1193,22 @@ void initSettings(){
   if (vfoB_mode < 2)
     vfoB_mode = 3;
 
+
+#if UBITX_BOARD_VERSION == 5
+  //original code with modified by kd8cec
+  if (usbCarrier > 11060000l || usbCarrier < 11048000l)
+    usbCarrier = 11052000l;
+
+  if (cwmCarrier > 11060000l || cwmCarrier < 11048000l)
+    cwmCarrier = 11052000l;
+#else
   //original code with modified by kd8cec
   if (usbCarrier > 12010000l || usbCarrier < 11990000l)
     usbCarrier = 11997000l;
 
   if (cwmCarrier > 12010000l || cwmCarrier < 11990000l)
     cwmCarrier = 11997000l;
+#endif
     
   if (vfoA > 35000000l || 3500000l > vfoA) {
      vfoA = 7150000l;
