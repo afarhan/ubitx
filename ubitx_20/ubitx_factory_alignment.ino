@@ -1,3 +1,4 @@
+#include "ubitx.h"
 
 /**
  * This procedure is only for those who have a signal generator/transceiver tuned to exactly 7.150 and a dummy load 
@@ -27,13 +28,24 @@ void factory_alignment(){
   printLine2("#2 BFO");
   delay(1000);
 
+#if UBITX_BOARD_VERSION == 5
+  usbCarrier = 11053000l;
+  menuSetupCarrier(1);
+  if (usbCarrier == 11053000l){
+    printLine2("Setup Aborted");
+    return;
+  }
+  
+#else
   usbCarrier = 11994999l;
   menuSetupCarrier(1);
-
   if (usbCarrier == 11994999l){
     printLine2("Setup Aborted");
     return;
   }
+
+#endif
+
 
   
   printLine2("#3:Test 3.5MHz");
@@ -88,4 +100,3 @@ void factory_alignment(){
   updateDisplay();  
   
 }
-

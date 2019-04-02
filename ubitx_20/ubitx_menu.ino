@@ -1662,6 +1662,15 @@ void menuSetupCarrier(int btn){
   delay_background(1000, 0);
 
   //usbCarrier = 11995000l; //Remarked by KD8CEC, Suggest from many user, if entry routine factoryrest
+  /*
+  //for uBITX V5.0, but not used by KD8CEC, if you want default value of carrier on Calibration, delete remark symbols
+#if UBITX_BOARD_VERSION == 5
+  usbCarrier = 11053000l;
+#else
+  usbCarrier = 11995000l;
+#endif
+   */
+
   
   si5351bx_setfreq(0, usbCarrier);
   printCarrierFreq(usbCarrier);
@@ -1705,4 +1714,3 @@ void menuSetupCarrier(int btn){
   //menuOn = 0; 
   menuClearExit(0);
 }
-

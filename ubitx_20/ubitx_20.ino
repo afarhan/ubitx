@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.110")  
+#define FIRMWARE_VERSION_INFO F("+v1.200")  
 #define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
@@ -72,10 +72,43 @@
 
 // the second oscillator should ideally be at 57 MHz, however, the crystal filter's center frequency 
 // is shifted down a little due to the loading from the impedance matching L-networks on either sides
-#define SECOND_OSC_USB (56995000l)
-#define SECOND_OSC_LSB (32995000l) 
-//these are the two default USB and LSB frequencies. The best frequencies depend upon your individual taste and filter shape
-#define INIT_USB_FREQ   (11996500l)
+
+#if UBITX_BOARD_VERSION == 5
+//For Test  //45005000
+  //#define SECOND_OSC_USB (56064200l)
+  //#define SECOND_OSC_LSB (33945800l) 
+
+/*
+  //For Test //4500000
+  #define SECOND_OSC_USB (56059200l)
+  #define SECOND_OSC_LSB (33940800l) 
+*/
+
+/*
+  //For Test // V1.121  44991500(LSB), 44998500 (USB), abs : 7k
+  #define SECOND_OSC_USB (56057700l)
+  #define SECOND_OSC_LSB (33932300l) 
+*/
+
+  //==============================================================================================================================
+  //For Test // V1.200 V1.122  45002500 (LSB), 45002000 (USB) (Change Default BFO Frequency 11056xxx, adjust bfo and ifshift ), abs: 0.5k
+  //Best, Test 3 uBITX V5
+  //Last Value, If more data is collected, it can be changed to a better value.
+  #define SECOND_OSC_USB (56058700l)
+  #define SECOND_OSC_LSB (33945800l) 
+
+  //Not used, Just comment (Default)
+  #define INIT_USB_FREQ   (11056500l)
+  //-----------------------------------------------------------------------------------------------------------------------------
+#else
+  #define SECOND_OSC_USB (56995000l)
+  #define SECOND_OSC_LSB (32995000l) 
+  //these are the two default USB and LSB frequencies. The best frequencies depend upon your individual taste and filter shape
+  //Not used, Just comment (Default)
+  #define INIT_USB_FREQ   (11996500l)
+#endif
+  
+
 // limits the tuning and working range of the ubitx between 3 MHz and 30 MHz
 #define LOWEST_FREQ  (3000000l)
 #define HIGHEST_FREQ (30000000l)
@@ -345,26 +378,51 @@ void setTXFilters(unsigned long freq){
     }
   } //end of for
 #else
-  if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
-    digitalWrite(TX_LPF_A, 0);
-    digitalWrite(TX_LPF_B, 0);
-    digitalWrite(TX_LPF_C, 0);
-  }
-  else if (freq >= 14000000L){ //thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 0);
-    digitalWrite(TX_LPF_C, 0);
-  }
-  else if (freq > 7000000L){
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 1);
-    digitalWrite(TX_LPF_C, 0);    
-  }
-  else {
-    digitalWrite(TX_LPF_A, 1);
-    digitalWrite(TX_LPF_B, 1);
-    digitalWrite(TX_LPF_C, 1);    
-  }
+  
+  #if UBITX_BOARD_VERSION == 5
+    if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq >= 14000000L){ //thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq > 7000000L){
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 1);
+      digitalWrite(TX_LPF_C, 0);    
+    }
+    else {
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 1);    
+    }
+  #else
+    if (freq > 21000000L){  // the default filter is with 35 MHz cut-off
+      digitalWrite(TX_LPF_A, 0);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq >= 14000000L){ //thrown the KT1 relay on, the 30 MHz LPF is bypassed and the 14-18 MHz LPF is allowd to go through
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 0);
+      digitalWrite(TX_LPF_C, 0);
+    }
+    else if (freq > 7000000L){
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 1);
+      digitalWrite(TX_LPF_C, 0);    
+    }
+    else {
+      digitalWrite(TX_LPF_A, 1);
+      digitalWrite(TX_LPF_B, 1);
+      digitalWrite(TX_LPF_C, 1);    
+    }
+  #endif
+
 
 #endif
 }
@@ -445,13 +503,23 @@ void setFrequency(unsigned long f){
       moveFrequency = (f % 1000000);
     }
 
+#if UBITX_BOARD_VERSION == 5    
+    si5351bx_setfreq(2, 45002000 + if1AdjustValue + f);
+    si5351bx_setfreq(1, 45002000 
+      + if1AdjustValue 
+      + SDR_Center_Freq 
+      //+ ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
+      + moveFrequency);
+      // + 2390);  //RTL-SDR Frequency Error, Do not add another SDR because the error is different. V1.3
+#else
     si5351bx_setfreq(2, 44991500 + if1AdjustValue + f);
     si5351bx_setfreq(1, 44991500 
       + if1AdjustValue 
       + SDR_Center_Freq 
       //+ ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
-      + moveFrequency
-      + 2390);
+      + moveFrequency );
+      //+ 2390); Do not add another SDR because the error is different. V1.3
+#endif
   }
   else
   {
@@ -1159,12 +1227,22 @@ void initSettings(){
   if (vfoB_mode < 2)
     vfoB_mode = 3;
 
+
+#if UBITX_BOARD_VERSION == 5
+  //original code with modified by kd8cec
+  if (usbCarrier > 11060000l || usbCarrier < 11048000l)
+    usbCarrier = 11052000l;
+
+  if (cwmCarrier > 11060000l || cwmCarrier < 11048000l)
+    cwmCarrier = 11052000l;
+#else
   //original code with modified by kd8cec
   if (usbCarrier > 12010000l || usbCarrier < 11990000l)
     usbCarrier = 11997000l;
 
   if (cwmCarrier > 12010000l || cwmCarrier < 11990000l)
     cwmCarrier = 11997000l;
+#endif
     
   if (vfoA > 35000000l || 3500000l > vfoA) {
      vfoA = 7150000l;
