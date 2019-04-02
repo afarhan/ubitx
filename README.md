@@ -1,6 +1,6 @@
 #NOTICE
 ----------------------------------------------------------------------------
-- Now Release Version 1.08 on my blog (http://www.hamskey.com)
+- Now Release Version 1.20 on my blog (http://www.hamskey.com)
 - You can download and compiled hex file and uBITX Manager application on release section (https://github.com/phdlee/ubitx/releases)
 - For more information, see my blog (http://www.hamskey.com)
 
@@ -24,6 +24,12 @@ Prepared or finished tasks for the next version
   
 ----------------------------------------------------------------------------
 ## REVISION RECORD
+1.20
+ - Support uBITX V5
+ - Change to SDR Frequency (Remove just RTL-SDR's error Frequency (2390Hz))
+1.12
+ - Support Custom LPF Control
+ - Other Minor Bugs
 1.1
  - Support Nextion LCD, TJC LCD
  - Read & Backup uBITX, ADC Monitoring, ATT, IF-Shift and more on Nextion LCD (TJC LCD)
