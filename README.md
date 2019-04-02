@@ -17,9 +17,7 @@ The copyright information of the original is below.
 KD8CEC
 ----------------------------------------------------------------------------
 Prepared or finished tasks for the next version
-  - Nextion LCD
   - Add TTS module
-  - Remote control on another MCU
   - Direct control for Student
   
 ----------------------------------------------------------------------------
