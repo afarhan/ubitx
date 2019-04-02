@@ -6,7 +6,7 @@
 //    So I put + in the sense that it was improved one by one based on Original Firmware.
 //    This firmware has been gradually changed based on the original firmware created by Farhan, Jack, Jerry and others.
 
-#define FIRMWARE_VERSION_INFO F("+v1.120")  
+#define FIRMWARE_VERSION_INFO F("+v1.200")  
 #define FIRMWARE_VERSION_NUM 0x04       //1st Complete Project : 1 (Version 1.061), 2st Project : 2, 1.08: 3, 1.09 : 4
 
 /**
@@ -74,13 +74,37 @@
 // is shifted down a little due to the loading from the impedance matching L-networks on either sides
 
 #if UBITX_BOARD_VERSION == 5
-  #define SECOND_OSC_USB (56064200l)
+//For Test  //45005000
+  //#define SECOND_OSC_USB (56064200l)
+  //#define SECOND_OSC_LSB (33945800l) 
+
+/*
+  //For Test //4500000
+  #define SECOND_OSC_USB (56059200l)
+  #define SECOND_OSC_LSB (33940800l) 
+*/
+
+/*
+  //For Test // V1.121  44991500(LSB), 44998500 (USB), abs : 7k
+  #define SECOND_OSC_USB (56057700l)
+  #define SECOND_OSC_LSB (33932300l) 
+*/
+
+  //==============================================================================================================================
+  //For Test // V1.200 V1.122  45002500 (LSB), 45002000 (USB) (Change Default BFO Frequency 11056xxx, adjust bfo and ifshift ), abs: 0.5k
+  //Best, Test 3 uBITX V5
+  //Last Value, If more data is collected, it can be changed to a better value.
+  #define SECOND_OSC_USB (56058700l)
   #define SECOND_OSC_LSB (33945800l) 
-  #define INIT_USB_FREQ   (11059200l)
+
+  //Not used, Just comment (Default)
+  #define INIT_USB_FREQ   (11056500l)
+  //-----------------------------------------------------------------------------------------------------------------------------
 #else
   #define SECOND_OSC_USB (56995000l)
   #define SECOND_OSC_LSB (32995000l) 
   //these are the two default USB and LSB frequencies. The best frequencies depend upon your individual taste and filter shape
+  //Not used, Just comment (Default)
   #define INIT_USB_FREQ   (11996500l)
 #endif
   
@@ -479,13 +503,23 @@ void setFrequency(unsigned long f){
       moveFrequency = (f % 1000000);
     }
 
+#if UBITX_BOARD_VERSION == 5    
+    si5351bx_setfreq(2, 45002000 + if1AdjustValue + f);
+    si5351bx_setfreq(1, 45002000 
+      + if1AdjustValue 
+      + SDR_Center_Freq 
+      //+ ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
+      + moveFrequency);
+      // + 2390);  //RTL-SDR Frequency Error, Do not add another SDR because the error is different. V1.3
+#else
     si5351bx_setfreq(2, 44991500 + if1AdjustValue + f);
     si5351bx_setfreq(1, 44991500 
       + if1AdjustValue 
       + SDR_Center_Freq 
       //+ ((advancedFreqOption1 & 0x04) == 0x00 ? 0 : (f % 10000000))
-      + moveFrequency
-      + 2390);
+      + moveFrequency );
+      //+ 2390); Do not add another SDR because the error is different. V1.3
+#endif
   }
   else
   {
