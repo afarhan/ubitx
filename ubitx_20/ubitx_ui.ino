@@ -6,166 +6,207 @@
  * quickly cleared up.
  */
 
-//returns true if the button is pressed
-int btnDown(){
-  if (digitalRead(FBUTTON) == HIGH)
-    return 0;
-  else
-    return 1;
-}
 
-/**
- * Meter (not used in this build for anything)
- * the meter is drawn using special characters. Each character is composed of 5 x 8 matrix.
- * The  s_meter array holds the definition of the these characters. 
- * each line of the array is is one character such that 5 bits of every byte 
- * makes up one line of pixels of the that character (only 5 bits are used)
- * The current reading of the meter is assembled in the string called meter
- */
-
-char meter[17];
-
-byte s_meter_bitmap[] = {
-  B00000,B00000,B00000,B00000,B00000,B00100,B00100,B11011,
-  B10000,B10000,B10000,B10000,B10100,B10100,B10100,B11011,
-  B01000,B01000,B01000,B01000,B01100,B01100,B01100,B11011,
-  B00100,B00100,B00100,B00100,B00100,B00100,B00100,B11011,
-  B00010,B00010,B00010,B00010,B00110,B00110,B00110,B11011,
-  B00001,B00001,B00001,B00001,B00101,B00101,B00101,B11011
+/*
+const PROGMEM uint8_t meters_bitmap[] = {
+  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000,  B10000 ,   //custom 1
+  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000,  B11000 ,   //custom 2
+  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100,  B11100 ,   //custom 3
+  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110,  B11110 ,   //custom 4
+  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111,  B11111 ,   //custom 5
+  B01000,  B11100,  B01000,  B00000,  B10111,  B10101,  B10101,  B10111     //custom 6
 };
+*/
 
+//SWR GRAPH,  DrawMeter and drawingMeter Logic function by VK2ETA 
+
+#ifdef OPTION_SKINNYBARS //We want skninny bars with more text
+//VK2ETA modded "Skinny" bitmaps
+const PROGMEM uint8_t meters_bitmap[] = {
+  //  B01110, B10001, B10001, B11111, B11011, B11011, B11111, B00000, //Padlock Symbol, for merging. Not working, see below
+  B00000, B00000, B00000, B00000, B00000, B00000, B00000, B10000, //shortest bar
+  B00000, B00000, B00000, B00000, B00000, B00000, B00100, B10100,
+  B00000, B00000, B00000, B00000, B00000, B00001, B00101, B10101,
+  B00000, B00000, B00000, B00000, B10000, B10000, B10000, B10000,
+  B00000, B00000, B00000, B00100, B10100, B10100, B10100, B10100,
+  B00000, B00000, B00001, B00101, B10101, B10101, B10101, B10101, //tallest bar
+  B00000, B00010, B00111, B00010, B01000, B11100, B01000, B00000, // ++ sign
+};
+#else
+//VK2ETA "Fat" bars, easy to read, with less text
+const PROGMEM uint8_t meters_bitmap[] = {
+  //  B01110, B10001, B10001, B11111, B11011, B11011, B11111, B00000, //Padlock Symbol, for merging. Not working, see below
+  B00000, B00000, B00000, B00000, B00000, B00000, B00000, B11111, //shortest bar
+  B00000, B00000, B00000, B00000, B00000, B00000, B11111, B11111,
+  B00000, B00000, B00000, B00000, B00000, B11111, B11111, B11111,
+  B00000, B00000, B00000, B00000, B11111, B11111, B11111, B11111,
+  B00000, B00000, B00000, B11111, B11111, B11111, B11111, B11111,
+  B00000, B00000, B11111, B11111, B11111, B11111, B11111, B11111, //tallest bar
+  B00000, B00010, B00111, B00010, B01000, B11100, B01000, B00000, // ++ sign
+};
+#endif //OPTION_SKINNYBARS
+PGM_P p_metes_bitmap = reinterpret_cast<PGM_P>(meters_bitmap);
+
+const PROGMEM uint8_t lock_bitmap[8] = {
+  0b01110,
+  0b10001,
+  0b10001,
+  0b11111,
+  0b11011,
+  0b11011,
+  0b11111,
+  0b00000};
+PGM_P plock_bitmap = reinterpret_cast<PGM_P>(lock_bitmap);
 
 
 // initializes the custom characters
 // we start from char 1 as char 0 terminates the string!
 void initMeter(){
-  lcd.createChar(1, s_meter_bitmap);
-  lcd.createChar(2, s_meter_bitmap + 8);
-  lcd.createChar(3, s_meter_bitmap + 16);
-  lcd.createChar(4, s_meter_bitmap + 24);
-  lcd.createChar(5, s_meter_bitmap + 32);
-  lcd.createChar(6, s_meter_bitmap + 40);
+  uint8_t tmpbytes[8];
+  byte i;
+
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(plock_bitmap + i);
+  LCD_CreateChar(0, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i);
+  LCD_CreateChar(1, tmpbytes);
+
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 8);
+  LCD_CreateChar(2, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 16);
+  LCD_CreateChar(3, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 24);
+  LCD_CreateChar(4, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 32);
+  LCD_CreateChar(5, tmpbytes);
+  
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 40);
+  LCD_CreateChar(6, tmpbytes);
+
+  for (i = 0; i < 8; i++)
+    tmpbytes[i] = pgm_read_byte(p_metes_bitmap + i + 48);
+  LCD_CreateChar(7, tmpbytes);
 }
 
-/**
- * The meter is drawn with special characters.
- * character 1 is used to simple draw the blocks of the scale of the meter
- * characters 2 to 6 are used to draw the needle in positions 1 to within the block
- * This displays a meter from 0 to 100, -1 displays nothing
- */
-void drawMeter(int8_t needle){
-  int16_t best, i, s;
 
-  if (needle < 0)
-    return;
-
-  s = (needle * 4)/10;
-  for (i = 0; i < 8; i++){
-    if (s >= 5)
-      meter[i] = 1;
-    else if (s >= 0)
-      meter[i] = 2 + s;
-    else
-      meter[i] = 1;
-    s = s - 5;
-  }
-  if (needle >= 40)
-    meter[i-1] = 6;
-  meter[i] = 0;
-}
-
-// The generic routine to display one line on the LCD 
-void printLine(char linenmbr, char *c) {
-  if (strcmp(c, printBuff[linenmbr])) {     // only refresh the display when there was a change
-    lcd.setCursor(0, linenmbr);             // place the cursor at the beginning of the selected line
-    lcd.print(c);
-    strcpy(printBuff[linenmbr], c);
-
-    for (byte i = strlen(c); i < 16; i++) { // add white spaces until the end of the 16 characters line is reached
-      lcd.print(' ');
-    }
-  }
-}
-
-//  short cut to print to the first line
-void printLine1(char *c){
-  printLine(1,c);
-}
-//  short cut to print to the first line
-void printLine2(char *c){
-  printLine(0,c);
-}
-
-// this builds up the top line of the display with frequency and mode
-void updateDisplay() {
-  // tks Jack Purdum W8TEE
-  // replaced fsprint commmands by str commands for code size reduction
-
-  memset(c, 0, sizeof(c));
-  memset(b, 0, sizeof(b));
-
-  ultoa(frequency, b, DEC);
-
-  if (inTx){
-    if (cwTimeout > 0)
-      strcpy(c, "   CW:");
-    else
-      strcpy(c, "   TX:");
-  }
-  else {
-    if (ritOn)
-      strcpy(c, "RIT ");
-    else {
-      if (isUSB)
-        strcpy(c, "USB ");
-      else
-        strcpy(c, "LSB ");
-    }
-    if (vfoActive == VFO_A) // VFO A is active
-      strcat(c, "A:");
-    else
-      strcat(c, "B:");
-  }
-
-
-
-  //one mhz digit if less than 10 M, two digits if more
-  if (frequency < 10000000l){
-    c[6] = ' ';
-    c[7]  = b[0];
-    strcat(c, ".");
-    strncat(c, &b[1], 3);    
-    strcat(c, ".");
-    strncat(c, &b[4], 3);
-  }
-  else {
-    strncat(c, b, 2);
-    strcat(c, ".");
-    strncat(c, &b[2], 3);
-    strcat(c, ".");
-    strncat(c, &b[5], 3);    
-  }
-
-  if (inTx)
-    strcat(c, " TX");
-  printLine(1, c);
-
+//by KD8CEC
+//0 ~ 25 : 30 over : + 10
 /*
-  //now, the second line
-  memset(c, 0, sizeof(c));
-  memset(b, 0, sizeof(b));
+void drawMeter(int needle) {
+  //5Char + O over
+  int i;
 
-  if (inTx)
-    strcat(c, "TX ");
-  else if (ritOn)
-    strcpy(c, "RIT");
+  for (i = 0; i < 5; i++) {
+    if (needle >= 5)
+      lcdMeter[i] = 5; //full
+    else if (needle > 0)
+      lcdMeter[i] = needle; //full
+    else  //0
+      lcdMeter[i] = 0x20;
+    
+    needle -= 5;
+  }
 
-  strcpy(c, "      \xff");
-  drawMeter(meter_reading);
-  strcat(c, meter);
-  strcat(c, "\xff");
-  printLine2(c);*/
+  if (needle > 0)
+    lcdMeter[5] = 6;
+  else
+    lcdMeter[5] = 0x20;
 }
+*/
+//VK2ETA meter for S.Meter, power and SWR
+void drawMeter(int needle) 
+{
+#ifdef OPTION_SKINNYBARS
+  //Fill buffer with growing set of bars, up to needle value
+  lcdMeter[0] = 0x20;
+  lcdMeter[1] = 0x20;
+  for (int i = 0; i < 6; i++) {
+    if (needle > i)
+      lcdMeter[i / 3] = byte(i + 1); //Custom characters above
+    //else if (i == 1 || i == 4) {
+    //  lcdMeter[i / 3] = 0x20; //blank
+    //}
+  }
+
+  if (needle > 7) {
+    lcdMeter[2] = byte(7); //Custom character "++"
+  } else if (needle > 6) {
+    lcdMeter[2] = '+'; //"+"
+  } else lcdMeter[2] = 0x20;
+  
+  
+#else //Must be "fat" bars
+  //Fill buffer with growing set of bars, up to needle value
+  for (int i = 0; i < 6; i++) {
+    if (needle > i)
+      lcdMeter[i] = byte(i + 1); //Custom characters above
+    else
+      lcdMeter[i] = 0x20; //blank
+  }
+
+  if (needle > 7) {
+    lcdMeter[6] = byte(7); //Custom character "++"
+  } else if (needle > 6) {
+    lcdMeter[6] = '+'; //"+"
+  } else lcdMeter[6] = 0x20;
+  
+#endif //OPTION_FATBARS
+}
+
+
+
+ char byteToChar(byte srcByte){
+  if (srcByte < 10)
+    return 0x30 + srcByte;
+ else
+    return 'A' + srcByte - 10;
+}
+
+//returns true if the button is pressed
+int btnDown(void){
+#ifdef EXTEND_KEY_GROUP1  
+  if (analogRead(FBUTTON) > FUNCTION_KEY_ADC)
+    return 0;
+  else
+    return 1;
+
+#else
+  if (digitalRead(FBUTTON) == HIGH)
+    return 0;
+  else
+    return 1;
+#endif    
+}
+
+#ifdef EXTEND_KEY_GROUP1  
+int getBtnStatus(void){
+  int readButtonValue = analogRead(FBUTTON);
+
+  if (analogRead(FBUTTON) < FUNCTION_KEY_ADC)
+    return FKEY_PRESS;
+  else
+  {
+    readButtonValue = readButtonValue / 4;
+    //return FKEY_VFOCHANGE;
+    for (int i = 0; i < 16; i++)
+      if (KeyValues[i][2] != 0 && KeyValues[i][0] <= readButtonValue && KeyValues[i][1] >= readButtonValue)
+        return KeyValues[i][2];
+        //return i;
+  }
+
+  return -1;
+}
+#endif
 
 int enc_prev_state = 3;
 
@@ -196,9 +237,9 @@ int enc_read(void) {
   byte newState;
   int enc_speed = 0;
   
-  long stop_by = millis() + 50;
+  unsigned long start_at = millis();
   
-  while (millis() < stop_by) { // check if the previous state was stable
+  while (millis() - start_at < 50) { // check if the previous state was stable
     newState = enc_state(); // Get current state  
     
     if (newState != enc_prev_state)
@@ -225,6 +266,34 @@ int enc_read(void) {
     delay(1);
   }
   return(result);
+}
+
+//===================================================================
+//I2C Signal Meter, Version 1.097
+//===================================================================
+
+// 0xA0 ~ 0xCF : CW Decode Mode + 100Hz ~
+// 0xD0 ~ 0xF3 : RTTY Decode Mode + 100Hz ~
+// 0x10 ~ 0x30 : Spectrum Mode
+int GetI2CSmeterValue(int valueType)
+{
+  if (valueType > 0)
+  {
+    Wire.beginTransmission(I2CMETER_ADDR);  //j : S-Meter
+    Wire.write(valueType);                  //Y : Get Value Type
+    Wire.endTransmission();
+  }
+  
+  Wire.requestFrom(I2CMETER_ADDR, 1);
+
+  if (Wire.available() > 0)
+  {
+    return Wire.read();
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 
